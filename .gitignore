@@ -1,0 +1,24 @@
+# Private Daten und Zugangsdaten
+.env
+.env.*
+*.key
+*.pem
+*.csr
+*.p12
+
+# Sicherungen und temporäre Dateien
+*.bak
+*.bak-*
+*.tmp
+*.swp
+*~
+*.log
+
+# Entwicklungsumgebung
+.idea/
+.vscode/
+__pycache__/
+.DS_Store
+
+# Lokale Abhängigkeiten
+node_modules/
