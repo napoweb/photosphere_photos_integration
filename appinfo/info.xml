@@ -21,6 +21,12 @@ Photo Sphere erweitert Nextcloud Fotos und Dateien um einen integrierten 360°-P
   <author>Stefan Sührer</author>
   <namespace>PhotospherePhotosIntegration</namespace>
   <category>multimedia</category>
+  <website>https://github.com/napoweb/photosphere_photos_integration</website>
+  <bugs>https://github.com/napoweb/photosphere_photos_integration/issues</bugs>
+  <repository>https://github.com/napoweb/photosphere_photos_integration</repository>
+  <screenshot>https://raw.githubusercontent.com/napoweb/photosphere_photos_integration/main/docs/screenshots/panorama-viewer.jpg</screenshot>
+  <screenshot>https://raw.githubusercontent.com/napoweb/photosphere_photos_integration/main/docs/screenshots/watermark-gallery.jpg</screenshot>
+  <screenshot>https://raw.githubusercontent.com/napoweb/photosphere_photos_integration/main/docs/screenshots/folder-assignments.jpg</screenshot>
   <settings>
     <admin>OCA\PhotospherePhotosIntegration\Settings\Admin</admin>
     <admin-section>OCA\PhotospherePhotosIntegration\Settings\AdminSection</admin-section>
