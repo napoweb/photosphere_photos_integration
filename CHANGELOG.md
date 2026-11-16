@@ -8,7 +8,10 @@
 - Uses Nextcloud's share manager for share validity checks.
 
 ### Notes
-- Release candidate; integration testing is still pending.
+- Release candidate tested successfully on Nextcloud 35.0.3.
+- Manual tests covered Photos, Files, panorama controls, watermarks and public shares.
+- Password-protected watermark access was checked with authorized and unauthorized sessions.
+- See [TESTREPORT-0.4.18.md](docs/TESTREPORT-0.4.18.md) for results and limitations.
 - No changes to the panorama viewer or original image files.
 
 ---

@@ -1,99 +1,200 @@
 # Photo Sphere – 360° Panorama
 
-An interactive 360° panorama viewer for Nextcloud 35.
+**Interaktiver 360°-Panoramabetrachter für Nextcloud**
 
-**Version:** 0.4.18 (release candidate)
-**Developer:** Stefan Sührer
-**License:** AGPL-3.0-or-later
+Photo Sphere erweitert Nextcloud um die Möglichkeit,
+360°-Panoramafotos direkt in Fotos, Dateien und
+öffentlichen Freigaben interaktiv zu betrachten.
+
+Die App verfügt über einen eigenen WebGL-basierten
+Panoramabetrachter sowie eine umfangreiche
+Verwaltung individueller Wasserzeichen.
+
+**Version:** 0.4.18 Release Candidate
+**Kompatibilität:** Nextcloud 35
+**Lizenz:** AGPL-3.0-or-later
+**Entwickler:** Stefan Sührer
+
+---
+
+## Funktionen
+
+### 360°-Panoramabetrachter
+
+- Automatische Erkennung geeigneter JPEG-Panoramen
+  anhand von XMP-Metadaten
+- Integrierter WebGL-basierter Panorama-Renderer
+- Unterstützung für Nextcloud Fotos und Dateien
+- Maus-, Tastatur- und Touchsteuerung
+- Sanftes Beschleunigen und Abbremsen bei
+  der Navigation mit Pfeiltasten
+- Stufenloser Zoom
+- Visuelle Ladeanzeige mit JPEG-Downloadfortschritt
+- Unterstützung öffentlicher Datei- und Ordnerfreigaben
+- Originalbilder bleiben unverändert
+
+### Individuelle Wasserzeichen
+
+- Eigene transparente PNG-Wasserzeichen hochladen
+- Verwaltung über eine integrierte Bildergalerie
+- Mitgeliefertes Standardwasserzeichen
+- Wasserzeichen aktivieren oder deaktivieren
+- Größe und Position individuell konfigurieren
+- Unterschiedliche Einstellungen für Desktop und Mobilgeräte
+- Feste Bildschirmposition oder Position im Panorama
+
+### Ordnerbezogene Wasserzeichen
+
+- Wasserzeichen bestimmten Ordnern zuweisen
+- Integrierter Nextcloud-Ordnerbrowser
+- Automatische Vererbung an Unterordner
+- Spezifischere Ordnerregeln haben Vorrang
+- Fallback auf das konfigurierte Standardwasserzeichen
+- Ordnerzugriff entsprechend den Berechtigungen
+  des angemeldeten Administratorkontos
+
+### Öffentliche Freigaben
+
+Photo Sphere unterstützt die interaktive
+Panoramaansicht in geeigneten öffentlichen
+Nextcloud-Freigaben.
+
+Dazu gehören auch passwortgeschützte Freigaben.
+
+Die dateibezogene Wasserzeichenauflösung
+berücksichtigt Freigabetyp, Leseberechtigungen
+und die Authentifizierung geschützter Freigaben.
+
+---
+
+## Voraussetzungen
+
+- Nextcloud 35
+- Nextcloud Photos
+- Nextcloud Viewer
+- Moderner Browser mit WebGL-Unterstützung
+
+Die zusätzliche Nextcloud-App `files_photospheres`
+ist für den integrierten Panorama-Renderer
+nicht erforderlich.
+
+---
+
+## Verwaltung
+
+Die Wasserzeichenverwaltung befindet sich
+in den Nextcloud-Verwaltungseinstellungen
+unter **360° Panorama**.
+
+Dort können Administratoren Wasserzeichen
+hochladen, auswählen, positionieren und
+bestimmten Ordnern zuweisen.
+
+Die Original-JPEG-Dateien werden durch die
+Wasserzeichenanzeige nicht verändert.
+
+---
+
+## Teststatus
+
+Version 0.4.18 wurde in einer isolierten
+Docker-Testumgebung mit folgenden Komponenten
+manuell geprüft:
+
+- Nextcloud 35.0.3
+- Nextcloud Photos 8.0.0
+- Nextcloud Viewer 8.0.0
+- ARM64 / Ubuntu 26.04.1 LTS
+
+Geprüft wurden unter anderem der Panoramabetrachter,
+die Bedienung, Wasserzeichen, Ordnerverwaltung
+und öffentliche Freigaben.
+
+Bei einer geschützten Wasserzeichen-Ressource
+wurde im Test ohne autorisierte Freigabesitzung
+HTTP 404 und mit autorisierter Sitzung HTTP 200
+zurückgegeben.
+
+**Vollständiger Testbericht:**
+
+[TESTREPORT-0.4.18.md](docs/TESTREPORT-0.4.18.md)
+
+Die Tests ersetzen kein umfassendes
+Sicherheitsaudit.
+
+---
+
+## Installation
+
+Die Veröffentlichung im offiziellen
+Nextcloud App Store wird vorbereitet.
+
+Version 0.4.18 ist derzeit ein Release Candidate
+und noch keine offiziell veröffentlichte
+App-Store-Version.
+
+Vor einer manuellen Installation oder einem
+Update sollte eine Sicherung der bestehenden
+Nextcloud-Installation erstellt werden.
+
+---
+
+## Versionshistorie
+
+Alle Änderungen sind in der
+[CHANGELOG.md](CHANGELOG.md) dokumentiert.
+
+---
 
 ## English
 
-Photo Sphere adds an interactive WebGL-based 360° panorama
-viewer to Nextcloud Photos, Files and supported public shares.
+**Photo Sphere – Interactive 360° Panorama Viewer for Nextcloud**
+
+Photo Sphere integrates an interactive WebGL-based
+360° panorama viewer into Nextcloud Photos, Files,
+and supported public shares.
 
 ### Features
 
-- Detection of suitable 360° JPEG panoramas using XMP metadata
-- Interactive equirectangular panorama viewer
-- Mouse, keyboard and touch navigation
-- Smooth keyboard movement and zoom controls
-- JPEG loading progress with visual feedback
-- Configurable PNG watermarks
-- Watermark gallery with custom images
-- Folder-specific watermark assignments
-- Watermark inheritance for subfolders
-- Administrative folder browser
-- Support for public file and folder shares
-- No modifications to original JPEG files
+- Automatic detection of suitable 360° JPEG panoramas
+  using XMP metadata
+- Interactive equirectangular WebGL panorama viewer
+- Mouse, keyboard, and touch controls
+- Smooth keyboard movement and zoom
+- JPEG download progress indicator
+- Custom transparent PNG watermarks
+- Watermark gallery and administration interface
+- Folder-specific watermarks with inheritance
+- Support for public and password-protected shares
+- Original JPEG files remain unchanged
 
 ### Requirements
 
 - Nextcloud 35
 - Nextcloud Photos and Viewer
-- Browser with WebGL support
+- WebGL-compatible browser
 
-The separate files_photospheres app is not required
-for the integrated panorama renderer.
+The separate `files_photospheres` application
+is not required.
 
-### Security
-
-Folder assignments are restricted to directories accessible
-to the currently signed-in administrator.
-
-Public-share watermark resolution includes checks for
-share type, read permissions and password authentication.
+### Release status
 
 Version 0.4.18 is a release candidate.
-Final integration and security tests are still required.
 
-## Deutsch
+Manual integration and public-sharing tests
+have passed in an isolated Nextcloud 35.0.3
+environment.
 
-Photo Sphere erweitert Nextcloud Fotos, Dateien und
-unterstützte öffentliche Freigaben um einen interaktiven
-360°-Panoramabetrachter.
+See the [test report](docs/TESTREPORT-0.4.18.md)
+for details and limitations.
 
-### Funktionen
+Official Nextcloud App Store publication
+is being prepared.
 
-- Erkennung geeigneter 360°-JPEGs anhand von XMP-Metadaten
-- Interaktiver WebGL-Panoramabetrachter
-- Steuerung mit Maus, Tastatur und Touch
-- Sanfte Pfeiltastenbewegung und Zoom
-- JPEG-Ladefortschritt mit visueller Rückmeldung
-- Konfigurierbare PNG-Wasserzeichen
-- Galerie für eigene Wasserzeichengrafiken
-- Ordnerbezogene Wasserzeichen mit Unterordner-Vererbung
-- Ordnerbrowser für Administratoren
-- Unterstützung öffentlicher Datei- und Ordnerfreigaben
-- Keine Veränderung der Original-JPEG-Dateien
-
-### Voraussetzungen
-
-- Nextcloud 35
-- Nextcloud Fotos und Viewer
-- Browser mit WebGL-Unterstützung
-
-Die separate App files_photospheres wird für den
-integrierten Panoramabetrachter nicht benötigt.
-
-### Sicherheit
-
-Ordnerzuweisungen sind auf Ordner beschränkt, die
-für das angemeldete Administratorkonto erreichbar sind.
-
-Die öffentliche Wasserzeichenauflösung enthält Prüfungen
-für Freigabetyp, Leseberechtigung und Passwortauthentifizierung.
-
-Version 0.4.18 ist ein Release-Kandidat.
-Abschließende Funktions- und Sicherheitstests stehen noch aus.
-
-## Installation
-
-The application is currently being prepared for publication
-in the official Nextcloud App Store.
-
-Manual installation and updates should be performed only
-after creating a backup of the existing installation.
+---
 
 ## License
 
-AGPL-3.0-or-later. See LICENSE.
+Licensed under AGPL-3.0-or-later.
+
+See [LICENSE](LICENSE).
