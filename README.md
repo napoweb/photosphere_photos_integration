@@ -67,6 +67,59 @@ und die Authentifizierung geschützter Freigaben.
 
 ---
 
+## Screenshots
+
+### Interaktiver 360°-Panoramabetrachter
+
+Der vollständig geladene Panoramabetrachter mit
+integriertem Wasserzeichen.
+
+![360°-Panoramabetrachter](docs/screenshots/panorama-viewer.jpg)
+
+### 360°-Startansicht
+
+Panorama mit eingeblendeter 360°-Schaltfläche
+und Steuerungshinweisen.
+
+![360°-Startansicht](docs/screenshots/panorama-launch.jpg)
+
+### Ladefortschritt
+
+Während des JPEG-Downloads zeigt Photo Sphere
+den Fortschritt mit einer visuellen Ladeanzeige an.
+
+![Panorama-Ladefortschritt](docs/screenshots/panorama-loading.jpg)
+
+### Wasserzeichen aktivieren und positionieren
+
+Der Administrationsbereich bietet verschiedene
+Positionierungsarten für Wasserzeichen.
+
+![Wasserzeichen-Einstellungen](docs/screenshots/watermark-toggle-and-mode.jpg)
+
+### Position und Größe konfigurieren
+
+Die Positionierung und Größe lassen sich
+für Desktop und Smartphone getrennt einstellen.
+
+![Wasserzeichen-Positionierung](docs/screenshots/watermark-position-and-size.jpg)
+
+### Wasserzeichen-Galerie
+
+Eigene PNG-Wasserzeichen können hochgeladen,
+ausgewählt und verwaltet werden.
+
+![Wasserzeichen-Galerie](docs/screenshots/watermark-gallery.jpg)
+
+### Ordnerbezogene Wasserzeichen
+
+Wasserzeichen lassen sich über einen integrierten
+Ordnerbrowser bestimmten Nextcloud-Ordnern zuweisen.
+
+![Ordnerzuweisungen](docs/screenshots/folder-assignments.jpg)
+
+---
+
 ## Voraussetzungen
 
 - Nextcloud 35
