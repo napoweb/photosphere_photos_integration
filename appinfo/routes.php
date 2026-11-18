@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 return [
     'routes' => [
+        ['name' => 'zoom#settings', 'url' => '/zoom/settings', 'verb' => 'GET'],
+        ['name' => 'zoom#save', 'url' => '/zoom/options', 'verb' => 'POST'],
         ['name' => 'watermark#resolve', 'url' => '/watermark/resolve', 'verb' => 'GET'],
         ['name' => 'watermark#contextImage', 'url' => '/watermark/context-image', 'verb' => 'GET'],
         ['name' => 'watermark#folderOwners', 'url' => '/watermark/folder/owners', 'verb' => 'GET'],

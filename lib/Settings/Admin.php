@@ -29,6 +29,8 @@ final class Admin implements ISettings {
             'selectUrl' => $route('select'),
             'deleteUrl' => $route('delete'),
             'optionsUrl' => $route('saveOptions'),
+            'zoomSettingsUrl' => $this->urlGenerator->linkToRoute('photosphere_photos_integration.zoom.settings'),
+            'zoomSaveUrl' => $this->urlGenerator->linkToRoute('photosphere_photos_integration.zoom.save'),
         ], '');
     }
 

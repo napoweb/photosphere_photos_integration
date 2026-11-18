@@ -26,6 +26,71 @@
     let folderRules = [];
     const token = () => window.OC?.requestToken || document.head?.dataset.requesttoken || '';
 
+    // Zoom administration is independent of watermark gallery and its state.
+    const zoomKeys = ['desktopMin','desktopStart','desktopMax','mobileMin','mobileStart','mobileMax'];
+    const zoomField = key => document.getElementById('ppi-zoom-' + key);
+    const zoomFeedback = document.getElementById('ppi-zoom-feedback');
+    const zoomSave = document.getElementById('ppi-zoom-save');
+    const zoomReset = document.getElementById('ppi-zoom-reset');
+    const zoomDefaults = {desktopMin:60,desktopStart:110,desktopMax:135,mobileMin:30,mobileStart:90,mobileMax:110};
+    function showZoom(message, error = false) {
+      if (!zoomFeedback) return;
+      zoomFeedback.textContent = message;
+      zoomFeedback.style.color = error ? 'var(--color-error,#d33)' : '';
+    }
+    function readZoomFields() {
+      return Object.fromEntries(zoomKeys.map(key => [key, Number(zoomField(key).value)]));
+    }
+    function validateZoom(values) {
+      return ['desktop','mobile'].every(device =>
+        values[device+'Min']+5 <= values[device+'Start'] &&
+        values[device+'Start']+5 <= values[device+'Max']);
+    }
+    function updateZoomOutput(key) {
+      document.getElementById('ppi-zoom-' + key + '-out').textContent = zoomField(key).value + '°';
+    }
+    if (zoomSave) {
+      zoomKeys.forEach(key => zoomField(key).addEventListener('input', () => {
+        updateZoomOutput(key);
+        showZoom(validateZoom(readZoomFields()) ? '' : 'Startwert muss mindestens 5° von beiden Grenzen entfernt sein.', true);
+      }));
+      request(root.dataset.zoomSettingsUrl).then(result => {
+        for (const key of zoomKeys) {
+          if (Number.isFinite(Number(result.zoom?.[key]))) zoomField(key).value = result.zoom[key];
+          updateZoomOutput(key);
+        }
+      }).catch(error => showZoom('Zoomwerte konnten nicht geladen werden: ' + error.message, true));
+      zoomReset?.addEventListener('click', async () => {
+        if (!confirm('Zoom-Einstellungen für Desktop und Smartphone auf die Standardwerte zurücksetzen?')) return;
+        zoomReset.disabled=true;
+        zoomSave.disabled=true;
+        showZoom('Standardwerte werden wiederhergestellt …');
+        try {
+          const body = new FormData(); body.set('zoom', JSON.stringify(zoomDefaults));
+          await request(root.dataset.zoomSaveUrl, body);
+          for (const key of zoomKeys) {
+            zoomField(key).value=zoomDefaults[key];
+            updateZoomOutput(key);
+          }
+          showZoom('Standardwerte gespeichert. Neue Panoramen übernehmen die Einstellung.');
+        } catch (error) {showZoom('Fehler: '+error.message,true);}
+        finally {zoomReset.disabled=false;zoomSave.disabled=false;}
+      });
+      zoomSave.addEventListener('click', async () => {
+        const values = readZoomFields();
+        if (!validateZoom(values)) return showZoom('Bitte die Zoomgrenzen und Startwerte korrigieren.', true);
+        zoomSave.disabled = true;
+        showZoom('Zoomwerte werden gespeichert …');
+        try {
+          const body = new FormData(); body.set('zoom', JSON.stringify(values));
+          await request(root.dataset.zoomSaveUrl, body);
+          showZoom('Zoomwerte gespeichert. Neue Panoramen übernehmen die Einstellung.');
+        } catch (error) {showZoom('Fehler: ' + error.message, true);}
+        finally {zoomSave.disabled = false;}
+      });
+    }
+
+
     function show(message, isError = false) {
       feedback.textContent = message;
       feedback.style.color = isError ? 'var(--color-error, #d33)' : '';

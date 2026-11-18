@@ -1,4 +1,4 @@
-/* Photo Sphere – Standalone Panorama integration v0.4.14 (Nextcloud 35 / Viewer 8). */
+/* Photo Sphere – Standalone Panorama integration v0.4.25 (Nextcloud 35 / Viewer 8). */
 (() => {
   'use strict';
   if (window.__photospherePhotosIntegrationLoaded) return;
@@ -31,7 +31,29 @@
   const heldZoomKeys = new Set();
   let zoomFrame = 0;
   let lastZoomTime = 0;
-  const ZOOM_SPEED = 35; // PSV zoom levels (0–100) per second
+  // Physical FOV degrees per second, independent of configured zoom range.
+  const ZOOM_DEGREES_PER_SECOND = 34;
+  const ZOOM_ACCEL_SECONDS = 0.90;
+  const ZOOM_DECEL_SECONDS = 0.70;
+  let zoomVelocity = 0;
+
+  const ZOOM_DEFAULTS = {
+    desktopMin: 60, desktopStart: 110, desktopMax: 135,
+    mobileMin: 30, mobileStart: 90, mobileMax: 110
+  };
+  async function fetchZoomSettings() {
+    try {
+      const url = window.OC?.generateUrl?.('/apps/photosphere_photos_integration/zoom/settings');
+      if (!url) return ZOOM_DEFAULTS;
+      const response = await fetch(url, {credentials:'same-origin', cache:'no-store'});
+      if (!response.ok) return ZOOM_DEFAULTS;
+      const result = await response.json();
+      return result?.success && result.zoom ? {...ZOOM_DEFAULTS, ...result.zoom} : ZOOM_DEFAULTS;
+    } catch (error) {
+      console.warn('[Photo Sphere] Zoom-Konfiguration nicht erreichbar:', error);
+      return ZOOM_DEFAULTS;
+    }
+  }
 
   const WATERMARK_DEFAULTS = {
     enabled: false, active: 'none', mode: 'panorama', yaw: 0,
@@ -341,7 +363,7 @@ function ensureOpenBadge() {
   // JPEG-Textur auf eine virtuelle Kugel ab. Nextcloud-Gastberechtigungen bleiben
   // unverändert: Das JPEG wird nur über seine bereits autorisierte URL geladen.
   let currentViewer = null;
-  function createPanoramaViewer(container, url, xmp, watermarkOptions = WATERMARK_DEFAULTS) {
+  function createPanoramaViewer(container, url, xmp, watermarkOptions = WATERMARK_DEFAULTS, zoomOptions = ZOOM_DEFAULTS) {
     const canvas = document.createElement('canvas');
     canvas.setAttribute('aria-label', 'Interaktives 360°-Panorama');
     Object.assign(canvas.style, {
@@ -451,12 +473,11 @@ function ensureOpenBadge() {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
     // Wider default view and much wider zoom-out range than 0.4.0.
-    const MIN_FOV = 30;
     const mobileTouch = window.matchMedia?.('(pointer: coarse)').matches || false;
-    // Mobile: slightly less extreme zoom-out (128° vs 135° on desktop).
-    // Opening with 90° instead of 86° shows a little more of the scene.
-    const MAX_FOV = mobileTouch ? 110 : 135;
-    let yaw=0, pitch=0, hfov=mobileTouch ? 90 : 114, dead=false, imageReady=false;
+    const prefix = mobileTouch ? 'mobile' : 'desktop';
+    const MIN_FOV = Number(zoomOptions[prefix+'Min']) || 30;
+    const MAX_FOV = Number(zoomOptions[prefix+'Max']) || (mobileTouch ? 110 : 135);
+    let yaw=0, pitch=0, hfov=Number(zoomOptions[prefix+'Start']) || (mobileTouch ? 90 : 114), dead=false, imageReady=false;
     const limit=(n,min,max)=>Math.max(min,Math.min(max,n));
     let firstFrameSent=false;
     let raf=0;
@@ -565,6 +586,244 @@ function ensureOpenBadge() {
         return new Float32Array([left/fullW,top/fullH,cropW/fullW,cropH/fullH]);
       return new Float32Array([0,0,1,1]);
     }
+    // Optional motion mode: sensor orientation is converted to camera-space
+    // orientation, including device landscape rotation. No raw alpha Euler
+    // subtraction: that jumps when the phone tilts or crosses the 0/360 seam.
+    const motionAvailable = mobileTouch && window.isSecureContext && 'DeviceOrientationEvent' in window;
+    let motionEnabled=false, motionAnchor=null, motionFrame=0, motionLast=0;
+    let motionTargetYaw=0, motionTargetPitch=0;
+    let sensorScreenAngle=null, sensorLastHeading=null;
+    // A single sliding control: its border and background belong to the
+    // outer shell. The integrated grip has no separate frame or decoration.
+    // Hide the entire control until the panorama's loading overlay and blur
+    // transition have completed.
+    let gyroOpen=false;
+    let gyroHintTimer=0;
+    let gyroHintAnimation=null;
+    const gyroShell=document.createElement('div');
+    const gyroTab=document.createElement('button');
+    const gyroPanel=document.createElement('div');
+    const gyroSwitch=document.createElement('button');
+    if (motionAvailable) {
+      const CLOSED_OFFSET='translateY(-50%) translateX(calc(100% - 14px))';
+      const OPEN_OFFSET='translateY(-50%) translateX(0)';
+      Object.assign(gyroShell.style,{
+        position:'absolute',right:'0',top:'76%',zIndex:'4',
+        display:'flex',alignItems:'stretch',gap:'0',width:'min(198px, 92vw)',
+        boxSizing:'border-box',overflow:'hidden',
+        background:'rgba(8, 18, 28, .20)',color:'#fff',
+        border:'1px solid rgba(255,255,255,.88)',borderRight:'none',
+        borderRadius:'13px 0 0 13px',
+        backdropFilter:'blur(2px)',WebkitBackdropFilter:'blur(2px)',
+        boxShadow:'0 10px 28px rgba(0,0,0,.14)',
+        transform:CLOSED_OFFSET,
+        transition:'transform .29s cubic-bezier(.2,.8,.25,1)',
+        visibility:'hidden',pointerEvents:'none'
+      });
+      gyroPanel.setAttribute('aria-label','Gyroskop-Steuerung');
+      Object.assign(gyroPanel.style,{
+        flex:'1 1 auto',minWidth:'0',padding:'10px 25px 10px 5px',
+        boxSizing:'border-box',display:'flex',flexDirection:'column',
+        alignItems:'center',justifyContent:'center',textAlign:'center',
+        opacity:'0',visibility:'hidden',pointerEvents:'none',
+        transition:'opacity .2s ease, visibility .2s ease'
+      });
+      const heading=document.createElement('div');
+      heading.textContent='Bewegungssteuerung';
+      Object.assign(heading.style,{
+        font:'600 12px system-ui,sans-serif',marginBottom:'7px',
+        textShadow:'0 1px 3px rgba(0,0,0,.6)'
+      });
+      gyroSwitch.type='button';
+      gyroSwitch.textContent='Gyroskop: Aus';
+      Object.assign(gyroSwitch.style,{
+        background:'rgba(8, 18, 28, .20)',color:'#fff',
+        border:'1px solid rgba(255,255,255,.88)',borderRadius:'999px',
+        padding:'8px 10px',font:'600 12px system-ui,sans-serif',
+        cursor:'pointer',touchAction:'manipulation',whiteSpace:'nowrap',maxWidth:'100%',
+        textShadow:'0 1px 3px rgba(0,0,0,.6)'
+      });
+      gyroPanel.append(heading,gyroSwitch);
+      gyroTab.type='button';
+      gyroTab.textContent='';
+      gyroTab.title='Gyroskop-Steuerung aufklappen';
+      gyroTab.setAttribute('aria-label','Gyroskop-Steuerung öffnen');
+      gyroTab.setAttribute('aria-expanded','false');
+      Object.assign(gyroTab.style,{
+        flex:'0 0 14px',alignSelf:'stretch',minHeight:'72px',
+        background:'transparent',border:'0',borderRadius:'0',padding:'0',
+        cursor:'pointer',touchAction:'manipulation',
+        WebkitTapHighlightColor:'transparent'
+      });
+      function stopGyroHint() {
+        if (gyroHintTimer) clearTimeout(gyroHintTimer);
+        gyroHintTimer=0;
+        if (gyroHintAnimation) { gyroHintAnimation.cancel(); gyroHintAnimation=null; }
+      }
+      function setGyroPanelOpen(open) {
+        if (dead || !gyroShell.isConnected) return;
+        stopGyroHint();
+        gyroOpen=Boolean(open);
+        gyroShell.style.transform=gyroOpen ? OPEN_OFFSET : CLOSED_OFFSET;
+        gyroPanel.style.opacity=gyroOpen ? '1' : '0';
+        gyroPanel.style.visibility=gyroOpen ? 'visible' : 'hidden';
+        gyroPanel.style.pointerEvents=gyroOpen ? 'auto' : 'none';
+        gyroTab.setAttribute('aria-expanded',String(gyroOpen));
+        gyroTab.setAttribute('aria-label',gyroOpen
+          ? 'Gyroskop-Steuerung schließen' : 'Gyroskop-Steuerung öffnen');
+      }
+      // The entire sliding surface acts as the open/close touch target.
+      // Only the dedicated gyro switch has its own independent action.
+      gyroShell.addEventListener('click', event => {
+        if (event.target === gyroSwitch || gyroSwitch.contains(event.target)) return;
+        setGyroPanelOpen(!gyroOpen);
+      });
+      gyroSwitch.addEventListener('click', event => {
+        // Do not let the click reach the shell and immediately reopen it.
+        event.stopPropagation();
+        setGyroPanelOpen(false);
+      });
+      // The panel and its grip share one parent border/background. The grip
+      // is the LEFT edge of the sliding surface so it remains visible and clickable
+      // while the rest of the shell is translated off the right screen edge.
+      gyroShell.append(gyroTab,gyroPanel);
+      container.appendChild(gyroShell);
+      container.addEventListener('ppi-image-ready', () => {
+        // The first GPU frame still has a loading veil (650 ms) and a canvas
+        // blur transition (720 ms). Only reveal the grip after both finish.
+        gyroHintTimer=setTimeout(() => {
+          gyroHintTimer=0;
+          if (dead || !gyroShell.isConnected) return;
+          gyroShell.style.visibility='visible';
+          gyroShell.style.pointerEvents='auto';
+          if (gyroOpen || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+              || typeof gyroShell.animate!=='function') return;
+          gyroHintAnimation=gyroShell.animate([
+            {transform:CLOSED_OFFSET,offset:0},
+            {transform:'translateY(-50%) translateX(calc(100% - 34px))',offset:.42},
+            {transform:'translateY(-50%) translateX(calc(100% - 34px))',offset:.58},
+            {transform:CLOSED_OFFSET,offset:1}
+          ],{duration:780,iterations:2,easing:'ease-in-out'});
+          gyroHintAnimation.addEventListener('finish',()=>{
+            gyroHintAnimation=null;
+          },{once:true});
+        },1500);
+      },{once:true});
+    }
+    function shortestAngle(value){return Math.atan2(Math.sin(value),Math.cos(value));}
+    function quatMultiply(a,b){return {
+      x:a.w*b.x+a.x*b.w+a.y*b.z-a.z*b.y,
+      y:a.w*b.y-a.x*b.z+a.y*b.w+a.z*b.x,
+      z:a.w*b.z+a.x*b.y-a.y*b.x+a.z*b.w,
+      w:a.w*b.w-a.x*b.x-a.y*b.y-a.z*b.z
+    };}
+    function quatAxis(x,y,z,angle){
+      const t=angle/2;return {x:x*Math.sin(t),y:y*Math.sin(t),z:z*Math.sin(t),w:Math.cos(t)};
+    }
+    function vectorByQuat(q,v){
+      const t=quatMultiply(quatMultiply(q,{...v,w:0}),{x:-q.x,y:-q.y,z:-q.z,w:q.w});
+      return {x:t.x,y:t.y,z:t.z};
+    }
+    function orientationDirection(a,b,g,angle) {
+      const rad=Math.PI/180;
+      const alpha=a*rad, beta=b*rad, gamma=g*rad;
+      // DeviceOrientationControls' intrinsic Z-X'-Y'' order represented by
+      // YXZ Euler (beta,alpha,-gamma), then phone-camera and screen rotations.
+      const cx=Math.cos(beta/2),sx=Math.sin(beta/2);
+      const cy=Math.cos(alpha/2),sy=Math.sin(alpha/2);
+      const cz=Math.cos(-gamma/2),sz=Math.sin(-gamma/2);
+      const euler={
+        x:sx*cy*cz+cx*sy*sz,
+        y:cx*sy*cz-sx*cy*sz,
+        z:cx*cy*sz-sx*sy*cz,
+        w:cx*cy*cz+sx*sy*sz
+      };
+      const phoneCamera=quatAxis(1,0,0,-Math.PI/2);
+      const screenRotation=quatAxis(0,0,1,-angle*rad);
+      const q=quatMultiply(quatMultiply(euler,phoneCamera),screenRotation);
+      return vectorByQuat(q,{x:0,y:0,z:-1});
+    }
+    function orientationHandler(event) {
+      if (!motionEnabled || dead) return;
+      if (event.alpha==null || event.beta==null || event.gamma==null) return;
+      const a=Number(event.alpha), b=Number(event.beta), g=Number(event.gamma);
+      if (![a,b,g].every(Number.isFinite)) return;
+      const angle=Number(screen.orientation?.angle ?? window.orientation ?? 0);
+      if (!Number.isFinite(angle)) return;
+      const dir=orientationDirection(a,b,g,angle);
+      const horizontal=Math.hypot(dir.x,dir.z);
+      // When pointed almost at the zenith, heading is mathematically unstable.
+      // Hold previous heading to avoid a sudden 180-degree rotation.
+      const heading=horizontal>.17?Math.atan2(dir.x,-dir.z):sensorLastHeading;
+      if (heading===null) return;
+      const elevation=Math.asin(limit(dir.y,-1,1));
+      if (!motionAnchor || angle!==sensorScreenAngle) {
+        motionAnchor={heading,initialHeading:heading,elevation,yaw,pitch};
+        sensorScreenAngle=angle;
+        sensorLastHeading=heading;
+        motionTargetYaw=yaw;motionTargetPitch=pitch;
+        return;
+      }
+      // Maintain continuous heading across the 360-degree wrap. The horizontal
+      // motion should follow the device turn (reversed from 0.4.20).
+      const delta=shortestAngle(heading-sensorLastHeading);
+      sensorLastHeading=heading;
+      if (Number.isFinite(delta) && Math.abs(delta)<.70) {
+        motionAnchor.heading += delta;
+      } else if (Math.abs(delta)>=.70) {
+        // Ignore occasional browser sensor spikes rather than jumping.
+        return;
+      }
+      motionTargetYaw=motionAnchor.yaw+(motionAnchor.heading-motionAnchor.initialHeading);
+      motionTargetPitch=limit(motionAnchor.pitch+(elevation-motionAnchor.elevation),
+        -Math.PI/2+.02,Math.PI/2-.02);
+    }
+    function motionTick(now) {
+      motionFrame=0;
+      if (!motionEnabled || dead || !canvas.isConnected) return;
+      const dt=motionLast?Math.min((now-motionLast)/1000,.08):1/60;
+      motionLast=now;
+      // Compromise between the responsive 0.4.24 (0.16 s) and the very
+      // damped 0.4.25 (0.22 s). Sensor noise smaller than ~0.06 degrees
+      // is ignored, avoiding tiny back-and-forth corrections on mobile.
+      const factor=1-Math.exp(-dt/.18);
+      const deadZone=0.001;
+      const yawError=shortestAngle(motionTargetYaw-yaw);
+      const pitchError=motionTargetPitch-pitch;
+      if (Math.abs(yawError)>deadZone) yaw+=(yawError-Math.sign(yawError)*deadZone)*factor;
+      if (Math.abs(pitchError)>deadZone) {
+        pitch=limit(pitch+(pitchError-Math.sign(pitchError)*deadZone)*factor,
+          -Math.PI/2+.02,Math.PI/2-.02);
+      }
+      requestDraw();
+      motionFrame=requestAnimationFrame(motionTick);
+    }
+    function stopMotion() {
+      motionEnabled=false;motionAnchor=null;motionLast=0;
+      sensorLastHeading=null;sensorScreenAngle=null;
+      window.removeEventListener('deviceorientation',orientationHandler);
+      if (motionFrame) cancelAnimationFrame(motionFrame);
+      motionFrame=0;
+      if (gyroSwitch.isConnected) gyroSwitch.textContent='Gyroskop: Aus';
+    }
+    if (motionAvailable) gyroSwitch.addEventListener('click',async () => {
+      if (motionEnabled) {stopMotion();return;}
+      try {
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+          const permission=await DeviceOrientationEvent.requestPermission();
+          if (permission!=='granted') throw new Error('Sensorzugriff nicht erlaubt');
+        }
+        motionAnchor=null;sensorLastHeading=null;sensorScreenAngle=null;
+        motionTargetYaw=yaw;motionTargetPitch=pitch;
+        motionEnabled=true;
+        gyroSwitch.textContent='Gyroskop: Ein';
+        window.addEventListener('deviceorientation',orientationHandler);
+        motionFrame=requestAnimationFrame(motionTick);
+      } catch(error) {
+        stopMotion();gyroSwitch.textContent='Gyroskop nicht verfügbar';
+        console.warn('[Photo Sphere] Gyroskop:',error);
+      }
+    });
     const crop=cropValue();
     // Touch swipes move the view directly with the finger rather than following
     // it via an easing target. This avoids perceptible lag on phones.
@@ -588,6 +847,7 @@ function ensureOpenBadge() {
       requestDraw();
     }
     const onDown = e => {
+      if (motionEnabled && e.pointerType === 'touch') stopMotion();
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       const touch = e.pointerType === 'touch';
       pointers.set(e.pointerId, {x:e.clientX, y:e.clientY, touch});
@@ -766,12 +1026,14 @@ function ensureOpenBadge() {
         touchYawTarget=yaw; touchPitchTarget=pitch;
         requestDraw();
       },
+      getFov(){return hfov;},
+      zoomByDegrees(delta){setFov(hfov+delta);},
       getZoomLevel(){return (MAX_FOV-hfov)/(MAX_FOV-MIN_FOV)*100;},
       zoom(level){setFov(MAX_FOV-limit(level,0,100)/100*(MAX_FOV-MIN_FOV));},
       zoomIn(){setFov(hfov-8);},
       zoomOut(){setFov(hfov+8);},
       destroy(){
-        dead=true;if(raf)cancelAnimationFrame(raf);
+        dead=true;stopMotion();if (gyroHintTimer) clearTimeout(gyroHintTimer);if (gyroHintAnimation) gyroHintAnimation.cancel();gyroShell.remove();if(raf)cancelAnimationFrame(raf);
         downloadController.abort();
         resizeObserver?.disconnect();
         image.onload=null;image.onerror=null;image.src='';
@@ -884,34 +1146,35 @@ function ensureOpenBadge() {
     if (zoomFrame) cancelAnimationFrame(zoomFrame);
     zoomFrame = 0;
     lastZoomTime = 0;
+    zoomVelocity = 0;
   }
   function zoomTick(now) {
     zoomFrame = 0;
-    if (!heldZoomKeys.size || !document.getElementById(FRAME_ID)) {
-      stopZoom();
-      return;
+    if (!document.getElementById(FRAME_ID)) { stopZoom(); return; }
+    const dt = lastZoomTime ? Math.min(Math.max((now-lastZoomTime)/1000,0),.06) : 1/60;
+    lastZoomTime = now;
+    const target = Number(heldZoomKeys.has('ArrowUp')) - Number(heldZoomKeys.has('ArrowDown'));
+    // Stronger ease-in/ease-out with a cubic smoothstep velocity envelope.
+    const duration=Math.abs(target)>Math.abs(zoomVelocity)?ZOOM_ACCEL_SECONDS:ZOOM_DECEL_SECONDS;
+    const linearStep=dt/duration;
+    if (zoomVelocity < target) zoomVelocity=Math.min(target,zoomVelocity+linearStep);
+    else if (zoomVelocity > target) zoomVelocity=Math.max(target,zoomVelocity-linearStep);
+    if (!heldZoomKeys.size && Math.abs(zoomVelocity)<1e-5) {
+      stopZoom();return;
     }
-    const viewer = sphereViewer();
-    if (viewer && typeof viewer.getZoomLevel === 'function'
-      && typeof viewer.zoom === 'function') {
-      const seconds = lastZoomTime ? Math.min((now - lastZoomTime) / 1000, .06) : 1 / 60;
-      const direction = Number(heldZoomKeys.has('ArrowUp')) -
-        Number(heldZoomKeys.has('ArrowDown'));
-      if (direction) {
-        try {
-          const current = viewer.getZoomLevel();
-          if (Number.isFinite(current)) {
-            viewer.zoom(Math.max(0, Math.min(100, current + direction * ZOOM_SPEED * seconds)));
-          }
-        } catch (error) {
-          // Do not disrupt the working panorama if a viewer build lacks zoom.
-          console.warn('[Photosphere Photos] Zoom konnte nicht angepasst werden:', error);
-          stopZoom();
-          return;
-        }
+    const viewer=sphereViewer();
+    if (viewer && typeof viewer.zoomByDegrees==='function') {
+      try {
+        // Smoothstep reduces initial motion and gives a pronounced ramp-up.
+        const amplitude=Math.abs(zoomVelocity);
+        const eased=amplitude*amplitude*(3-2*amplitude);
+        const degrees=-Math.sign(zoomVelocity)*eased*ZOOM_DEGREES_PER_SECOND*dt;
+        viewer.zoomByDegrees(degrees);
+      } catch(error) {
+        console.warn('[Photo Sphere] Sanfter Zoom fehlgeschlagen:',error);
+        stopZoom();return;
       }
     }
-    lastZoomTime = now;
     zoomFrame = requestAnimationFrame(zoomTick);
   }
   function handleZoomKeyDown(event) {
@@ -919,8 +1182,7 @@ function ensureOpenBadge() {
     if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
     if (!document.getElementById(FRAME_ID) || !event.ctrlKey || event.altKey
       || event.metaKey || event.shiftKey || isTextOrMenuTarget(event.target)) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
+    event.preventDefault(); event.stopImmediatePropagation();
     stopSteering();
     heldZoomKeys.add(event.key);
     if (!zoomFrame) zoomFrame = requestAnimationFrame(zoomTick);
@@ -928,15 +1190,15 @@ function ensureOpenBadge() {
   function handleZoomKeyUp(event) {
     if (!document.getElementById(FRAME_ID)) return;
     if (event.key === 'Control') {
-      stopZoom();
+      heldZoomKeys.clear();
+      if (zoomVelocity && !zoomFrame) zoomFrame = requestAnimationFrame(zoomTick);
       return;
     }
     if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
     if (!heldZoomKeys.has(event.key)) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
+    event.preventDefault(); event.stopImmediatePropagation();
     heldZoomKeys.delete(event.key);
-    if (!heldZoomKeys.size) stopZoom();
+    if (!zoomFrame) zoomFrame = requestAnimationFrame(zoomTick);
   }
   function attachZoomListeners(target) {
     target.addEventListener('keydown', handleZoomKeyDown, true);
@@ -1161,7 +1423,7 @@ function ensureOpenBadge() {
     removeBadge();
     currentPanorama = photo.source;
     try {
-      const watermarkOptions = await fetchWatermarkSettings(photo);
+      const [watermarkOptions, zoomOptions] = await Promise.all([fetchWatermarkSettings(photo), fetchZoomSettings()]);
       if (currentPanorama !== photo.source) return;
       const overlay = document.createElement('div');
       overlay.id = FRAME_ID;
@@ -1309,7 +1571,7 @@ function ensureOpenBadge() {
         status('Panoramabild konnte nicht geladen werden: ' + event.detail);
       }, { once: true });
       document.body.append(overlay, close);
-      currentViewer = createPanoramaViewer(overlay, photo.source, xmp, watermarkOptions);
+      currentViewer = createPanoramaViewer(overlay, photo.source, xmp, watermarkOptions, zoomOptions);
 
       if (currentPanorama !== photo.source) closePanorama();
     } catch (error) {

@@ -4,19 +4,21 @@
   <name>Photo Sphere – 360° Panorama</name>
   <summary>360°-Panoramen in Nextcloud Fotos, Dateien und öffentlichen Freigaben</summary>
   <description><![CDATA[
-Photo Sphere erweitert Nextcloud Fotos und Dateien um einen integrierten 360°-Panoramabetrachter. Panoramabilder werden automatisch erkannt und lassen sich direkt in Nextcloud interaktiv betrachten – auch über öffentliche Freigaben.
+**Interaktive 360°-Panoramen in Nextcloud Fotos und Dateien erleben.**
+
+Photo Sphere erweitert sowohl die Nextcloud **Fotos-App** als auch die **Dateien-App** um eine interaktive 360°-Ansicht. Panoramabilder werden automatisch erkannt, **aber niemals automatisch im 360°-Betrachter geöffnet**. Die gewohnte Bildansicht und Navigation bleiben erhalten. Erst ein Klick auf die 360°-Schaltfläche startet das Panorama.
 
 ### Funktionen
-- Automatische Erkennung von 360°-Panoramabildern
-- Interaktive 360°-Ansicht mit Maus-, Tastatur- und Touchsteuerung
-- Stufenloser Zoom und animierte Ladeanzeige
-- Unterstützung für öffentliche Fotoalben und Dateifreigaben
-- Individuelle Wasserzeichen mit zentraler Verwaltung
-- Ordnerabhängige Wasserzeichen mit Vererbung an Unterordner
-- Anpassbare Position, Größe und Sichtbarkeit der Wasserzeichen
+- Nahtlose Integration in Nextcloud Fotos und Dateien ohne automatisches Öffnen erkannter Panoramen
+- Interaktive Steuerung mit Maus, Tastatur und Touch; optional per Gyroskop auf unterstützten Smartphones
+- Konfigurierbarer Start-Zoom und Zoomgrenzen für Desktop und Mobilgeräte
+- Sanfter Tastatur-Zoom sowie animierte Ladeanzeige mit tatsächlichem Downloadfortschritt
+- Unterstützung öffentlicher Fotoalben und Dateifreigaben
+- Individuelle und ordnerabhängige Wasserzeichen mit zentraler Verwaltung
+- Anpassbare Position, Größe und Sichtbarkeit; Vererbung an Unterordner
 - Originalbilder bleiben unverändert
-]]></description>
-  <version>0.4.18</version>
+  ]]></description>
+  <version>0.4.27</version>
   <licence>AGPL-3.0-or-later</licence>
   <author>Stefan Sührer</author>
   <namespace>PhotospherePhotosIntegration</namespace>

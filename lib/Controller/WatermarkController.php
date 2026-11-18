@@ -513,6 +513,7 @@ final class WatermarkController extends Controller {
         if ($shareToken !== '') {
             try {
                 $share = $this->shareManager->getShareByToken($shareToken);
+                // Match 0.4.18: public read-only share and authenticated password session.
                 if ($share->getShareType() !== IShare::TYPE_LINK) { return null; }
                 if (($share->getPermissions() & Constants::PERMISSION_READ) === 0) { return null; }
                 if (!$share->canSeeContent()) { return null; }
@@ -522,8 +523,7 @@ final class WatermarkController extends Controller {
                     $saved = json_decode((string)($this->session->get(
                         PublicShareController::DAV_AUTHENTICATED_FRONTEND
                     ) ?? '[]'), true);
-                    if (!is_array($saved) ||
-                        !is_string($saved[$shareToken] ?? null) ||
+                    if (!is_array($saved) || !is_string($saved[$shareToken] ?? null) ||
                         !hash_equals($hash, $saved[$shareToken])) {
                         return null;
                     }
@@ -580,9 +580,7 @@ final class WatermarkController extends Controller {
         $token = (string)$this->request->getParam('shareToken', '');
         if (strlen($token) > 256) { return new JSONResponse(['message' => 'Ungültiger Token.'], 400); }
         $active = $id ? $this->watermarkForFile((int)$id, $token) : $this->activeId();
-        if ($active === null) {
-            return new JSONResponse(['message' => 'Datei nicht verfügbar.'], 404);
-        }
+        if ($active === null) { return new JSONResponse(['message' => 'Datei nicht verfügbar.'], 404); }
         $response = new JSONResponse(['success' => true, 'active' => $active]);
         $response->addHeader('Cache-Control', 'no-store, max-age=0');
         return $response;
@@ -596,9 +594,7 @@ final class WatermarkController extends Controller {
         $token = (string)$this->request->getParam('shareToken', '');
         if (!$id || strlen($token) > 256) { return new DataDisplayResponse('', 404); }
         $active = $this->watermarkForFile((int)$id, $token);
-        if ($active === null || $active === 'none') {
-            return new DataDisplayResponse('', 404);
-        }
+        if ($active === null || $active === 'none') { return new DataDisplayResponse('', 404); }
         return $this->imageResponse($active);
     }
 

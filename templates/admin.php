@@ -2,6 +2,8 @@
 /** @var array $_ */
 ?>
 <div id="ppi-watermark-admin" class="section"
+     data-zoom-settings-url="<?php p($_['zoomSettingsUrl']); ?>"
+     data-zoom-save-url="<?php p($_['zoomSaveUrl']); ?>"
      data-assign-folder-url="<?php p($_['assignFolderUrl']); ?>"
      data-folder-owners-url="<?php p($_['folderOwnersUrl']); ?>"
      data-browse-folders-url="<?php p($_['browseFoldersUrl']); ?>"
@@ -15,8 +17,10 @@
      data-options-url="<?php p($_['optionsUrl']); ?>"
      data-reset-url="<?php p($_['resetUrl']); ?>"
      data-restore-default-url="<?php p($_['restoreDefaultUrl']); ?>">
-  <h2>360° Panorama – Wasserzeichen</h2>
-  <p>Wasserzeichen für alle 360°-Panoramen verwalten. Änderungen gelten auch für öffentliche Freigaben. Die Originalbilder bleiben unverändert.</p>
+  <div class="ppi-settings-panel ppi-settings-intro">
+    <h2>360° Panorama – Einstellungen</h2>
+    <p>Verwalte die Wasserzeichen und Zoom-Einstellungen für deine Panoramaansichten. Die Einstellungen gelten auch für öffentliche Freigaben; Originalbilder bleiben unverändert.</p>
+  </div>
   <style>
     /* Uniform bordered layout: all top-level sections share the same outer width. */
     #ppi-watermark-admin { --ppi-panel-max: 840px; }
@@ -28,6 +32,9 @@
       margin: 0 0 16px;
     }
     #ppi-watermark-admin .ppi-settings-panel > h3:first-child { margin:0 0 10px; }
+    #ppi-watermark-admin .ppi-section-heading { box-sizing:border-box; max-width:var(--ppi-panel-max); margin:24px 0 12px; font-size:19px; font-weight:700; }
+    #ppi-watermark-admin .ppi-settings-intro h2 { margin:0 0 8px; font-size:22px; }
+    #ppi-watermark-admin .ppi-settings-intro p { margin:0; }
     #ppi-watermark-admin .ppi-settings-panel > p { margin: 0 0 16px; }
     #ppi-watermark-admin .ppi-settings-panel--action { padding: 14px 20px; }
     #ppi-watermark-admin .ppi-settings-panel--action button { margin: 0; }
@@ -77,6 +84,7 @@
     #ppi-watermark-admin .ppi-help li { margin:6px 0; }
   </style>
 
+  <h3 class="ppi-section-heading">Wasserzeichen-Verwaltung</h3>
   <div class="ppi-settings-panel ppi-settings-panel--activation">
     <label for="ppi-wm-enabled">
       <input id="ppi-wm-enabled" type="checkbox" checked /> Wasserzeichen anzeigen
@@ -188,5 +196,33 @@
       <p>Beispiel: <code>/Fotos/MTB</code> → MTB-Logo; <code>/Fotos/MTB/Harz</code> erbt es automatisch. Öffentliche Dateifreigaben nutzen die Zuordnung, wenn der Zugriff sicher zugeordnet werden kann. Andere öffentliche Alben verwenden das Standard-Wasserzeichen.</p>
       <p>Die Ordner werden anhand ihrer Nextcloud-ID gespeichert. Ändert sich der Pfad durch Umbenennen, bleibt die Regel bestehen; die angezeigte Pfadangabe ist dann möglicherweise veraltet.</p>
     </details>
+  </div>
+
+  <h3 class="ppi-section-heading">Zoom und Blickwinkel</h3>
+  <div class="ppi-settings-panel" id="ppi-zoom-settings-panel">
+    <h3>Zoom-Einstellungen</h3>
+    <p>Blickwinkel in Grad: Ein kleiner Wert bedeutet stärkeres Hineinzoomen. Der Startwert muss zwischen den beiden Grenzen liegen.</p>
+    <div class="ppi-control-row">
+      <div class="ppi-control-card">
+        <div class="ppi-device-heading">Desktop / PC</div>
+        <label for="ppi-zoom-desktopMin">Maximaler Zoom-in <output id="ppi-zoom-desktopMin-out">60°</output></label>
+        <input id="ppi-zoom-desktopMin" type="range" min="20" max="70" step="1" value="60" />
+        <label for="ppi-zoom-desktopStart">Start-Blickwinkel <output id="ppi-zoom-desktopStart-out">110°</output></label>
+        <input id="ppi-zoom-desktopStart" type="range" min="60" max="145" step="1" value="110" />
+        <label for="ppi-zoom-desktopMax">Maximaler Zoom-out <output id="ppi-zoom-desktopMax-out">135°</output></label>
+        <input id="ppi-zoom-desktopMax" type="range" min="80" max="150" step="1" value="135" />
+      </div>
+      <div class="ppi-control-card">
+        <div class="ppi-device-heading">Smartphone / Tablet</div>
+        <label for="ppi-zoom-mobileMin">Maximaler Zoom-in <output id="ppi-zoom-mobileMin-out">30°</output></label>
+        <input id="ppi-zoom-mobileMin" type="range" min="20" max="70" step="1" value="30" />
+        <label for="ppi-zoom-mobileStart">Start-Blickwinkel <output id="ppi-zoom-mobileStart-out">90°</output></label>
+        <input id="ppi-zoom-mobileStart" type="range" min="60" max="145" step="1" value="90" />
+        <label for="ppi-zoom-mobileMax">Maximaler Zoom-out <output id="ppi-zoom-mobileMax-out">110°</output></label>
+        <input id="ppi-zoom-mobileMax" type="range" min="80" max="150" step="1" value="110" />
+      </div>
+    </div>
+    <p style="margin:12px 0 8px;"><button type="button" class="primary" id="ppi-zoom-save">Zoom-Einstellungen speichern</button> <button type="button" id="ppi-zoom-reset" style="margin-left:10px;">Standardwerte wiederherstellen</button></p>
+    <p id="ppi-zoom-feedback" role="status" aria-live="polite"></p>
   </div>
 </div>
