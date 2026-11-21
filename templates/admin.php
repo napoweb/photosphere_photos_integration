@@ -10,6 +10,7 @@
      data-unassign-folder-url="<?php p($_['unassignFolderUrl']); ?>"
      data-image-url="<?php p($_['imageUrl']); ?>"
      data-preview-base-url="<?php p($_['previewBaseUrl']); ?>"
+     data-tour-share-url="<?php p($_['tourShareUrl']); ?>"
      data-list-url="<?php p($_['listUrl']); ?>"
      data-upload-url="<?php p($_['uploadUrl']); ?>"
      data-select-url="<?php p($_['selectUrl']); ?>"
@@ -19,7 +20,7 @@
      data-restore-default-url="<?php p($_['restoreDefaultUrl']); ?>">
   <div class="ppi-settings-panel ppi-settings-intro">
     <h2>360° Panorama – Einstellungen</h2>
-    <p>Verwalte die Wasserzeichen und Zoom-Einstellungen für deine Panoramaansichten. Die Einstellungen gelten auch für öffentliche Freigaben; Originalbilder bleiben unverändert.</p>
+    <p>Verwalte Wasserzeichen, Blickwinkel, Tour-Cache und die optionale Menüverknüpfung. Bestehende Touren und Originalbilder bleiben unverändert.</p>
   </div>
   <style>
     /* Uniform bordered layout: all top-level sections share the same outer width. */
@@ -31,6 +32,10 @@
       border-radius: 12px; padding: 20px;
       margin: 0 0 16px;
     }
+    #ppi-watermark-admin .ppi-settings-group {box-sizing:border-box;width:100%;max-width:var(--ppi-panel-max);margin:24px 0 30px;padding:18px;border:2px solid var(--color-border-dark,var(--color-border,#bbb));border-radius:16px;background:var(--color-background-dark,rgba(127,127,127,.035));}
+    #ppi-watermark-admin .ppi-settings-group .ppi-section-heading {margin:0 0 16px;padding:0 0 12px;border-bottom:1px solid var(--color-border,#ccc);}
+    #ppi-watermark-admin .ppi-settings-group .ppi-settings-panel {max-width:none;background:var(--color-main-background,var(--color-background-plain,#fff));}
+    @media (max-width:600px) { #ppi-watermark-admin .ppi-settings-group {padding:10px;margin:18px 0;} }
     #ppi-watermark-admin .ppi-settings-panel > h3:first-child { margin:0 0 10px; }
     #ppi-watermark-admin .ppi-section-heading { box-sizing:border-box; max-width:var(--ppi-panel-max); margin:24px 0 12px; font-size:19px; font-weight:700; }
     #ppi-watermark-admin .ppi-settings-intro h2 { margin:0 0 8px; font-size:22px; }
@@ -84,7 +89,8 @@
     #ppi-watermark-admin .ppi-help li { margin:6px 0; }
   </style>
 
-  <h3 class="ppi-section-heading">Wasserzeichen-Verwaltung</h3>
+  <section class="ppi-settings-group" aria-labelledby="ppi-watermark-group-title">
+  <h3 class="ppi-section-heading" id="ppi-watermark-group-title">Wasserzeichen</h3>
   <div class="ppi-settings-panel ppi-settings-panel--activation">
     <label for="ppi-wm-enabled">
       <input id="ppi-wm-enabled" type="checkbox" checked /> Wasserzeichen anzeigen
@@ -198,7 +204,9 @@
     </details>
   </div>
 
-  <h3 class="ppi-section-heading">Zoom und Blickwinkel</h3>
+  </section>
+  <section class="ppi-settings-group" aria-labelledby="ppi-zoom-group-title">
+  <h3 class="ppi-section-heading" id="ppi-zoom-group-title">Zoom und Blickwinkel</h3>
   <div class="ppi-settings-panel" id="ppi-zoom-settings-panel">
     <h3>Zoom-Einstellungen</h3>
     <p>Blickwinkel in Grad: Ein kleiner Wert bedeutet stärkeres Hineinzoomen. Der Startwert muss zwischen den beiden Grenzen liegen.</p>
@@ -216,8 +224,8 @@
         <div class="ppi-device-heading">Smartphone / Tablet</div>
         <label for="ppi-zoom-mobileMin">Maximaler Zoom-in <output id="ppi-zoom-mobileMin-out">30°</output></label>
         <input id="ppi-zoom-mobileMin" type="range" min="20" max="70" step="1" value="30" />
-        <label for="ppi-zoom-mobileStart">Start-Blickwinkel <output id="ppi-zoom-mobileStart-out">90°</output></label>
-        <input id="ppi-zoom-mobileStart" type="range" min="60" max="145" step="1" value="90" />
+        <label for="ppi-zoom-mobileStart">Start-Blickwinkel <output id="ppi-zoom-mobileStart-out">75°</output></label>
+        <input id="ppi-zoom-mobileStart" type="range" min="60" max="145" step="1" value="75" />
         <label for="ppi-zoom-mobileMax">Maximaler Zoom-out <output id="ppi-zoom-mobileMax-out">110°</output></label>
         <input id="ppi-zoom-mobileMax" type="range" min="80" max="150" step="1" value="110" />
       </div>
@@ -225,4 +233,117 @@
     <p style="margin:12px 0 8px;"><button type="button" class="primary" id="ppi-zoom-save">Zoom-Einstellungen speichern</button> <button type="button" id="ppi-zoom-reset" style="margin-left:10px;">Standardwerte wiederherstellen</button></p>
     <p id="ppi-zoom-feedback" role="status" aria-live="polite"></p>
   </div>
+  </section>
+  <section class="ppi-settings-group" aria-labelledby="ppi-cache-group-title">
+  <h3 class="ppi-section-heading" id="ppi-cache-group-title">Panorama-Cache</h3>
+  <div class="ppi-settings-panel" id="ppi-panorama-cache-panel"
+       data-statistics-url="<?php p($_['panoramaCacheStatisticsUrl']); ?>"
+       data-status-url="<?php p($_['panoramaCacheStatusUrl']); ?>"
+       data-save-url="<?php p($_['panoramaCacheSaveUrl']); ?>">
+    <h3>Automatische Cache-Erstellung für 360°-Touren</h3>
+    <p><strong>Hinweis:</strong> Diese Funktion gilt ausschließlich für den Bereich <strong>360°-Touren</strong> der App. Die normalen Panoramaansichten in Nextcloud Dateien und Fotos werden dadurch nicht verändert.</p>
+    <p>Für Touren erzeugt die App im Hintergrund JPEG-Vorschauen mit bis zu 8192 × 4096 Pixeln (Desktop) und 4096 × 2048 Pixeln (Mobil). Bereits vorhandene Vorschaudateien bleiben bei einer Pause verfügbar.</p>
+    <label for="ppi-panorama-cache-enabled" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+      <input id="ppi-panorama-cache-enabled" type="checkbox" checked>
+      Automatische Panorama-Optimierung aktivieren
+    </label>
+    <div style="margin-top:16px;">
+      <label for="ppi-panorama-cache-workers"><strong>Gleichzeitig zu verarbeitende Panoramen</strong></label>
+      <select id="ppi-panorama-cache-workers" style="display:block;max-width:100%;margin-top:7px;">
+        <option value="1" selected>1 Panorama (empfohlen)</option>
+        <option value="2">2 Panoramen</option>
+        <option value="3">3 Panoramen</option>
+      </select>
+      <p class="ppi-note" style="margin-top:8px;">Jedes gleichzeitig verarbeitete Panorama benötigt zusätzlich CPU und Arbeitsspeicher. Für kleine Server und große 120-Megapixel-Bilder empfehlen wir 1. Die Auswahl gilt für diesen Server; sie kann laufende Berechnungen nicht rückwirkend stoppen.</p>
+    </div>
+    <p style="margin-top:12px;"><button type="button" class="primary" id="ppi-panorama-cache-save">Einstellungen speichern</button></p>
+    <p id="ppi-panorama-cache-feedback" role="status" aria-live="polite"></p>
+    <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--color-border, #ccc);" id="ppi-panorama-cache-statistics">
+      <h3>Cache-Statistik der 360°-Touren</h3>
+      <p class="ppi-note">Nur App-eigene optimierte Vorschaubilder. Die Bereinigung berücksichtigt Tourreferenzen aller Benutzer. In der Anzeige bleiben Dateinamen, Tournamen und Datei-IDs anderer Benutzer geschützt. Nicht zuordenbare Cache-Dateien werden ebenfalls anonym dargestellt. Die Statistik verändert oder löscht keine Dateien.</p>
+      <p><button type="button" id="ppi-panorama-cache-stats-refresh">Statistik aktualisieren</button></p>
+      <p id="ppi-panorama-cache-stats-feedback" role="status" aria-live="polite">Statistik wird geladen …</p>
+      <div id="ppi-panorama-cache-stats-content" hidden>
+        <div id="ppi-panorama-cache-stats-summary" style="display:flex;flex-wrap:wrap;gap:10px;margin:10px 0;"></div>
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin:18px 0 14px;">
+        <label for="ppi-panorama-cache-stats-filter"><strong>Dateien anzeigen</strong></label>
+        <select id="ppi-panorama-cache-stats-filter" style="max-width:100%;min-width:220px;margin:0;">
+          <option value="used" selected>Aktuell in Touren verwendet</option>
+          <option value="marked">Für Bereinigung vorgemerkt</option>
+          <option value="unused">Nicht in Touren verwendet</option>
+          <option value="all">Alle Cache-Panoramen</option>
+        </select>
+        </div>
+        <style>
+          #ppi-panorama-cache-statistics .ppi-cache-stats-scroll {
+            display:block;width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;
+            overscroll-behavior-x:contain;scrollbar-gutter:stable;
+            border:1px solid var(--color-border,#ddd);border-radius:6px;
+          }
+          #ppi-panorama-cache-statistics .ppi-cache-stats-table {
+            width:1290px;min-width:1290px;max-width:none;
+            table-layout:fixed;border-collapse:separate;border-spacing:0;text-align:left;
+          }
+          #ppi-panorama-cache-statistics .ppi-cache-stats-table th,
+          #ppi-panorama-cache-statistics .ppi-cache-stats-table td {
+            box-sizing:border-box;min-width:0;max-width:none;padding:10px 12px;
+            text-align:left;vertical-align:middle;overflow:hidden;
+            border-bottom:1px solid var(--color-border,#ddd);
+          }
+          #ppi-panorama-cache-statistics .ppi-cache-stats-table th {
+            position:relative;font-weight:600;white-space:nowrap;
+            background:var(--color-main-background,#fff);
+          }
+          #ppi-panorama-cache-statistics .ppi-cache-stats-table td {white-space:nowrap;text-overflow:ellipsis;}
+          #ppi-panorama-cache-statistics .ppi-cache-stats-table .ppi-cache-filename,
+          #ppi-panorama-cache-statistics .ppi-cache-stats-table .ppi-cache-tourname {
+            display:block;width:100%;min-width:0;max-width:100%;overflow:hidden;
+            white-space:nowrap;text-overflow:ellipsis;
+          }
+          #ppi-panorama-cache-statistics .ppi-cache-resize-handle {
+            position:absolute;right:0;top:0;bottom:0;width:12px;z-index:2;
+            cursor:col-resize;touch-action:none;user-select:none;
+            border-right:2px solid var(--color-border-dark,#aaa);
+          }
+          #ppi-panorama-cache-statistics .ppi-cache-resize-handle:hover,
+          #ppi-panorama-cache-statistics .ppi-cache-resize-handle:focus-visible {
+            background:var(--color-primary-element-light,#e5f3fa);
+            border-right-color:var(--color-primary-element,#0082c9);
+            outline:2px solid var(--color-primary-element,#0082c9);outline-offset:-2px;
+          }
+          #ppi-panorama-cache-statistics .ppi-cache-stats-scroll:focus-visible {
+            outline:2px solid var(--color-primary-element,#0082c9);outline-offset:2px;
+          }
+        </style>
+        <p class="ppi-note">Die Trennlinien in der Tabellen-Kopfzeile lassen sich mit der Maus ziehen (per Tastatur mit Pfeiltasten anpassen). Bei wenig Platz kannst du die Tabelle seitlich scrollen. Vollständige Dateinamen sind über den Mauszeiger lesbar.</p>
+        <div class="ppi-cache-stats-scroll" tabindex="0" role="region" aria-label="Cache-Dateitabelle horizontal scrollbar">
+          <table aria-label="Cache-Panoramen" class="ppi-cache-stats-table" id="ppi-cache-stats-table">
+            <colgroup><col style="width:86px"><col style="width:350px"><col style="width:260px"><col style="width:130px"><col style="width:90px"><col style="width:80px"><col style="width:130px"><col style="width:164px"></colgroup>
+            <thead><tr><th scope="col">Datei-ID</th><th scope="col">Dateiname</th><th scope="col">Verwendet in Tour</th><th scope="col">Status</th><th scope="col">Desktop</th><th scope="col">Mobil</th><th scope="col">Cache-Größe</th><th scope="col">Schutzfrist bis</th></tr></thead>
+            <tbody id="ppi-panorama-cache-stats-rows"></tbody>
+          </table>
+        </div>
+        <p id="ppi-panorama-cache-stats-limit" class="ppi-note"></p>
+      </div>
+    </div>
+    <p class="ppi-note">Eine laufende Bildberechnung wird bei einer Pause nicht abgebrochen. Neue Berechnungen werden nicht eingeplant; bereits wartende Jobs überspringen die Verarbeitung. Der normale Nextcloud-Cron bleibt aktiv. Falls alle Verarbeitungsplätze belegt sind, wird der Job übersprungen und kann später erneut eingeplant werden.</p>
+  </div>
+  </section>
+  <section class="ppi-settings-group" aria-labelledby="ppi-navigation-group-title">
+    <h3 class="ppi-section-heading" id="ppi-navigation-group-title">Navigation · 360°-Touren</h3>
+    <div class="ppi-settings-panel" id="ppi-tour-navigation-panel"
+         data-status-url="<?php p($_['tourNavigationStatusUrl']); ?>"
+         data-save-url="<?php p($_['tourNavigationSaveUrl']); ?>">
+      <h3>Verknüpfung im Nextcloud-App-Menü</h3>
+      <p>Öffnet mit einem eigenen Menüeintrag direkt die persönliche Tourenübersicht. Der bisherige Zugang bleibt bestehen. Die Einstellung gilt für alle angemeldeten Benutzer dieser Nextcloud-Installation.</p>
+      <label for="ppi-tour-navigation-enabled" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <input type="checkbox" id="ppi-tour-navigation-enabled">
+        <strong>360°-Touren im Nextcloud-Menü anzeigen</strong>
+      </label>
+      <p style="margin-top:14px;"><button type="button" class="primary" id="ppi-tour-navigation-save">Menüeinstellung speichern</button></p>
+      <p id="ppi-tour-navigation-feedback" role="status" aria-live="polite"></p>
+      <p class="ppi-note">Nach dem Speichern die Seite neu laden. Das Menü zeigt ausschließlich den Zugang zu den eigenen Touren; öffentliche Freigaben und Dateiberechtigungen werden dadurch nicht verändert.</p>
+    </div>
+  </section>
+
 </div>

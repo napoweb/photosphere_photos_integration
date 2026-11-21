@@ -24,6 +24,7 @@
     let busy = false;
     let selectionInProgress = false;
     let folderRules = [];
+    let tourAllowed = [];
     const token = () => window.OC?.requestToken || document.head?.dataset.requesttoken || '';
 
     // Zoom administration is independent of watermark gallery and its state.
@@ -32,7 +33,7 @@
     const zoomFeedback = document.getElementById('ppi-zoom-feedback');
     const zoomSave = document.getElementById('ppi-zoom-save');
     const zoomReset = document.getElementById('ppi-zoom-reset');
-    const zoomDefaults = {desktopMin:60,desktopStart:110,desktopMax:135,mobileMin:30,mobileStart:90,mobileMax:110};
+    const zoomDefaults = {desktopMin:60,desktopStart:110,desktopMax:135,mobileMin:30,mobileStart:75,mobileMax:110};
     function showZoom(message, error = false) {
       if (!zoomFeedback) return;
       zoomFeedback.textContent = message;
@@ -286,6 +287,19 @@
         }));
         card.append(image,label,select);
         if (item.id !== 'none') {
+          const allow = document.createElement('label');
+          allow.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:12px;text-align:left;cursor:pointer';
+          const check = document.createElement('input'); check.type='checkbox';
+          check.checked = tourAllowed.includes(item.id);
+          allow.append(check,document.createTextNode('Für Touren freigeben'));
+          check.addEventListener('change',()=>run(async()=>{
+            await request(root.dataset.tourShareUrl,data({id:item.id,shared:check.checked?'1':'0'}));
+            await refresh();
+            show(check.checked?'Für Touren freigegeben.':'Tour-Freigabe aufgehoben.');
+          }));
+          card.appendChild(allow);
+        }
+        if (item.id !== 'none') {
           const remove = document.createElement('button');
           remove.type = 'button';
           remove.textContent = item.id === 'default' ? 'Aus Galerie entfernen' : 'Löschen';
@@ -346,6 +360,7 @@
       const result = await request(root.dataset.listUrl);
       revision = result.revision;
       folderRules = Array.isArray(result.folderRules) ? result.folderRules : [];
+      tourAllowed = Array.isArray(result.tourAllowed) ? result.tourAllowed : [];
       active = result.active;
       renderOptions(result.options);
       renderGallery(result.images);

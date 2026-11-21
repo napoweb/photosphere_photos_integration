@@ -17,7 +17,7 @@ final class ZoomController extends Controller {
     private const APP_ID = 'photosphere_photos_integration';
     private const DEFAULTS = [
         'desktopMin' => 60, 'desktopStart' => 110, 'desktopMax' => 135,
-        'mobileMin' => 30, 'mobileStart' => 90, 'mobileMax' => 110,
+        'mobileMin' => 30, 'mobileStart' => 75, 'mobileMax' => 110,
     ];
 
     public function __construct(IRequest $request, private IConfig $config) {
