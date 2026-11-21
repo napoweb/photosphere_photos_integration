@@ -69,6 +69,63 @@ final class WatermarkController extends Controller {
         return $items;
     }
 
+    /** Explicitly approved for user-created tours (independent of the global active watermark). */
+    private function tourAllowed(): array {
+        $raw = json_decode($this->config->getAppValue(self::APP_ID, 'watermark_tour_allowed', '[]'), true);
+        return is_array($raw) ? array_values(array_filter($raw, 'is_string')) : [];
+    }
+
+    /** Authenticated editors see only approved IDs and labels, never admin folder rules. */
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
+    public function tourLibrary(): JSONResponse {
+        if ($this->userSession->getUser() === null) { return new JSONResponse(['success' => false], 401); }
+        $approved = $this->tourAllowed();
+        $items = [];
+        if (!$this->defaultHidden() && in_array('default', $approved, true)) {
+            $items[] = ['id' => 'default', 'label' => '360°-Standardgrafik'];
+        }
+        foreach ($this->library() as $id => $label) {
+            if (in_array($id, $approved, true)) { $items[] = ['id' => $id, 'label' => $label]; }
+        }
+        $response = new JSONResponse(['success' => true, 'images' => $items]);
+        $response->addHeader('Cache-Control', 'no-store');
+        return $response;
+    }
+
+    /** Only an authenticated user may preview a currently tour-approved watermark. */
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
+    public function tourThumbnail(): DataDisplayResponse {
+        if ($this->userSession->getUser() === null) {
+            return new DataDisplayResponse('', 401);
+        }
+        $id = (string)$this->request->getParam('id', '');
+        $allowed = in_array($id, $this->tourAllowed(), true);
+        $exists = ($id === 'default' && !$this->defaultHidden()) || array_key_exists($id, $this->library());
+        if (!$allowed || !$exists) {
+            return new DataDisplayResponse('', 404);
+        }
+        return $this->imageResponse($id);
+    }
+
+    /** Admin-only. Approve or revoke one image for tour selection. */
+    public function shareWithTours(): JSONResponse {
+        $id = (string)$this->request->getParam('id', '');
+        $share = filter_var($this->request->getParam('shared', false), FILTER_VALIDATE_BOOLEAN);
+        if ($id !== 'default' && !array_key_exists($id, $this->library())) {
+            return new JSONResponse(['success' => false, 'message' => 'Unbekanntes Wasserzeichen'], 400);
+        }
+        if ($id === 'default' && $this->defaultHidden()) {
+            return new JSONResponse(['success' => false, 'message' => 'Standardgrafik ist ausgeblendet'], 400);
+        }
+        $allowed = $this->tourAllowed();
+        $allowed = array_values(array_diff($allowed, [$id]));
+        if ($share) { $allowed[] = $id; }
+        $this->config->setAppValue(self::APP_ID, 'watermark_tour_allowed', json_encode($allowed));
+        return new JSONResponse(['success' => true, 'shared' => $share]);
+    }
+
     private function storeLibrary(array $items): void {
         unset($items['legacy']);
         $this->config->setAppValue(self::APP_ID, 'watermark_library', json_encode($items, JSON_UNESCAPED_UNICODE));
@@ -195,6 +252,7 @@ final class WatermarkController extends Controller {
             'count' => count($this->library()),
             'maxUploads' => self::MAX_UPLOADS,
             'defaultHidden' => $this->defaultHidden(),
+            'tourAllowed' => $this->tourAllowed(),
             'folderRules' => $this->visibleFolderRules(),
         ]);
     }

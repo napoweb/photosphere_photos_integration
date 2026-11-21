@@ -1,4 +1,4 @@
-/* Photo Sphere – Standalone Panorama integration v0.4.25 (Nextcloud 35 / Viewer 8). */
+/* Photo Sphere – Standalone Panorama integration v0.4.30 (Nextcloud 35 / Viewer 8). */
 (() => {
   'use strict';
   if (window.__photospherePhotosIntegrationLoaded) return;
@@ -39,7 +39,7 @@
 
   const ZOOM_DEFAULTS = {
     desktopMin: 60, desktopStart: 110, desktopMax: 135,
-    mobileMin: 30, mobileStart: 90, mobileMax: 110
+    mobileMin: 30, mobileStart: 75, mobileMax: 110
   };
   async function fetchZoomSettings() {
     try {
@@ -231,6 +231,43 @@ function assetUrl(fileName) {
   }
   function removeBadge() { document.getElementById(BADGE_WRAP_ID)?.remove(); document.getElementById(BADGE_ID)?.remove(); }
 
+  // Mobile Nextcloud Viewer may consume touch/pointer events on the document
+  // before a regular click is dispatched to the 360-degree launcher. Intercept
+  // just the centre launcher's own hit rectangle during the CAPTURE phase.
+  // Crucially this never covers the Nextcloud image navigation arrows at the
+  // left and right edges, nor the rest of the photograph.
+  let mobileLaunchPointer = null;
+  function isMobileLauncher() {
+    return Boolean(window.matchMedia?.('(max-width: 700px)').matches
+      && (window.matchMedia?.('(pointer: coarse)').matches || navigator.maxTouchPoints > 0));
+  }
+  function isWithinMobileLauncher(x, y) {
+    const wrap = document.getElementById(BADGE_WRAP_ID);
+    if (!wrap || !isMobileLauncher() || !wrap.isConnected || document.getElementById(FRAME_ID)) return false;
+    const rect = wrap.getBoundingClientRect();
+    return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom;
+  }
+  window.addEventListener('pointerdown', event => {
+    mobileLaunchPointer = null;
+    if (event.pointerType === 'mouse' || !event.isPrimary
+      || !isWithinMobileLauncher(event.clientX, event.clientY)) return;
+    mobileLaunchPointer = {id: event.pointerId, x: event.clientX, y: event.clientY};
+    // No preventDefault: keep click and accessibility semantics as fallback.
+    event.stopImmediatePropagation();
+  }, true);
+  window.addEventListener('pointerup', event => {
+    const start = mobileLaunchPointer;
+    mobileLaunchPointer = null;
+    if (!start || event.pointerId !== start.id
+      || Math.hypot(event.clientX-start.x, event.clientY-start.y) > 18
+      || !isWithinMobileLauncher(event.clientX, event.clientY)) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openPanorama();
+  }, true);
+  window.addEventListener('pointercancel', () => { mobileLaunchPointer = null; }, true);
+
+
   function getActiveVisualRect() {
     const visual = document.querySelector('#viewer .viewer__file--active img')
       || document.querySelector('#viewer .viewer__file--active canvas')
@@ -240,10 +277,12 @@ function assetUrl(fileName) {
 
 
 function ensureOpenBadge() {
+  // Only on narrow touch devices, the full launcher (symbol, instructions and gap) is interactive.
+  const isSmallTouch = isMobileLauncher();
   let wrap = document.getElementById(BADGE_WRAP_ID);
   let badge = document.getElementById(BADGE_ID);
   if (!wrap) {
-    wrap = document.createElement('div');
+    wrap = document.createElement(isSmallTouch ? 'button' : 'div');
     wrap.id = BADGE_WRAP_ID;
     Object.assign(wrap.style, {
       position: 'fixed',
@@ -251,13 +290,35 @@ function ensureOpenBadge() {
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
-      gap: '10px',
-      pointerEvents: 'none',
+      gap: isSmallTouch ? '3px' : '10px',
+      // Never put an interactive box across Nextcloud's left/right image arrows.
+      // Only the symbol, the hint and their narrow central bridge receive taps.
+      pointerEvents: isSmallTouch ? 'auto' : 'none',
+      cursor: isSmallTouch ? 'pointer' : 'default',
+      padding: '0',
+      border: 'none',
+      appearance: 'none',
+      WebkitAppearance: 'none',
+      background: 'transparent',
+      color: 'inherit',
+      font: 'inherit',
+      touchAction: isSmallTouch ? 'manipulation' : 'auto',
       userSelect: 'none'
     });
+    // Real semantic button on mobile: all three centred visible parts share
+    // one hit target; no fullscreen overlay and no side-arrow interception.
+    if (isSmallTouch) {
+      wrap.type = 'button';
+      wrap.setAttribute('aria-label', '360°-Panorama öffnen');
+      wrap.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        openPanorama();
+      });
+    }
 
-    badge = document.createElement('button');
-    badge.type = 'button';
+    badge = document.createElement(isSmallTouch ? 'span' : 'button');
+    if (!isSmallTouch) badge.type = 'button';
     badge.id = BADGE_ID;
     badge.title = 'In 360°-Ansicht öffnen';
     badge.setAttribute('aria-label', 'In 360°-Ansicht öffnen');
@@ -269,7 +330,8 @@ function ensureOpenBadge() {
       padding: '0',
       margin: '0',
       cursor: 'pointer',
-      pointerEvents: 'auto',
+      pointerEvents: isSmallTouch ? 'none' : 'auto',
+      display: 'block',
       lineHeight: '0',
       transition: 'filter .15s ease, opacity .15s ease',
       filter: 'drop-shadow(0 10px 22px rgba(0,0,0,.26))',
@@ -284,7 +346,7 @@ function ensureOpenBadge() {
       width: 'min(280px, 44vw)',
       // On narrow touch screens keep the open graphic unobtrusive.
       ...(window.matchMedia?.('(pointer: coarse) and (max-width: 700px)').matches
-        ? {width:'min(126px, 31vw)'} : {}),
+        ? {width:'min(145px, 35.65vw)'} : {}),
       maxWidth: '310px',
       height: 'auto',
       pointerEvents: 'none',
@@ -293,6 +355,10 @@ function ensureOpenBadge() {
       transition: 'transform .17s ease-out'
     });
     badge.appendChild(image);
+    if (isSmallTouch) {
+      // Recenter around the actual image height once the PNG has loaded.
+      image.addEventListener('load', () => ensureOpenBadge(), {once: true});
+    }
     badge.addEventListener('mouseenter', () => {
       image.style.transform = 'scale(1.045)';
       badge.style.filter = 'drop-shadow(0 12px 24px rgba(0,0,0,.32))';
@@ -315,9 +381,11 @@ function ensureOpenBadge() {
     badge.addEventListener('pointerdown', () => setPressed(true));
     badge.addEventListener('pointerup', () => setPressed(false));
     badge.addEventListener('pointercancel', () => setPressed(false));
-    badge.addEventListener('click', openPanorama);
+    if (!isSmallTouch) badge.addEventListener('click', event => {
+      event.stopPropagation();
+      openPanorama();
+    });
 
-    const isSmallTouch = window.matchMedia?.('(pointer: coarse) and (max-width: 700px)').matches || false;
     const hint = document.createElement('div');
     hint.id = BADGE_HINT_ID;
     // Each arrow gets its own thin, bright outline for better contrast.
@@ -327,6 +395,8 @@ function ensureOpenBadge() {
       + ' zoomen &nbsp;•&nbsp; <strong>Enter</strong> öffnen</div>';
     Object.assign(hint.style, {
       pointerEvents: 'none',
+      cursor: isSmallTouch ? 'pointer' : 'default',
+      touchAction: isSmallTouch ? 'manipulation' : 'auto',
       color: 'rgba(255,255,255,.98)',
       background: 'rgba(8, 18, 28, .34)',
       border: '1.5px solid rgba(255,255,255,.94)',
@@ -342,18 +412,30 @@ function ensureOpenBadge() {
       whiteSpace: 'nowrap'
     });
 
-    wrap.append(badge, hint);
+    // On mobile the 360-degree graphic is the only visible launch control.
+    // Keep the existing semantic button and its capture-phase touch handling.
+    // Desktop still displays the full keyboard and mouse help below the icon.
+    if (isSmallTouch) {
+      wrap.append(badge);
+    } else {
+      wrap.append(badge, hint);
+    }
     document.body.appendChild(wrap);
   }
   const rect = getActiveVisualRect();
-  if (rect && rect.width > 0 && rect.height > 0) {
-    wrap.style.left = `${Math.round(rect.left + rect.width / 2)}px`;
-    wrap.style.top = `${Math.round(rect.top + rect.height / 2)}px`;
+  const centerX = rect && rect.width > 0 ? rect.left + rect.width / 2 : window.innerWidth / 2;
+  const centerY = rect && rect.height > 0 ? rect.top + rect.height / 2 : window.innerHeight / 2;
+  wrap.style.left = `${Math.round(centerX)}px`;
+  if (isSmallTouch) {
+    // Mobile launcher contains only the icon: center its actual rendered
+    // height on the active Nextcloud image, not the viewport or a hint group.
+    const badgeHeight = badge?.getBoundingClientRect().height || 0;
+    wrap.style.top = `${Math.round(centerY - badgeHeight / 2)}px`;
+    wrap.style.transform = 'translateX(-50%)';
   } else {
-    wrap.style.left = '50%';
-    wrap.style.top = '50%';
+    wrap.style.top = `${Math.round(centerY)}px`;
+    wrap.style.transform = 'translate(-50%, -50%)';
   }
-  wrap.style.transform = 'translate(-50%, -50%)';
 }
 
 
@@ -477,7 +559,7 @@ function ensureOpenBadge() {
     const prefix = mobileTouch ? 'mobile' : 'desktop';
     const MIN_FOV = Number(zoomOptions[prefix+'Min']) || 30;
     const MAX_FOV = Number(zoomOptions[prefix+'Max']) || (mobileTouch ? 110 : 135);
-    let yaw=0, pitch=0, hfov=Number(zoomOptions[prefix+'Start']) || (mobileTouch ? 90 : 114), dead=false, imageReady=false;
+    let yaw=0, pitch=0, hfov=Number(zoomOptions[prefix+'Start']) || (mobileTouch ? 75 : 110), dead=false, imageReady=false;
     const limit=(n,min,max)=>Math.max(min,Math.min(max,n));
     let firstFrameSent=false;
     let raf=0;
@@ -1414,6 +1496,8 @@ function ensureOpenBadge() {
     ensureOpenBadge();
   }
   async function openPanorama() {
+    // A touch may produce both pointerup and a synthetic click; start once only.
+    if (opening || currentPanorama || document.getElementById(FRAME_ID)) return;
     const photo = getPhoto();
     if (!photo) return;
     const entry = xmpCache.get(photo.source);
@@ -1583,11 +1667,54 @@ function ensureOpenBadge() {
     }
   }
 
+  // Faster panorama detection: react to actual viewer changes immediately.
+  // Retain the existing 450 ms polling as a fallback for Vue-only state changes.
+  let syncScheduled = false;
+  function scheduleSync() {
+    if (syncScheduled) return;
+    syncScheduled = true;
+    requestAnimationFrame(() => {
+      syncScheduled = false;
+      syncUi();
+    });
+  }
+  function installFastDetection() {
+    syncUi();
+    let observedViewer = null;
+    let viewerObserver = null;
+    function attachViewerObserver() {
+      const root = document.getElementById('viewer');
+      if (root === observedViewer) return;
+      viewerObserver?.disconnect();
+      observedViewer = root;
+      if (!root) return;
+      viewerObserver = new MutationObserver(scheduleSync);
+      viewerObserver.observe(root, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        attributeFilter: ['src', 'class', 'style']
+      });
+      scheduleSync();
+    }
+    attachViewerObserver();
+    // Nextcloud creates/removes the viewer dynamically. Observe only direct
+    // body children to avoid rescanning the whole page for irrelevant changes.
+    const bodyObserver = new MutationObserver(() => {
+      attachViewerObserver();
+      scheduleSync();
+    });
+    bodyObserver.observe(document.body, { childList: true });
+    window.addEventListener('popstate', scheduleSync);
+    window.addEventListener('hashchange', scheduleSync);
+    setInterval(() => {
+      attachViewerObserver();
+      syncUi();
+    }, 450);
+  }
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-      syncUi(); setInterval(syncUi, 450);
-    }, { once: true });
+    document.addEventListener('DOMContentLoaded', installFastDetection, { once: true });
   } else {
-    syncUi(); setInterval(syncUi, 450);
+    installFastDetection();
   }
 })();

@@ -14,6 +14,8 @@ final class Admin implements ISettings {
 
     public function getForm(): TemplateResponse {
         Util::addScript('photosphere_photos_integration', 'watermark-settings');
+        Util::addScript('photosphere_photos_integration', 'panorama-cache-settings');
+        Util::addScript('photosphere_photos_integration', 'tour-navigation-settings');
         $route = fn(string $method) => $this->urlGenerator->linkToRoute('photosphere_photos_integration.watermark.' . $method);
         return new TemplateResponse('photosphere_photos_integration', 'admin', [
             'imageUrl' => $route('get'),
@@ -23,12 +25,18 @@ final class Admin implements ISettings {
             'unassignFolderUrl' => $route('unassignFolder'),
             'previewBaseUrl' => $route('preview'),
             'listUrl' => $route('listImages'),
+            'tourShareUrl' => $route('shareWithTours'),
             'uploadUrl' => $route('upload'),
             'resetUrl' => $route('reset'),
             'restoreDefaultUrl' => $route('restoreDefault'),
             'selectUrl' => $route('select'),
             'deleteUrl' => $route('delete'),
             'optionsUrl' => $route('saveOptions'),
+            'tourNavigationStatusUrl' => $this->urlGenerator->linkToRoute('photosphere_photos_integration.tourNavigation.status'),
+            'tourNavigationSaveUrl' => $this->urlGenerator->linkToRoute('photosphere_photos_integration.tourNavigation.save'),
+            'panoramaCacheStatusUrl' => $this->urlGenerator->linkToRoute('photosphere_photos_integration.panoramaCache.status'),
+            'panoramaCacheStatisticsUrl' => $this->urlGenerator->linkToRoute('photosphere_photos_integration.panoramaCache.statistics'),
+            'panoramaCacheSaveUrl' => $this->urlGenerator->linkToRoute('photosphere_photos_integration.panoramaCache.save'),
             'zoomSettingsUrl' => $this->urlGenerator->linkToRoute('photosphere_photos_integration.zoom.settings'),
             'zoomSaveUrl' => $this->urlGenerator->linkToRoute('photosphere_photos_integration.zoom.save'),
         ], '');

@@ -2,23 +2,34 @@
 <info xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://apps.nextcloud.com/schema/apps/info.xsd">
   <id>photosphere_photos_integration</id>
   <name>Photo Sphere – 360° Panorama</name>
-  <summary>360°-Panoramen in Nextcloud Fotos, Dateien und öffentlichen Freigaben</summary>
+  <summary>Interaktiver 360°-Viewer und verknüpfbare Panorama-Touren für Nextcloud</summary>
   <description><![CDATA[
-**Interaktive 360°-Panoramen in Nextcloud Fotos und Dateien erleben.**
+**360°-Panoramen in Nextcloud Fotos und Dateien interaktiv erkunden und eigene virtuelle Touren erstellen.**
 
-Photo Sphere erweitert sowohl die Nextcloud **Fotos-App** als auch die **Dateien-App** um eine interaktive 360°-Ansicht. Panoramabilder werden automatisch erkannt, **aber niemals automatisch im 360°-Betrachter geöffnet**. Die gewohnte Bildansicht und Navigation bleiben erhalten. Erst ein Klick auf die 360°-Schaltfläche startet das Panorama.
+Photo Sphere erkennt geeignete 360°-JPEG-Panoramen und bietet einen manuell gestarteten, interaktiven WebGL-Viewer. Die gewohnte Bildansicht bleibt erhalten, bis die 360°-Funktion ausdrücklich geöffnet wird.
 
-### Funktionen
-- Nahtlose Integration in Nextcloud Fotos und Dateien ohne automatisches Öffnen erkannter Panoramen
-- Interaktive Steuerung mit Maus, Tastatur und Touch; optional per Gyroskop auf unterstützten Smartphones
-- Konfigurierbarer Start-Zoom und Zoomgrenzen für Desktop und Mobilgeräte
-- Sanfter Tastatur-Zoom sowie animierte Ladeanzeige mit tatsächlichem Downloadfortschritt
-- Unterstützung öffentlicher Fotoalben und Dateifreigaben
-- Individuelle und ordnerabhängige Wasserzeichen mit zentraler Verwaltung
-- Anpassbare Position, Größe und Sichtbarkeit; Vererbung an Unterordner
-- Originalbilder bleiben unverändert
+### Panorama-Viewer
+- Integration in Nextcloud Fotos und Dateien sowie unterstützte öffentliche Freigaben
+- Steuerung mit Maus, Tastatur und Touch; optionale Bewegungssensoren auf geeigneten Mobilgeräten
+- Separate Zoomgrenzen und Startzoom-Einstellungen für Desktop und Mobilgeräte
+- Konfigurierbare Wasserzeichen mit Ordnerzuordnung und Vererbung
+
+### 360°-Touren
+- Eigene Touren aus mehreren Panorama-Bildern erstellen und bearbeiten
+- Mit Hotspots zwischen Panorama-Standorten wechseln
+- Touren über zusätzliche Links freigeben, optional mit Passwort, Ablaufdatum und Deaktivierung
+- Optionaler direkter Touren-Eintrag im Nextcloud-App-Menü
+- Berechtigungsprüfung für Touren und öffentlich ausgelieferte Bilddateien
+
+### Optimierter Tour-Cache
+- Optionale serverseitige Desktop- und Mobil-Vorschaubilder per Imagick und Nextcloud-Hintergrundjobs
+- Private AppData-Ablage; Original-JPEGs und Nextclouds allgemeiner Vorschau-Cache bleiben unverändert
+- Administrationsansicht mit Cache-Statistik, Schutz fremder Dateinamen und einstellbarer Verarbeitung
+- Konservative Bereinigung ungenutzter optimierter Dateien nach einer Sicherheitsfrist
+
+**Hinweise:** Für automatische Bildoptimierung muss PHP Imagick verfügbar sein und Nextcloud-Hintergrundjobs müssen laufen. Ohne vorbereitete App-Vorschaubilder bleibt ein Fallback auf reguläre Vorschaubilder oder Originale. Wasserzeichen verhindern nicht den Zugriff auf berechtigt herunterladbare Originaldateien.
   ]]></description>
-  <version>0.4.27</version>
+  <version>0.4.62.92</version>
   <licence>AGPL-3.0-or-later</licence>
   <author>Stefan Sührer</author>
   <namespace>PhotospherePhotosIntegration</namespace>
@@ -32,8 +43,10 @@ Photo Sphere erweitert sowohl die Nextcloud **Fotos-App** als auch die **Dateien
   <dependencies>
     <nextcloud min-version="35" max-version="35" />
   </dependencies>
-  <settings>
+<settings>
     <admin>OCA\PhotospherePhotosIntegration\Settings\Admin</admin>
     <admin-section>OCA\PhotospherePhotosIntegration\Settings\AdminSection</admin-section>
+    <personal>OCA\PhotospherePhotosIntegration\Settings\Personal</personal>
+    <personal-section>OCA\PhotospherePhotosIntegration\Settings\PersonalSection</personal-section>
   </settings>
 </info>
