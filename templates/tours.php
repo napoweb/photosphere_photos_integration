@@ -153,7 +153,7 @@
     <div class="ppi-picker-filters" role="search" aria-label="Panorama-Suche und Filter">
       <label class="ppi-picker-filter-search">Dateiname<input id="ppi-picker-search" type="search" autocomplete="off" placeholder="Panorama suchen …"></label>
       <label>Sortieren<select id="ppi-picker-sort"><option value="name_asc">Name A–Z</option><option value="name_desc">Name Z–A</option><option value="newest">Neueste zuerst</option><option value="oldest">Älteste zuerst</option><option value="size_desc">Größte zuerst</option></select></label>
-      <label>Tourstatus<select id="ppi-picker-status"><option value="all">Alle Panoramen</option><option value="unused">Noch nicht in dieser Tour</option><option value="used">Bereits in dieser Tour</option></select></label>
+      <label>Tourstatus<select id="ppi-picker-status"><option value="unused">Noch nicht in dieser Tour</option><option value="all">Alle Panoramen</option><option value="used">Bereits in dieser Tour</option></select></label>
       <label>Geändert<select id="ppi-picker-date"><option value="any">Beliebiges Datum</option><option value="30d">Letzte 30 Tage</option><option value="year">Dieses Jahr</option></select></label>
       <label>Dateigröße<select id="ppi-picker-size"><option value="any">Beliebige Größe</option><option value="lt10">Unter 10 MB</option><option value="10to50">10–50 MB</option><option value="gt50">Über 50 MB</option></select></label>
       <button id="ppi-picker-reset-filters" type="button">Filter zurücksetzen</button>
