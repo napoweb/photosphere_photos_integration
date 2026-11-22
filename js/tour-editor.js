@@ -1160,7 +1160,8 @@
       sort:pickerValue('ppi-picker-sort'),
       date:pickerValue('ppi-picker-date'),
       size:pickerValue('ppi-picker-size'),
-      recursive:byId('ppi-picker-recursive').checked?'1':'0'
+      recursive:byId('ppi-picker-recursive').checked?'1':'0',
+      panoramaOnly:byId('ppi-picker-panorama-only').checked?'1':'0'
     });
     try {
       const data=await request(filesApi+(filesApi.includes('?')?'&':'?')+params.toString());
@@ -1191,6 +1192,19 @@
     });
   }
   byId('ppi-picker-status').addEventListener('change',renderPickerItems);
+  // This preference belongs to the Nextcloud user, not a browser-specific localStorage key.
+  byId('ppi-picker-panorama-only').addEventListener('change',async()=>{
+    const checkbox=byId('ppi-picker-panorama-only');
+    const newValue=checkbox.checked, oldValue=!newValue;
+    checkbox.disabled=true;
+    try {
+      await request(root.dataset.pickerPreferencesUrl,'POST',{panoramaOnly:newValue?'1':'0'});
+      reapplyPicker();
+    } catch(e) {
+      checkbox.checked=oldValue;
+      notify('360°-Filter konnte nicht gespeichert werden: '+e.message,true);
+    } finally {checkbox.disabled=false;}
+  });
   byId('ppi-picker-reset-filters').addEventListener('click',()=>{
     clearTimeout(pickerDebounce);
     for(const id of ['ppi-picker-search','ppi-picker-sort','ppi-picker-status','ppi-picker-date','ppi-picker-size']){
