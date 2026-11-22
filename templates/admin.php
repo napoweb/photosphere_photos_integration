@@ -100,6 +100,19 @@
     #ppi-watermark-admin .ppi-cache-help-body code{overflow-wrap:anywhere;font-size:12px;background:var(--color-main-background,#fff);padding:2px 5px;border-radius:4px}
     #ppi-watermark-admin .ppi-cache-help-body a{overflow-wrap:anywhere}
 
+    /* Visual overview of the separate 360° tour cache; remains readable on mobile. */
+    #ppi-watermark-admin .ppi-cache-flow{max-width:640px;width:100%;box-sizing:border-box;margin:12px auto 20px;padding:13px;display:flex;flex-direction:column;align-items:center;gap:4px;border:1px solid var(--color-border,#ccc);border-radius:12px;background:var(--color-main-background,#fff);color:var(--color-main-text,#222)}
+    #ppi-watermark-admin .ppi-cache-flow-step{width:100%;min-width:0;box-sizing:border-box;padding:13px 15px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;border:1px solid var(--color-border,#ccc);border-radius:10px;background:var(--color-background-hover,rgba(127,127,127,.07));overflow-wrap:anywhere}
+    #ppi-watermark-admin .ppi-cache-flow-step strong{font-size:14px}
+    #ppi-watermark-admin .ppi-cache-flow-step small{font-size:12px;line-height:1.45;color:var(--color-text-maxcontrast,#666)}
+    #ppi-watermark-admin .ppi-cache-flow-icon{font-size:22px;line-height:1.25}
+    #ppi-watermark-admin .ppi-cache-flow-arrow{font-size:24px;line-height:1.05;color:var(--color-text-maxcontrast,#666);padding:1px 0;aria-hidden:true}
+    #ppi-watermark-admin .ppi-cache-flow-profiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%}
+    #ppi-watermark-admin .ppi-cache-flow-profiles .ppi-cache-flow-step{height:100%}
+    #ppi-watermark-admin .ppi-cache-flow-number{font-size:clamp(14px,2.4vw,19px);font-weight:700;line-height:1.3;white-space:nowrap}
+    @media(max-width:540px){#ppi-watermark-admin .ppi-cache-flow{padding:9px}#ppi-watermark-admin .ppi-cache-flow-profiles{grid-template-columns:1fr;gap:7px}#ppi-watermark-admin .ppi-cache-flow-step{padding:10px 8px}#ppi-watermark-admin .ppi-cache-flow-number{font-size:17px}}
+
+
   </style>
 
   <section class="ppi-settings-group" aria-labelledby="ppi-watermark-group-title">
@@ -345,6 +358,41 @@
       <div class="ppi-cache-help-body">
         <h4>Was macht der Panorama-Cache?</h4>
         <p>Diese Optimierung gilt nur für gespeicherte 360°-Touren. Beim Speichern oder bei einem berechtigten Touraufruf werden passende Panoramen über Nextcloud-Hintergrundjobs zur Verarbeitung vorgemerkt. Mit PHP Imagick erzeugt die App verkleinerte JPEG-Dateien aus dem Original und speichert sie getrennt im privaten AppData-Cache. Die Original-JPEGs und Nextclouds allgemeiner Vorschau-Cache werden nicht verändert.</p>
+        <h4 id="ppi-cache-flow-heading">So funktioniert unsere Lösung</h4>
+        <figure class="ppi-cache-flow" aria-labelledby="ppi-cache-flow-heading">
+          <div class="ppi-cache-flow-step">
+            <span class="ppi-cache-flow-icon" aria-hidden="true">🖼️</span>
+            <strong>Original-Panorama</strong>
+            <small>Beispiel: 15.520 × 7.760 Pixel · rund 120 Megapixel</small>
+          </div>
+          <div class="ppi-cache-flow-arrow" aria-hidden="true">↓</div>
+          <div class="ppi-cache-flow-step">
+            <strong>Photo Sphere + PHP Imagick</strong>
+            <small>Liest die Originaldatei direkt und erzeugt optimierte JPEGs – ohne Nextclouds Vorschau-API.</small>
+          </div>
+          <div class="ppi-cache-flow-arrow" aria-hidden="true">↓</div>
+          <div class="ppi-cache-flow-profiles">
+            <div class="ppi-cache-flow-step">
+              <span class="ppi-cache-flow-icon" aria-hidden="true">🖥️</span>
+              <strong>Desktop</strong>
+              <span class="ppi-cache-flow-number">8192 × 4096</span>
+              <small>max. 33,6 MP · JPEG</small>
+            </div>
+            <div class="ppi-cache-flow-step">
+              <span class="ppi-cache-flow-icon" aria-hidden="true">📱</span>
+              <strong>Mobil</strong>
+              <span class="ppi-cache-flow-number">4096 × 2048</span>
+              <small>max. 8,4 MP · JPEG</small>
+            </div>
+          </div>
+          <div class="ppi-cache-flow-arrow" aria-hidden="true">↓</div>
+          <div class="ppi-cache-flow-step">
+            <span class="ppi-cache-flow-icon" aria-hidden="true">🗂️</span>
+            <strong>Eigener Photo-Sphere-Cache</strong>
+            <small>Privates Nextcloud-AppData-Verzeichnis · beide Profile stehen dem berechtigten Tour-Viewer zur Verfügung.</small>
+          </div>
+        </figure>
+        <p>Anders als bei Nextclouds normaler Vorschaugenerierung greift <code>preview_max_x</code> bei dieser direkten Imagick-Verarbeitung nicht. Die App ändert diese Nextcloud-Grenze nicht. Fehlt ein optimiertes Profil, versucht der Viewer zuerst die Nextcloud-Vorschau und kann anschließend auf das berechtigte Original zurückfallen.</p>
         <h4>Welche zwei Bildgrößen entstehen?</h4>
         <ul>
           <li><strong>Desktop:</strong> bis zu <strong>8192 × 4096 Pixel</strong> (2:1, JPEG-Qualität 85).</li>
