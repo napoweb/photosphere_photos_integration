@@ -1211,11 +1211,33 @@
   // Debounced live search. Only the image-results container is rerendered.
   // Invalidate any previous in-flight result as soon as the text changes.
   const searchInput=byId('ppi-picker-search');
+  const searchMode=byId('ppi-picker-search-mode');
+  const searchModeLabel=byId('ppi-picker-search-mode-label');
+  const syncSearchModeLabel=()=>{
+    searchModeLabel.textContent=searchMode.options[searchMode.selectedIndex]?.textContent || 'Suchbereich';
+  };
+  searchMode.addEventListener('change',syncSearchModeLabel);
+  syncSearchModeLabel();
   // Genuine user interaction elsewhere ends the typing session.
   root.addEventListener('pointerdown', event => {
     if (!searchInput.contains(event.target)) searchEditing = false;
   }, true);
+  document.addEventListener('pointerdown', event => {
+    if (!searchInput.contains(event.target)) searchEditing = false;
+  }, true);
   searchInput.addEventListener('focus',()=>{searchEditing=true;});
+  // Some Nextcloud themes/browser integrations blur inputs when the results settle.
+  // Keep a real typing session focused unless the user intentionally moves elsewhere.
+  searchInput.addEventListener('blur',()=>{
+    if (!searchEditing) return;
+    requestAnimationFrame(()=>{
+      const current=document.activeElement;
+      if (searchEditing && searchInput.isConnected && !byId('ppi-tour-picker').hidden
+          && (!current || current === document.body || current === document.documentElement)) {
+        searchInput.focus({preventScroll:true});
+      }
+    });
+  });
   searchInput.addEventListener('input',()=>{
     searchEditing = true;
     ++browseSerial;
