@@ -495,6 +495,49 @@
   root.querySelectorAll('[data-pin-color]').forEach(button=>button.addEventListener('click',()=>{byId('ppi-design-pin-color').value=button.dataset.pinColor;refreshDesignPreviews();}));
   ['ppi-design-start','ppi-design-style','ppi-design-size'].forEach(id=>byId(id).addEventListener(id==='ppi-design-size'?'input':'change',refreshDesignPreviews));
   byId('ppi-design-yaw').addEventListener('input',()=>{byId('ppi-design-yaw-value').textContent=byId('ppi-design-yaw').value+'°';});
+  // Lightweight description formatting. The field stores plain text / a tiny Markdown subset.
+  // No HTML from users is ever injected into the editor or public tour.
+  const descriptionField=byId('ppi-design-intro');
+  const insertDescriptionText=(replacement)=>{
+    const start=descriptionField.selectionStart,end=descriptionField.selectionEnd;
+    if(descriptionField.value.length-(end-start)+replacement.length>descriptionField.maxLength){
+      notify('Beschreibung: maximal 1.200 Zeichen.',true);return false;
+    }
+    descriptionField.setRangeText(replacement,start,end,'end');
+    descriptionField.focus({preventScroll:true});
+    descriptionField.dispatchEvent(new Event('input',{bubbles:true}));
+    return true;
+  };
+  root.querySelectorAll('[data-intro-insert]').forEach(button=>button.addEventListener('click',()=>{
+    const start=descriptionField.selectionStart,end=descriptionField.selectionEnd;
+    const selected=descriptionField.value.slice(start,end);
+    const action=button.dataset.introInsert;
+    let insertion='';
+    if(action==='bullet'||action==='number'){
+      const lines=(selected||'Listenpunkt').split('\\n');
+      insertion=lines.map((line,i)=>(action==='bullet'?'- ':(i+1)+'. ')+line).join('\\n');
+      if(start>0&&descriptionField.value[start-1]!=='\\n')insertion='\\n'+insertion;
+    }else if(action==='link'){
+      const address=window.prompt('HTTPS- oder HTTP-Link eingeben:','https://');
+      if(address===null)return;
+      let url;
+      try{url=new URL(address);if(!['http:','https:'].includes(url.protocol))throw Error('scheme');}
+      catch(_e){notify('Bitte eine gültige HTTPS- oder HTTP-Adresse eingeben.',true);return;}
+      insertion='['+(selected||'Linktext').replace(/[\\[\\]\\n]/g,'')+']('+url.href+')';
+    }
+    if(insertion)insertDescriptionText(insertion);
+  }));
+  const iconToggle=byId('ppi-intro-icons-toggle'),iconPanel=byId('ppi-intro-icons');
+  iconToggle.addEventListener('click',()=>{
+    iconPanel.hidden=!iconPanel.hidden;
+    iconToggle.setAttribute('aria-expanded',String(!iconPanel.hidden));
+  });
+  root.querySelectorAll('[data-intro-icon]').forEach(button=>button.addEventListener('click',()=>{
+    if(insertDescriptionText(button.dataset.introIcon)){
+      iconPanel.hidden=true;iconToggle.setAttribute('aria-expanded','false');
+    }
+  }));
+
   byId('ppi-design-save').addEventListener('click',async()=>{
     if(!active)return;
     try{
