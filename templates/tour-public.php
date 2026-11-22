@@ -126,7 +126,7 @@
   #ppi-public-landing-description{font:400 clamp(14px,1.4vw,18px)/1.55 system-ui,sans-serif;white-space:pre-line;max-width:680px;max-height:min(22dvh,180px);overflow-y:auto;margin:8px 0 16px;opacity:.93;text-shadow:0 2px 10px #0008}
   #ppi-public-landing-description[hidden]{display:none!important}
   #ppi-public-landing-description p{font:inherit!important;color:inherit!important;margin:0 0 7px!important}
-  #ppi-public-landing-description ul,#ppi-public-landing-description ol{margin:5px 0 10px;padding-left:26px}
+  #ppi-public-landing-description ul,#ppi-public-landing-description ol{display:table;max-width:calc(100% - 32px);box-sizing:border-box;margin:5px auto 10px;padding-left:26px;text-align:left;overflow-wrap:anywhere}
   #ppi-public-landing-description li{margin:2px 0}
   #ppi-public-landing-description a{color:#bde3ff;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
   #ppi-public-landing-description a:hover,#ppi-public-landing-description a:focus-visible{color:#fff}
