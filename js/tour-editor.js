@@ -1098,7 +1098,7 @@
   let pickerData = null;
   let pickerDebounce = null;
   const pickerValue = id => byId(id).value;
-  function renderPickerItems() {
+  function renderPickerItems(updateFolders=true) {
     if (!pickerData) return;
     const folderBox=byId('ppi-picker-folders'), imageBox=byId('ppi-picker-images');
     const folders=pickerData.items.filter(item=>item.type==='folder');
@@ -1106,13 +1106,17 @@
     const status=pickerValue('ppi-picker-status');
     const images=pickerData.items.filter(item=>item.type==='image' &&
       (status==='all'||(status==='used')===tourIds.has(Number(item.id))));
-    folderBox.replaceChildren();imageBox.replaceChildren();
-    if(!folders.length)folderBox.append(node('p','Keine Unterordner.'));
-    for(const item of folders){
-      const button=node('button',undefined,'ppi-folder-tile');button.type='button';
-      button.append(node('span','📁','ppi-folder-icon'),node('span',item.name));
-      button.addEventListener('click',()=>browse(item.id));folderBox.append(button);
+    // On live search, update only #ppi-picker-images. Never reconstruct folder navigation.
+    if (updateFolders) {
+      folderBox.replaceChildren();
+      if(!folders.length)folderBox.append(node('p','Keine Unterordner.'));
+      for(const item of folders){
+        const button=node('button',undefined,'ppi-folder-tile');button.type='button';
+        button.append(node('span','📁','ppi-folder-icon'),node('span',item.name));
+        button.addEventListener('click',()=>browse(item.id));folderBox.append(button);
+      }
     }
+    imageBox.replaceChildren();
     if(!images.length)imageBox.append(node('p','Keine passenden JPEG-Bilder gefunden.'));
     for(const item of images){
       const card=node('label',undefined,'ppi-pano-card');
@@ -1143,7 +1147,7 @@
   }
   // The server applies the filename/date/size search before limiting results;
   // browsing into other folders keeps selected images from previous folders.
-  async function browse(folderId=0, resetSelection=false) {
+  async function browse(folderId=0, resetSelection=false, resultsOnly=false) {
     const serial=++browseSerial;
     pickerFolderId=Number(folderId)||0;
     if(resetSelection){selectedFiles.clear();updateSelection();}
@@ -1154,7 +1158,7 @@
     // This also avoids scroll/layout jumps when the user executes a search.
     const currentSearch = byId('ppi-picker-search');
     const restoreSearchFocus = document.activeElement === currentSearch;
-    if (!pickerData) {
+    if (!resultsOnly && !pickerData) {
       folderBox.replaceChildren(node('p','Ordner werden geladen …'));
       imageBox.replaceChildren();
     }
@@ -1175,9 +1179,11 @@
       browsing={id:Number(data.folderId),path:data.path,parentId:Number(data.parentId||0)};
       pickerFolderId=browsing.id;
       pickerData=data;
-      byId('ppi-picker-path').textContent=data.path;
-      byId('ppi-picker-up').disabled=Boolean(data.isRoot);
-      renderPickerItems();
+      if (!resultsOnly) {
+        byId('ppi-picker-path').textContent=data.path;
+        byId('ppi-picker-up').disabled=Boolean(data.isRoot);
+      }
+      renderPickerItems(!resultsOnly);
       byId('ppi-picker-results').removeAttribute('aria-busy');
       if (restoreSearchFocus && document.activeElement !== currentSearch) {
         currentSearch.focus({preventScroll:true});
@@ -1185,29 +1191,32 @@
     }catch(e){
       if(serial!==browseSerial)return;
       byId('ppi-picker-results').removeAttribute('aria-busy');
-      if (!pickerData) folderBox.replaceChildren(node('p','Ordner konnten nicht geladen werden: '+e.message));
+      if (!resultsOnly && !pickerData) folderBox.replaceChildren(node('p','Ordner konnten nicht geladen werden: '+e.message));
       if (restoreSearchFocus && document.activeElement !== currentSearch) currentSearch.focus({preventScroll:true});
       notify('Panorama-Auswahl: '+e.message,true);
     }
   }
   function reapplyPicker() {
-    if(!byId('ppi-tour-picker').hidden)browse(pickerFolderId);
+    if(!byId('ppi-tour-picker').hidden)browse(pickerFolderId,false,true);
   }
-  // Never rebuild the folder/results UI during text entry: users can type freely.
-  // Run the search explicitly via Enter or the magnifier button.
-  byId('ppi-picker-search').addEventListener('keydown',event=>{
+  // Debounced live search. Only the image-results container is rerendered.
+  // Invalidate any previous in-flight result as soon as the text changes.
+  const searchInput=byId('ppi-picker-search');
+  searchInput.addEventListener('input',()=>{
+    ++browseSerial;
+    clearTimeout(pickerDebounce);
+    pickerDebounce=setTimeout(reapplyPicker,350);
+  });
+  searchInput.addEventListener('keydown',event=>{
     if(event.key==='Enter' && !event.isComposing){
       event.preventDefault();
       clearTimeout(pickerDebounce);
       reapplyPicker();
     }
   });
-  byId('ppi-picker-search-run').addEventListener('click',()=>{
-    clearTimeout(pickerDebounce);
-    reapplyPicker();
-  });
   for(const id of ['ppi-picker-search-mode','ppi-picker-sort','ppi-picker-date','ppi-picker-size','ppi-picker-recursive']){
     byId(id).addEventListener('change',()=>{
+      ++browseSerial;
       clearTimeout(pickerDebounce);
       reapplyPicker();
     });
