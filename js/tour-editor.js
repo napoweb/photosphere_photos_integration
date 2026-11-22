@@ -427,6 +427,84 @@
     byId('ppi-design-size-label').textContent=sizeNames[n];
     root.querySelector('.ppi-design-hotspot-preview')?.style.setProperty('--ppi-mini-scale',String([.72,.8,1,1.2,1.28][n]));
   }
+  const introInput = byId('ppi-design-intro');
+  const introPreview = byId('ppi-desc-preview');
+  const introPreviewToggle = byId('ppi-desc-preview-toggle');
+
+  function refreshIntroPreview() {
+    if (introPreview.hidden) return;
+    const value = introInput.value.trim();
+    const renderer = window.PPI_TOUR_DESCRIPTION;
+    if (renderer?.render) renderer.render(introPreview, value);
+    else introPreview.textContent = value;
+    if (!value) introPreview.textContent = 'Noch keine Beschreibung eingegeben.';
+  }
+
+  function replaceIntroRange(start, end, replacement, innerStart, innerEnd) {
+    const projected = introInput.value.length - (end - start) + replacement.length;
+    if (projected > introInput.maxLength) {
+      notify('Beschreibung: maximal ' + introInput.maxLength + ' Zeichen.', true);
+      return;
+    }
+    introInput.setRangeText(replacement, start, end, 'end');
+    introInput.focus({preventScroll:true});
+    if (innerStart !== undefined && innerEnd !== undefined) {
+      introInput.setSelectionRange(innerStart, innerEnd);
+    }
+    refreshIntroPreview();
+  }
+
+  root.querySelectorAll('[data-ppi-description-action]').forEach(button => {
+    button.addEventListener('click', () => {
+      const action = button.dataset.ppiDescriptionAction;
+      const start = introInput.selectionStart;
+      const end = introInput.selectionEnd;
+      const selected = introInput.value.slice(start, end);
+      if (action === 'bold' || action === 'italic') {
+        const mark = action === 'bold' ? '**' : '*';
+        const inside = selected || 'Text';
+        replaceIntroRange(start, end, mark + inside + mark,
+          start + mark.length, start + mark.length + inside.length);
+      } else if (action === 'bullet' || action === 'number') {
+        const lineStart = introInput.value.lastIndexOf('\n', Math.max(0, start - 1)) + 1;
+        const nextBreak = introInput.value.indexOf('\n', end);
+        const lineEnd = nextBreak < 0 ? introInput.value.length : nextBreak;
+        let sequence = 0;
+        const content = introInput.value.slice(lineStart, lineEnd) || 'Eintrag';
+        const formatted = content.split('\n').map(line => {
+          if (!line.trim()) return line;
+          return (action === 'bullet' ? '- ' : (++sequence) + '. ') + line;
+        }).join('\n');
+        replaceIntroRange(lineStart, lineEnd, formatted);
+      } else if (action === 'link') {
+        const text = (selected || 'Linktext').replace(/[\]\r\n]/g, ' ').trim() || 'Linktext';
+        const raw = window.prompt('Linkadresse (https:// oder http://):', 'https://');
+        if (raw === null) return;
+        const urlText = raw.trim();
+        let valid = false;
+        try {
+          const url = new URL(urlText);
+          valid = (url.protocol === 'https:' || url.protocol === 'http:')
+            && !/[\s)]/.test(urlText) && !url.username && !url.password;
+        } catch (_e) { /* URL is validated before inserting. */ }
+        if (!valid) {
+          notify('Bitte eine gültige http(s)-Adresse ohne Leerzeichen eingeben.', true);
+          introInput.focus({preventScroll:true});
+          return;
+        }
+        const replacement = '[' + text + '](' + urlText + ')';
+        replaceIntroRange(start, end, replacement, start + 1, start + 1 + text.length);
+      }
+    });
+  });
+
+  introInput.addEventListener('input', refreshIntroPreview);
+  introPreviewToggle.addEventListener('click', () => {
+    const showPreview = introPreview.hidden;
+    introPreview.hidden = !showPreview;
+    introPreviewToggle.setAttribute('aria-expanded', String(showPreview));
+    refreshIntroPreview();
+  });
   const designDefault = {watermarkEnabled:false,watermarkId:'none',startImageId:0,startYaw:0,showTitle:true,showNavigation:true,showFullscreen:true,hotspotSize:'medium',hotspotStyle:'classic',introText:'',socialPreviewMode:'cover',svgPinColor:'#1687bc'};
   function currentDesign(){return {...designDefault,...(active?.display||{})};}
   function updateSocialPreviewStatus(){
@@ -450,6 +528,7 @@
     byId('ppi-tour-name').value=String(active.name||'');
     byId('ppi-design-yaw').value=String(d.startYaw);byId('ppi-design-yaw-value').textContent=d.startYaw+'°';
     byId('ppi-design-intro').value=String(d.introText||'');
+    refreshIntroPreview();
     byId('ppi-design-social').value=['cover','neutral','off'].includes(d.socialPreviewMode)?d.socialPreviewMode:'cover';
     byId('ppi-design-size').value=String(Math.max(0,sizeSteps.indexOf(d.hotspotSize)));
     byId('ppi-design-pin-color').value=/^#[0-9a-fA-F]{6}$/.test(d.svgPinColor||'')?d.svgPinColor:'#1687bc';
