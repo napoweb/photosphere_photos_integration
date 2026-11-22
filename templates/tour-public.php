@@ -35,7 +35,7 @@
       <span class="ppi-public-landing-kicker">INTERAKTIVE 360°-TOUR</span>
       <h1 id="ppi-public-landing-title">360°-Tour</h1>
       <p id="ppi-public-landing-info">Entdecke die Panoramen dieser Tour.</p>
-      <p id="ppi-public-landing-description" hidden></p>
+      <div id="ppi-public-landing-description" hidden></div>
       <button id="ppi-public-start" type="button">Tour starten <span aria-hidden="true">→</span></button>
     </div>
   </section>
@@ -123,7 +123,12 @@
   #ppi-public-nav .ppi-public-nav-card img{display:block;width:100%;height:69px;object-fit:cover;border-radius:6px;background:#2d3d4a}
   #ppi-public-nav .ppi-public-nav-card span{font:500 11px/1.25 system-ui,sans-serif;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
   #ppi-public-nav .ppi-public-nav-card.ppi-public-no-thumb{justify-content:center;min-height:70px}
-  #ppi-public-landing-description{font:400 clamp(14px,1.4vw,18px)/1.55 system-ui,sans-serif;white-space:pre-line;max-width:680px;max-height:min(22dvh,180px);overflow-y:auto;margin:8px 0 16px;opacity:.93;text-shadow:0 2px 10px #0008}
+  #ppi-public-landing-description{font:400 clamp(14px,1.4vw,18px)/1.55 system-ui,sans-serif;white-space:normal;max-width:680px;max-height:min(22dvh,180px);overflow-y:auto;margin:8px 0 16px;opacity:.93;text-shadow:0 2px 10px #0008;overflow-wrap:anywhere}
+  #ppi-public-landing #ppi-public-landing-description p{font:inherit;line-height:inherit;margin:0 0 8px;color:inherit}
+  #ppi-public-landing #ppi-public-landing-description ul,#ppi-public-landing #ppi-public-landing-description ol{list-style-position:outside;padding-left:25px;margin:5px 0 10px}
+  #ppi-public-landing #ppi-public-landing-description li{display:list-item;margin:2px 0}
+  #ppi-public-landing #ppi-public-landing-description a{color:#e0f2ff;text-decoration:underline;text-underline-offset:2px}
+  #ppi-public-landing #ppi-public-landing-description a:focus-visible{outline:2px solid #fff;outline-offset:2px}
   #ppi-public-landing-description[hidden]{display:none!important}
   #ppi-public-message{position:absolute;z-index:6;left:50%;top:50%;transform:translate(-50%,-50%);max-width:90vw;pointer-events:none;padding:11px 16px;color:#fff;background:rgba(7,20,31,.7);border-radius:10px;text-align:center;backdrop-filter:blur(8px)}
   #ppi-public-message:empty{display:none!important}

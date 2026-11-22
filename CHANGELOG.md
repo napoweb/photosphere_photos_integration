@@ -1,3 +1,10 @@
+## 0.4.62.97 (Docker Test)
+- Compact formatting toolbar for the optional description on a public 360° tour landing page: bold, italic, unordered/numbered lists and HTTP(S) links.
+- Five quick-insert topic pictograms: Quad, ATV, holiday, mountain biking and home. No additional image assets or external services.
+- Safe text-node-only Markdown rendering on public landing pages with a strict HTTP(S) URL allowlist, no raw HTML; existing plain-text descriptions stay readable.
+- Live preview in the tour editor; description limit increased from 600 to 1200 characters, with plain-text social previews.
+- Tour sharing, token/password access, panorama files, cache and other settings remain unchanged.
+
 ## 0.4.62.92
 - Refresh App Store metadata to describe the 360-degree tour editor, hotspots, public sharing, responsive viewer and app-owned panorama cache.
 - Update documentation and publication checklist; no changes to application runtime behavior, routes, access controls or cache deletion rules.
