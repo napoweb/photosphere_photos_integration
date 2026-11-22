@@ -1,8 +1,10 @@
-/* 360°-Tour Draft Editor 0.4.39 — private Nextcloud user area. */
+/* Photo Sphere Tour Editor – tag-search test build 0.4.62.94. */
 (() => {
   'use strict';
   const root = document.getElementById('ppi-tours-app');
   if (!root) return;
+  // Diagnostic marker: verifies that the browser loaded the matching script.
+  root.dataset.tourEditorBuild = '0.4.62.94-tagsearch';
   const byId = id => document.getElementById(id);
   const api = root.dataset.apiUrl;
   const filesApi = root.dataset.filesUrl;
@@ -1216,6 +1218,7 @@
   const syncSearchModeLabel=()=>{
     searchModeLabel.textContent=searchMode.options[searchMode.selectedIndex]?.textContent || 'Suchbereich';
   };
+  searchMode.addEventListener('input',syncSearchModeLabel);
   searchMode.addEventListener('change',syncSearchModeLabel);
   syncSearchModeLabel();
   // Genuine user interaction elsewhere ends the typing session.
