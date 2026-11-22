@@ -416,6 +416,21 @@
  .ppi-preview-link-controls select{min-width:180px;max-width:100%;flex:1}
  @media(max-width:620px){.ppi-tour-preview{padding:2px}.ppi-preview-window{width:100%;height:calc(100dvh - 4px);max-height:calc(100dvh - 4px);padding:8px;border-radius:7px}.ppi-preview-sphere{height:clamp(240px,58dvh,620px)}.ppi-preview-action-footer{max-height:none}.ppi-preview-link-controls{gap:8px}.ppi-preview-link-controls button{min-height:38px}#ppi-tours-app .ppi-tour-image-row{grid-template-columns:95px 1fr}#ppi-tours-app .ppi-tour-thumb-wrap{width:95px;height:60px}#ppi-tours-app .ppi-image-controls{grid-column:1/-1}#ppi-tours-app .ppi-picker-image-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
+/* Hover preview floats above the scrolling destination gallery without clipping. */
+.ppi-target-hover-preview{
+  position:fixed!important;z-index:2147483647!important;
+  pointer-events:none!important;box-sizing:border-box!important;
+  padding:6px!important;border:2px solid #fff!important;
+  border-radius:12px!important;background:#102033!important;
+  box-shadow:0 12px 38px rgba(0,0,0,.68),0 0 0 1px rgba(255,255,255,.20)!important;
+}
+.ppi-target-hover-preview[hidden]{display:none!important}
+.ppi-target-hover-preview img{
+  display:block!important;width:100%!important;height:auto!important;
+  aspect-ratio:16/9;max-height:none!important;object-fit:cover!important;
+  border-radius:6px!important;background:#132434!important;
+}
+
 /* 0.4.43: Scrollbarer Tour-Dialog mit kompakter, stets erreichbarer Zielbildgalerie. */
 .ppi-tour-preview{padding:8px!important;align-items:center!important;justify-content:center!important;overscroll-behavior:contain}
 .ppi-preview-window{height:calc(100dvh - 16px)!important;max-height:calc(100dvh - 16px)!important;width:min(99vw,1800px)!important;min-height:0!important;display:flex!important;flex-direction:column!important;overflow:hidden!important;}
