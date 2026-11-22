@@ -295,13 +295,14 @@
  #ppi-tours-app .ppi-picker-search-labels{display:flex;justify-content:space-between;gap:8px;align-items:center}
  #ppi-tours-app .ppi-picker-search-labels>label{flex:none;min-width:0;font-size:12px}
  #ppi-tours-app #ppi-picker-search-mode-label{font-size:11px;color:var(--color-text-maxcontrast);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right;cursor:pointer}
- #ppi-tours-app .ppi-picker-search-control{display:flex;align-items:stretch;min-width:0;width:100%;min-height:38px;border:1px solid var(--color-border);border-radius:7px;overflow:hidden;background:var(--color-main-background)}
- #ppi-tours-app .ppi-picker-filters .ppi-picker-search-control input{flex:1 1 auto;min-width:0;width:0;min-height:38px;border:0;border-radius:0;background:transparent;box-shadow:none;font-size:14px;padding:0 10px}
+ #ppi-tours-app .ppi-picker-search-control{display:flex;align-items:stretch;min-width:0;width:100%;height:38px;min-height:38px;max-height:38px;box-sizing:border-box;border:1px solid var(--color-border);border-radius:7px;overflow:hidden;background:var(--color-main-background)}
+ #ppi-tours-app .ppi-picker-filters .ppi-picker-search-control input{flex:1 1 auto;min-width:0;width:0;height:36px!important;min-height:36px!important;max-height:36px!important;box-sizing:border-box;margin:0!important;border:0!important;border-radius:0!important;background:transparent;box-shadow:none!important;font-size:14px;line-height:36px;padding:0 10px!important;appearance:none}
  #ppi-tours-app .ppi-picker-search-control input:focus{outline:0;box-shadow:none}
  #ppi-tours-app .ppi-picker-search-control:focus-within{outline:2px solid var(--color-primary-element);outline-offset:1px}
  #ppi-tours-app .ppi-picker-search-mode-wrap{position:relative;flex:0 0 38px;width:38px;border-left:1px solid var(--color-border);background:var(--color-main-background)}
- #ppi-tours-app .ppi-picker-filters .ppi-picker-search-mode-wrap select{position:absolute;inset:0;width:100%;height:100%;min-height:38px;opacity:0;cursor:pointer;z-index:2}
- #ppi-tours-app .ppi-picker-search-chevron{display:flex;align-items:center;justify-content:center;position:absolute;inset:0;pointer-events:none;font-size:22px;color:var(--color-main-text)}
+ #ppi-tours-app .ppi-picker-filters .ppi-picker-search-mode-wrap select{position:absolute;inset:0;width:100%;height:100%;min-height:0;opacity:0;cursor:pointer;z-index:2}
+ #ppi-tours-app .ppi-picker-search-chevron{display:flex;align-items:center;justify-content:center;position:absolute;inset:0;pointer-events:none;font-size:0;color:var(--color-main-text)}
+ #ppi-tours-app .ppi-picker-search-chevron::after{content:'';display:block;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor}
  #ppi-tours-app .ppi-picker-search-mode-wrap:focus-within{background:var(--color-background-hover)}
  #ppi-tours-app .ppi-picker-filters input,#ppi-tours-app .ppi-picker-filters select{min-width:0;width:100%;min-height:38px;box-sizing:border-box}
  #ppi-tours-app #ppi-picker-reset-filters{min-height:38px}
