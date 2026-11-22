@@ -918,7 +918,7 @@ final class TourController extends Controller {
                 $description = trim((string)($tour['display']['introText'] ?? ''));
                 // Social previews are plain text, not raw Markdown or icon shortcodes.
                 $description = preg_replace('/\[([^\]]+)\]\(https?:\/\/[^\s)]+\)/i', '$1', $description) ?? $description;
-                $description = str_replace(':quad:', 'Quad/ATV', $description);
+                $description = str_replace([':quad:', ':drone:', ':360:'], ['Quad/ATV', 'Drohne', '360°'], $description);
                 $description = preg_replace('/(?:^|\n)\s*(?:[-*]|\d+[.)])\s+/m', ' ', $description) ?? $description;
                 $description = mb_substr(trim(preg_replace('/\s+/u', ' ', $description) ?? $description), 0, 250);
                 if ($description === '') { $description = 'Entdecke diese interaktive 360°-Tour.'; }
