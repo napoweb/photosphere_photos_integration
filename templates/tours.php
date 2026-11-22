@@ -738,6 +738,9 @@
  #ppi-tours-app #ppi-step-design .ppi-design-layout{grid-template-columns:minmax(0,1fr)}
  #ppi-tours-app #ppi-step-design .ppi-design-intro{flex:0 1 auto;min-height:0}
  #ppi-tours-app #ppi-step-design .ppi-design-intro textarea{flex:0 1 auto;height:auto;min-height:140px}
+}
+
+/* Description editor toolbar, on desktop and mobile. */
  #ppi-tours-app #ppi-step-design .ppi-desc-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin:4px 0 2px}
  #ppi-tours-app #ppi-step-design .ppi-desc-toolbar button{flex:none;min-height:29px;padding:4px 8px;font-size:12px;line-height:1.35;border:1px solid var(--color-border);border-radius:6px;background:var(--color-main-background);color:var(--color-main-text)}
  #ppi-tours-app #ppi-step-design .ppi-desc-toolbar button:hover{background:var(--color-background-hover)}
@@ -750,7 +753,6 @@
  #ppi-tours-app #ppi-step-design .ppi-desc-preview li{display:list-item}
  #ppi-tours-app #ppi-step-design .ppi-desc-preview a{color:var(--color-primary-element);text-decoration:underline}
 
-}
 
 
 /* 0.4.62.25: align lower split precisely with the first upper card;
