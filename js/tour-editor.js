@@ -1147,7 +1147,8 @@
     const serial=++browseSerial;
     pickerFolderId=Number(folderId)||0;
     if(resetSelection){selectedFiles.clear();updateSelection();}
-    show('picker');
+    // Only focus/scroll the picker when opening it, never on live filter refresh.
+    if (byId('ppi-tour-picker').hidden) show('picker');
     const folderBox=byId('ppi-picker-folders'), imageBox=byId('ppi-picker-images');
     pickerData=null;
     folderBox.replaceChildren(node('p','Ordner werden geladen …'));
@@ -1159,6 +1160,7 @@
     const params=new URLSearchParams({
       folderId:String(folderId),
       q:pickerValue('ppi-picker-search').trim(),
+      searchMode:pickerValue('ppi-picker-search-mode'),
       sort:pickerValue('ppi-picker-sort'),
       date:pickerValue('ppi-picker-date'),
       size:pickerValue('ppi-picker-size'),
@@ -1188,7 +1190,7 @@
     clearTimeout(pickerDebounce);
     pickerDebounce=setTimeout(reapplyPicker,300);
   });
-  for(const id of ['ppi-picker-sort','ppi-picker-date','ppi-picker-size','ppi-picker-recursive']){
+  for(const id of ['ppi-picker-search-mode','ppi-picker-sort','ppi-picker-date','ppi-picker-size','ppi-picker-recursive']){
     byId(id).addEventListener('change',()=>{
       clearTimeout(pickerDebounce);
       reapplyPicker();
@@ -1214,7 +1216,7 @@
   });
   byId('ppi-picker-reset-filters').addEventListener('click',()=>{
     clearTimeout(pickerDebounce);
-    for(const id of ['ppi-picker-search','ppi-picker-sort','ppi-picker-status','ppi-picker-date','ppi-picker-size']){
+    for(const id of ['ppi-picker-search','ppi-picker-search-mode','ppi-picker-sort','ppi-picker-status','ppi-picker-date','ppi-picker-size']){
       byId(id).selectedIndex!==undefined && byId(id).tagName==='SELECT'
         ? byId(id).selectedIndex=0 : byId(id).value='';
     }
