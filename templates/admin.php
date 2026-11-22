@@ -106,7 +106,7 @@
     #ppi-watermark-admin .ppi-cache-flow-step strong{font-size:14px}
     #ppi-watermark-admin .ppi-cache-flow-step small{font-size:12px;line-height:1.45;color:var(--color-text-maxcontrast,#666)}
     #ppi-watermark-admin .ppi-cache-flow-icon{font-size:22px;line-height:1.25}
-    #ppi-watermark-admin .ppi-cache-flow-arrow{font-size:24px;line-height:1.05;color:var(--color-text-maxcontrast,#666);padding:1px 0;aria-hidden:true}
+    #ppi-watermark-admin .ppi-cache-flow-arrow{font-size:24px;line-height:1.05;color:var(--color-text-maxcontrast,#666);padding:1px 0}
     #ppi-watermark-admin .ppi-cache-flow-profiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%}
     #ppi-watermark-admin .ppi-cache-flow-profiles .ppi-cache-flow-step{height:100%}
     #ppi-watermark-admin .ppi-cache-flow-number{font-size:clamp(14px,2.4vw,19px);font-weight:700;line-height:1.3;white-space:nowrap}
@@ -389,7 +389,7 @@
           <div class="ppi-cache-flow-step">
             <span class="ppi-cache-flow-icon" aria-hidden="true">🗂️</span>
             <strong>Eigener Photo-Sphere-Cache</strong>
-            <small>Privates Nextcloud-AppData-Verzeichnis · beide Profile stehen dem berechtigten Tour-Viewer zur Verfügung.</small>
+            <small>Privates Nextcloud-AppData-Verzeichnis · bereits erzeugte Profile werden dem berechtigten Tour-Viewer bereitgestellt.</small>
           </div>
         </figure>
         <p>Anders als bei Nextclouds normaler Vorschaugenerierung greift <code>preview_max_x</code> bei dieser direkten Imagick-Verarbeitung nicht. Die App ändert diese Nextcloud-Grenze nicht. Fehlt ein optimiertes Profil, versucht der Viewer zuerst die Nextcloud-Vorschau und kann anschließend auf das berechtigte Original zurückfallen.</p>
