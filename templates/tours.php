@@ -144,10 +144,6 @@
     <p id="ppi-picker-path" style="word-break:break-all;color:var(--color-text-maxcontrast)">/</p>
     <div class="ppi-picker-toolbar"><button id="ppi-picker-up" type="button">← Eine Ebene zurück</button><span id="ppi-picker-selection-count">0 ausgewählt</span><button id="ppi-picker-add-selected" class="primary" type="button" disabled>Panoramen hinzufügen</button></div>
     <div class="ppi-picker-section-title"><h3 class="ppi-picker-heading">Ordner</h3></div>
-    <div class="ppi-picker-switches" role="group" aria-label="Ordner- und Panorama-Anzeige">
-      <label class="ppi-picker-inline"><input type="checkbox" id="ppi-picker-recursive"> Unterordner einbeziehen</label>
-      <label class="ppi-picker-inline" title="Die 360°-Filtereinstellung wird dauerhaft in deinem Nextcloud-Konto gespeichert"><input id="ppi-picker-panorama-only" type="checkbox" <?php if ($_['pickerPanoramaOnly']) { print_unescaped('checked'); } ?>> Nur erkannte 360°-Panoramen anzeigen</label>
-    </div>
     <div id="ppi-picker-folders" class="ppi-picker-folder-grid"></div>
     <div class="ppi-picker-section-title"><h3 class="ppi-picker-heading">Panorama-Vorschaubilder</h3><span id="ppi-picker-results" aria-live="polite"></span></div>
     <div class="ppi-picker-filters" role="search" aria-label="Panorama-Suche und Filter">
@@ -156,7 +152,13 @@
       <label>Tourstatus<select id="ppi-picker-status"><option value="unused">Noch nicht in dieser Tour</option><option value="all">Alle Panoramen</option><option value="used">Bereits in dieser Tour</option></select></label>
       <label>Geändert<select id="ppi-picker-date"><option value="any">Beliebiges Datum</option><option value="30d">Letzte 30 Tage</option><option value="year">Dieses Jahr</option></select></label>
       <label>Dateigröße<select id="ppi-picker-size"><option value="any">Beliebige Größe</option><option value="lt10">Unter 10 MB</option><option value="10to50">10–50 MB</option><option value="gt50">Über 50 MB</option></select></label>
-      <button id="ppi-picker-reset-filters" type="button">Filter zurücksetzen</button>
+      <div class="ppi-picker-filter-actions">
+        <button id="ppi-picker-reset-filters" type="button">Filter zurücksetzen</button>
+        <div class="ppi-picker-switches" role="group" aria-label="Ordner- und Panorama-Anzeige">
+          <label class="ppi-picker-inline"><input type="checkbox" id="ppi-picker-recursive"> Unterordner einbeziehen</label>
+          <label class="ppi-picker-inline" title="Die 360°-Filtereinstellung wird dauerhaft in deinem Nextcloud-Konto gespeichert"><input id="ppi-picker-panorama-only" type="checkbox" <?php if ($_['pickerPanoramaOnly']) { print_unescaped('checked'); } ?>> Nur erkannte 360°-Panoramen anzeigen</label>
+        </div>
+      </div>
     </div>
     <p id="ppi-picker-limit-warning" role="status" hidden></p>
     <div id="ppi-picker-images" class="ppi-picker-image-grid"></div>
@@ -286,8 +288,9 @@
  #ppi-tours-app #ppi-tour-picker .ppi-picker-section-title:first-of-type .ppi-picker-heading{margin-top:4px}
  #ppi-tours-app .ppi-picker-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
  #ppi-tours-app .ppi-picker-inline{display:flex;align-items:center;gap:6px;font-size:13px}
- #ppi-tours-app .ppi-picker-switches{display:flex;align-items:center;flex-wrap:wrap;column-gap:20px;row-gap:8px;margin:4px 0 8px;padding:7px 10px;background:var(--color-background-hover);border-radius:8px}
- #ppi-tours-app .ppi-picker-switches .ppi-picker-inline{flex:0 1 auto;min-width:0;white-space:normal;cursor:pointer}
+ #ppi-tours-app .ppi-picker-filter-actions{display:flex;align-items:center;justify-content:space-between;gap:8px 20px;flex:1 0 100%;min-width:0;flex-wrap:wrap;margin-top:2px}
+ #ppi-tours-app .ppi-picker-filter-actions .ppi-picker-switches{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px 20px;margin:0 0 0 auto;padding:0;background:transparent}
+ #ppi-tours-app .ppi-picker-switches .ppi-picker-inline{display:inline-flex;align-items:center;flex:0 1 auto;min-width:0;gap:6px;font-size:13px;white-space:normal;cursor:pointer}
  #ppi-tours-app .ppi-picker-filters{display:flex;align-items:end;flex-wrap:wrap;gap:8px;margin:4px 0 14px}
  #ppi-tours-app .ppi-picker-filters>label{display:flex;flex:1 1 135px;min-width:120px;flex-direction:column;gap:4px;font-size:12px;line-height:16px}
  #ppi-tours-app .ppi-picker-filters .ppi-picker-filter-search{flex:2 1 300px;min-width:220px;width:auto}
