@@ -21,6 +21,7 @@ use OCA\PhotospherePhotosIntegration\Service\PanoramaCache;
 use OCP\IPreview;
 use OCP\AppFramework\Http\Response;
 use OCP\IConfig;
+use OCP\ICacheFactory;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCP\IUserSession;
@@ -43,10 +44,12 @@ final class TourController extends Controller {
     private const MAX_IMAGES = 50;
     private const MAX_EXTRA_SHARES = 12;
     private const SHARE_INDEX_PREFIX = 'tourpub_';
+    private const PICKER_PANORAMA_ONLY = 'picker_panorama_only';
 
     public function __construct(
         IRequest $request,
         private IConfig $config,
+        private ICacheFactory $cacheFactory,
         private IAppData $appData,
         private IUserSession $userSession,
         private IRootFolder $rootFolder,
@@ -183,6 +186,8 @@ final class TourController extends Controller {
         Util::addScript(self::APP_ID, 'tour-editor');
         return new TemplateResponse(self::APP_ID, 'tours', [
             'apiUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.listTours'),
+            'pickerPreferencesUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.savePickerPreferences'),
+            'pickerPanoramaOnly' => ($this->userId() !== null && $this->config->getUserValue($this->userId(), self::APP_ID, self::PICKER_PANORAMA_ONLY, '0') === '1'),
             'filesUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.browse'),
             'imageUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.imageBytes'),
             'watermarkLibraryUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.watermark.tourLibrary'),
@@ -258,6 +263,64 @@ final class TourController extends Controller {
         return $this->error('Panorama nicht verfügbar oder keine Leseberechtigung', 404);
     }
 
+
+    /** Persist the panorama-only checkbox for the signed-in user across devices. */
+    #[NoAdminRequired]
+    public function savePickerPreferences(): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $raw = (string)$this->request->getParam('panoramaOnly', '');
+        if ($raw !== '0' && $raw !== '1') { return $this->error('Ungültige Filtereinstellung'); }
+        $this->config->setUserValue($uid, self::APP_ID, self::PICKER_PANORAMA_ONLY, $raw);
+        return new JSONResponse(['success' => true, 'panoramaOnly' => $raw === '1']);
+    }
+
+    /** Read only the bounded beginning of a JPEG. Do not decode large panorama image data.
+     * Strict GPano metadata detection: image ratio alone must never qualify. */
+    private function hasPanoramaXmp(File $file): bool {
+        $stream = null;
+        try {
+            $stream = $file->fopen('r');
+            if (!is_resource($stream)) { return false; }
+            // XMP normally lives in JPEG APP1 near the file header.
+            $head = '';
+            $remaining = 768 * 1024;
+            while ($remaining > 0 && !feof($stream)) {
+                $chunk = fread($stream, min(32768, $remaining));
+                if ($chunk === false || $chunk === '') { break; }
+                $head .= $chunk;
+                $remaining -= strlen($chunk);
+            }
+            // Require the Adobe XMP header as well as a recognized GPano field.
+            if (strpos($head, 'http://ns.adobe.com/xap/1.0/') === false) { return false; }
+            return (bool)preg_match(
+                '~(?:\\bGPano:ProjectionType\\s*=\\s*["\\x27]equirectangular["\\x27]|<GPano:ProjectionType>\\s*equirectangular\\s*</GPano:ProjectionType>)~i',
+                $head
+            );
+        } catch (\\Throwable $e) {
+            return false;
+        } finally {
+            if (is_resource($stream)) { fclose($stream); }
+        }
+    }
+
+    private function isPanoramaFile(File $file): bool {
+        try {
+            $cache = $this->cacheFactory->createDistributed(self::APP_ID . '_pano_xmp');
+            $key = hash('sha256', (string)$file->getId() . ':' . (string)$file->getMtime()
+                . ':' . (string)$file->getSize() . ':' . (string)$file->getEtag());
+            $cached = $cache->get($key);
+            if ($cached === 'yes') { return true; }
+            if ($cached === 'no') { return false; }
+            $recognized = $this->hasPanoramaXmp($file);
+            $cache->set($key, $recognized ? 'yes' : 'no', 30 * 86400);
+            return $recognized;
+        } catch (\\Throwable $e) {
+            // A cache failure must not expose ordinary JPEGs as verified panoramas.
+            return $this->hasPanoramaXmp($file);
+        }
+    }
+
     /** List a folder by Nextcloud file ID, using the current user's own mount tree. */
     #[NoAdminRequired]
     #[NoCSRFRequired]
@@ -290,6 +353,7 @@ final class TourController extends Controller {
             }
             $date = (string)$this->request->getParam('date', 'any');
             $size = (string)$this->request->getParam('size', 'any');
+            $panoramaOnly = (string)$this->request->getParam('panoramaOnly', '0') === '1';
             if (!in_array($date, ['any', '30d', 'year'], true)) { $date = 'any'; }
             if (!in_array($size, ['any', 'lt10', '10to50', 'gt50'], true)) { $size = 'any'; }
             $threshold = $date === '30d' ? time() - 30 * 86400
@@ -334,6 +398,7 @@ final class TourController extends Controller {
                     if ($size === 'lt10' && $bytes >= $minMb) { continue; }
                     if ($size === '10to50' && ($bytes < $minMb || $bytes > $maxMb)) { continue; }
                     if ($size === 'gt50' && $bytes <= $maxMb) { continue; }
+                    if ($panoramaOnly && !$this->isPanoramaFile($node)) { continue; }
                     $images[] = ['id' => $node->getId(), 'name' => $node->getName(),
                         'path' => '/' . ltrim($relative, '/'), 'type' => 'image',
                         'mtime' => $mtime, 'size' => $bytes];
