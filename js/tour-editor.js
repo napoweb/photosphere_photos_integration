@@ -1223,6 +1223,7 @@
     pickerDebounce=setTimeout(reapplyPicker,350);
   });
   searchInput.addEventListener('keydown',event=>{
+    if (event.key === 'Tab') searchEditing = false;
     if(event.key==='Enter' && !event.isComposing){
       event.preventDefault();
       clearTimeout(pickerDebounce);
