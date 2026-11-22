@@ -495,8 +495,7 @@
   root.querySelectorAll('[data-pin-color]').forEach(button=>button.addEventListener('click',()=>{byId('ppi-design-pin-color').value=button.dataset.pinColor;refreshDesignPreviews();}));
   ['ppi-design-start','ppi-design-style','ppi-design-size'].forEach(id=>byId(id).addEventListener(id==='ppi-design-size'?'input':'change',refreshDesignPreviews));
   byId('ppi-design-yaw').addEventListener('input',()=>{byId('ppi-design-yaw-value').textContent=byId('ppi-design-yaw').value+'°';});
-  // Lightweight description formatting. The field stores plain text / a tiny Markdown subset.
-  // No HTML from users is ever injected into the editor or public tour.
+  // Lightweight description formatting: store only text, not user HTML.
   const descriptionField=byId('ppi-design-intro');
   const insertDescriptionText=(replacement)=>{
     const start=descriptionField.selectionStart,end=descriptionField.selectionEnd;
@@ -514,16 +513,16 @@
     const action=button.dataset.introInsert;
     let insertion='';
     if(action==='bullet'||action==='number'){
-      const lines=(selected||'Listenpunkt').split('\\n');
-      insertion=lines.map((line,i)=>(action==='bullet'?'- ':(i+1)+'. ')+line).join('\\n');
-      if(start>0&&descriptionField.value[start-1]!=='\\n')insertion='\\n'+insertion;
+      const lines=(selected||'Listenpunkt').split('\n');
+      insertion=lines.map((line,i)=>(action==='bullet'?'- ':(i+1)+'. ')+line).join('\n');
+      if(start>0&&descriptionField.value[start-1]!=='\n')insertion='\n'+insertion;
     }else if(action==='link'){
       const address=window.prompt('HTTPS- oder HTTP-Link eingeben:','https://');
       if(address===null)return;
       let url;
       try{url=new URL(address);if(!['http:','https:'].includes(url.protocol))throw Error('scheme');}
       catch(_e){notify('Bitte eine gültige HTTPS- oder HTTP-Adresse eingeben.',true);return;}
-      insertion='['+(selected||'Linktext').replace(/[\\[\\]\\n]/g,'')+']('+url.href+')';
+      insertion='['+(selected||'Linktext').replace(/[\[\]\r\n]/g,'')+']('+url.href+')';
     }
     if(insertion)insertDescriptionText(insertion);
   }));
