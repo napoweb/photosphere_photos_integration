@@ -131,6 +131,8 @@
   #ppi-public-landing-description a{color:#bde3ff;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
   #ppi-public-landing-description a:hover,#ppi-public-landing-description a:focus-visible{color:#fff}
   #ppi-public-landing-description svg.ppi-inline-quad{display:inline-block;width:1.65em;height:1em;vertical-align:-.16em;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+  #ppi-public-landing-description svg.ppi-inline-drone{display:inline-block;width:1.65em;height:1em;vertical-align:-.16em;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+  #ppi-public-landing-description .ppi-inline-360{display:inline-flex;align-items:center;justify-content:center;vertical-align:.04em;border:1.5px solid currentColor;border-radius:50%;font:bold .72em/1 system-ui,sans-serif;width:2.5em;height:1.4em;white-space:nowrap;letter-spacing:-.03em}
   #ppi-public-message{position:absolute;z-index:6;left:50%;top:50%;transform:translate(-50%,-50%);max-width:90vw;pointer-events:none;padding:11px 16px;color:#fff;background:rgba(7,20,31,.7);border-radius:10px;text-align:center;backdrop-filter:blur(8px)}
   #ppi-public-message:empty{display:none!important}
   #ppi-public-guide{position:absolute;z-index:7;right:16px;top:76px;max-width:min(400px,85vw);background:rgba(7,20,31,.78);backdrop-filter:blur(10px);border:1px solid #ffffff56;border-radius:12px;color:#fff;padding:14px;line-height:1.65}
