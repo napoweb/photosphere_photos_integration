@@ -331,14 +331,14 @@ final class TourController extends Controller {
      * Batch file/tag relations; resolve each unique tag once with current-user
      * visibility enforcement. Only the matching file IDs leave this method.
      */
-    private function matchingTaggedFileIds(array $listing, string $query, int $limit): array {
+    private function matchingTaggedFileIds(array $listing, string $query, int $limit, bool $skipFilenameMatches): array {
         if ($query === '' || $limit <= 0) { return []; }
         $ids = [];
         foreach ($listing as $node) {
             if (count($ids) >= $limit) { break; }
             if (!$node instanceof File || !$node->isReadable()
                 || $node->getMimetype() !== 'image/jpeg'
-                || mb_stripos($node->getName(), $query) !== false) { continue; }
+                || ($skipFilenameMatches && mb_stripos($node->getName(), $query) !== false)) { continue; }
             $ids[] = (string)$node->getId();
         }
         if (!$ids) { return []; }
@@ -443,7 +443,7 @@ final class TourController extends Controller {
                 try { $listing = $current->getDirectoryListing(); }
                 catch (\Throwable $e) { continue; }
                 $tagMatches = $searchMode === 'name' ? []
-                    : $this->matchingTaggedFileIds($listing, $query, max(0, 3000 - $scanned));
+                    : $this->matchingTaggedFileIds($listing, $query, max(0, 3000 - $scanned), $searchMode === 'both');
                 foreach ($listing as $node) {
                     if (++$scanned > 3000) { $truncated = true; break 2; }
                     if (!$node->isReadable()) { continue; }
@@ -508,7 +508,8 @@ final class TourController extends Controller {
             }
             return new JSONResponse(['success' => true, 'path' => $path, 'folderId' => $folder->getId(),
                 'parentId' => $parentId, 'isRoot' => $folder->getId() === $home->getId(), 'items' => $items, 'truncated' => $truncated,
-                'panoramaOnly' => $panoramaOnly, 'nonPanoramasExcluded' => $nonPanoramasExcluded]);
+                'panoramaOnly' => $panoramaOnly, 'nonPanoramasExcluded' => $nonPanoramasExcluded,
+                'searchMode' => $searchMode]);
         } catch (\Throwable $e) {
             // Fail closed: never expose server paths or exception details to the browser.
             return $this->error('Ordner konnten nicht geladen werden. Bitte Nextcloud-Protokoll prüfen.', 500);
