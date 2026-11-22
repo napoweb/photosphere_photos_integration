@@ -500,7 +500,7 @@
   const insertDescriptionText=(replacement)=>{
     const start=descriptionField.selectionStart,end=descriptionField.selectionEnd;
     if(descriptionField.value.length-(end-start)+replacement.length>descriptionField.maxLength){
-      notify('Beschreibung: maximal 1.200 Zeichen.',true);return false;
+      notify('Beschreibung: maximal 300 Zeichen.',true);return false;
     }
     descriptionField.setRangeText(replacement,start,end,'end');
     descriptionField.focus({preventScroll:true});
@@ -568,7 +568,7 @@
     const insertion='\n'+match[1]+nextMarker+match[4];
     if(value.length+insertion.length>descriptionField.maxLength){
       event.preventDefault();
-      notify('Beschreibung: maximal 1.200 Zeichen.',true);
+      notify('Beschreibung: maximal 300 Zeichen.',true);
       return;
     }
     event.preventDefault();
@@ -589,6 +589,7 @@
   byId('ppi-design-save').addEventListener('click',async()=>{
     if(!active)return;
     try{
+      if(descriptionField.value.trim().length>300){notify('Beschreibung: maximal 300 Zeichen. Bitte vorhandenen Text kürzen.',true);descriptionField.focus();return;}
       if(!byId('ppi-tour-name').value.trim()){notify('Bitte einen Namen für die Tour eingeben.',true);byId('ppi-tour-name').focus();return;}
       const display={startImageId:Number(byId('ppi-design-start').value)||0,startYaw:Number(byId('ppi-design-yaw').value),
         introText:byId('ppi-design-intro').value.trim(),socialPreviewMode:byId('ppi-design-social').value,hotspotSize:sizeSteps[Number(byId('ppi-design-size').value)]||'medium',hotspotStyle:byId('ppi-design-style').value,svgPinColor:byId('ppi-design-pin-color').value,showTitle:byId('ppi-design-title').checked,
