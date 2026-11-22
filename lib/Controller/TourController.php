@@ -35,6 +35,8 @@ use OCP\AppFramework\Http\RedirectResponse;
 use OCP\Files\IRootFolder;
 use OCP\Files\Folder;
 use OCP\Files\File;
+use OCP\SystemTag\ISystemTagObjectMapper;
+use OCP\SystemTag\ISystemTagManager;
 use OCP\Util;
 
 /** User-owned tour drafts with isolated, revocable token access for shared tours. */
@@ -50,6 +52,8 @@ final class TourController extends Controller {
         IRequest $request,
         private IConfig $config,
         private ICacheFactory $cacheFactory,
+        private ISystemTagObjectMapper $tagMapper,
+        private ISystemTagManager $tagManager,
         private IAppData $appData,
         private IUserSession $userSession,
         private IRootFolder $rootFolder,
@@ -321,6 +325,66 @@ final class TourController extends Controller {
         }
     }
 
+
+    /**
+     * Match Nextcloud system tags for visible, readable JPEG files in this folder.
+     * Batch file/tag relations; resolve each unique tag once with current-user
+     * visibility enforcement. Only the matching file IDs leave this method.
+     */
+    private function matchingTaggedFileIds(array $listing, string $query, int $limit, bool $skipFilenameMatches): array {
+        if ($query === '' || $limit <= 0) { return []; }
+        $ids = [];
+        foreach ($listing as $node) {
+            if (count($ids) >= $limit) { break; }
+            if (!$node instanceof File || !$node->isReadable()
+                || $node->getMimetype() !== 'image/jpeg'
+                || ($skipFilenameMatches && mb_stripos($node->getName(), $query) !== false)) { continue; }
+            $ids[] = (string)$node->getId();
+        }
+        if (!$ids) { return []; }
+
+        $mappings = [];
+        try {
+            foreach (array_chunk($ids, 200) as $chunk) {
+                foreach ($this->tagMapper->getTagIdsForObjects($chunk, 'files') as $fileId => $tagIds) {
+                    $mappings[(string)$fileId] = $tagIds;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Tag subsystem problems must not break the original filename search.
+            return [];
+        }
+
+        $user = $this->userSession->getUser();
+        if ($user === null) { return []; }
+        $tagsMatchingQuery = [];
+        $matches = [];
+        foreach ($mappings as $fileId => $tagIds) {
+            foreach ($tagIds as $tagId) {
+                $tagId = (string)$tagId;
+                if (!array_key_exists($tagId, $tagsMatchingQuery)) {
+                    $tagsMatchingQuery[$tagId] = false;
+                    try {
+                        $tags = $this->tagManager->getTagsByIds([$tagId], $user);
+                        foreach ($tags as $tag) {
+                            if (mb_stripos($tag->getName(), $query) !== false) {
+                                $tagsMatchingQuery[$tagId] = true;
+                                break;
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        // Missing or invisible tags are never returned as matches.
+                    }
+                }
+                if ($tagsMatchingQuery[$tagId]) {
+                    $matches[$fileId] = true;
+                    break;
+                }
+            }
+        }
+        return $matches;
+    }
+
     /** List a folder by Nextcloud file ID, using the current user's own mount tree. */
     #[NoAdminRequired]
     #[NoCSRFRequired]
@@ -345,6 +409,8 @@ final class TourController extends Controller {
             }
 
             $query = trim((string)$this->request->getParam('q', ''));
+            $searchMode = (string)$this->request->getParam('searchMode', 'both');
+            if (!in_array($searchMode, ['both', 'name', 'tags'], true)) { $searchMode = 'both'; }
             if (mb_strlen($query) > 120) { return $this->error('Suchbegriff ist zu lang'); }
             $recursive = (string)$this->request->getParam('recursive', '0') === '1';
             $sort = (string)$this->request->getParam('sort', 'name_asc');
@@ -376,6 +442,8 @@ final class TourController extends Controller {
                 $visited[$currentId] = true;
                 try { $listing = $current->getDirectoryListing(); }
                 catch (\Throwable $e) { continue; }
+                $tagMatches = $searchMode === 'name' ? []
+                    : $this->matchingTaggedFileIds($listing, $query, max(0, 3000 - $scanned), $searchMode === 'both');
                 foreach ($listing as $node) {
                     if (++$scanned > 3000) { $truncated = true; break 2; }
                     if (!$node->isReadable()) { continue; }
@@ -392,7 +460,11 @@ final class TourController extends Controller {
                         if ($recursive) { $pending[] = $node; }
                         continue;
                     }
-                    if ($query !== '' && mb_stripos($node->getName(), $query) === false) { continue; }
+                    if ($query !== '') {
+                        $nameMatch = $searchMode !== 'tags' && mb_stripos($node->getName(), $query) !== false;
+                        $tagMatch = $searchMode !== 'name' && isset($tagMatches[(string)$node->getId()]);
+                        if (!$nameMatch && !$tagMatch) { continue; }
+                    }
                     $mtime = (int)$node->getMtime();
                     $bytes = (int)$node->getSize();
                     if ($threshold > 0 && $mtime < $threshold) { continue; }
@@ -436,7 +508,8 @@ final class TourController extends Controller {
             }
             return new JSONResponse(['success' => true, 'path' => $path, 'folderId' => $folder->getId(),
                 'parentId' => $parentId, 'isRoot' => $folder->getId() === $home->getId(), 'items' => $items, 'truncated' => $truncated,
-                'panoramaOnly' => $panoramaOnly, 'nonPanoramasExcluded' => $nonPanoramasExcluded]);
+                'panoramaOnly' => $panoramaOnly, 'nonPanoramasExcluded' => $nonPanoramasExcluded,
+                'searchMode' => $searchMode]);
         } catch (\Throwable $e) {
             // Fail closed: never expose server paths or exception details to the browser.
             return $this->error('Ordner konnten nicht geladen werden. Bitte Nextcloud-Protokoll prüfen.', 500);

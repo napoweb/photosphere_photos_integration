@@ -1,8 +1,10 @@
-/* 360°-Tour Draft Editor 0.4.39 — private Nextcloud user area. */
+/* Photo Sphere Tour Editor – tag-search test build 0.4.62.95. */
 (() => {
   'use strict';
   const root = document.getElementById('ppi-tours-app');
   if (!root) return;
+  // Diagnostic marker: verifies that the browser loaded the matching script.
+  root.dataset.tourEditorBuild = '0.4.62.95-tagsearch';
   const byId = id => document.getElementById(id);
   const api = root.dataset.apiUrl;
   const filesApi = root.dataset.filesUrl;
@@ -365,7 +367,7 @@
       requestAnimationFrame(() => {
         if (!dialog.hidden) {
           dialog.scrollIntoView({block: 'start', behavior: 'instant'});
-          dialog.focus({preventScroll: true});
+          // Do not focus the picker wrapper: this can steal focus from the search input.
         }
       });
     }
@@ -1097,8 +1099,9 @@
   let pickerFolderId = 0; // Target folder, including when its request is still loading.
   let pickerData = null;
   let pickerDebounce = null;
+  let searchEditing = false;
   const pickerValue = id => byId(id).value;
-  function renderPickerItems() {
+  function renderPickerItems(updateFolders=true) {
     if (!pickerData) return;
     const folderBox=byId('ppi-picker-folders'), imageBox=byId('ppi-picker-images');
     const folders=pickerData.items.filter(item=>item.type==='folder');
@@ -1106,13 +1109,17 @@
     const status=pickerValue('ppi-picker-status');
     const images=pickerData.items.filter(item=>item.type==='image' &&
       (status==='all'||(status==='used')===tourIds.has(Number(item.id))));
-    folderBox.replaceChildren();imageBox.replaceChildren();
-    if(!folders.length)folderBox.append(node('p','Keine Unterordner.'));
-    for(const item of folders){
-      const button=node('button',undefined,'ppi-folder-tile');button.type='button';
-      button.append(node('span','📁','ppi-folder-icon'),node('span',item.name));
-      button.addEventListener('click',()=>browse(item.id));folderBox.append(button);
+    // On live search, update only #ppi-picker-images. Never reconstruct folder navigation.
+    if (updateFolders) {
+      folderBox.replaceChildren();
+      if(!folders.length)folderBox.append(node('p','Keine Unterordner.'));
+      for(const item of folders){
+        const button=node('button',undefined,'ppi-folder-tile');button.type='button';
+        button.append(node('span','📁','ppi-folder-icon'),node('span',item.name));
+        button.addEventListener('click',()=>browse(item.id));folderBox.append(button);
+      }
     }
+    imageBox.replaceChildren();
     if(!images.length)imageBox.append(node('p','Keine passenden JPEG-Bilder gefunden.'));
     for(const item of images){
       const card=node('label',undefined,'ppi-pano-card');
@@ -1143,22 +1150,34 @@
   }
   // The server applies the filename/date/size search before limiting results;
   // browsing into other folders keeps selected images from previous folders.
-  async function browse(folderId=0, resetSelection=false) {
+  async function browse(folderId=0, resetSelection=false, resultsOnly=false) {
     const serial=++browseSerial;
     pickerFolderId=Number(folderId)||0;
     if(resetSelection){selectedFiles.clear();updateSelection();}
-    show('picker');
+    // Only focus/scroll the picker when opening it, never on live filter refresh.
+    if (byId('ppi-tour-picker').hidden) show('picker');
     const folderBox=byId('ppi-picker-folders'), imageBox=byId('ppi-picker-images');
-    pickerData=null;
-    folderBox.replaceChildren(node('p','Ordner werden geladen …'));
-    imageBox.replaceChildren();
-    byId('ppi-picker-results').textContent='';
-    byId('ppi-picker-limit-warning').hidden=true;
-    byId('ppi-picker-path').textContent='Ordner laden …';
-    byId('ppi-picker-up').disabled=true;
+    // Keep existing folders, previews and search controls stable while loading.
+    // This also avoids scroll/layout jumps when the user executes a search.
+    const currentSearch = byId('ppi-picker-search');
+    const restoreSearchFocus = searchEditing || document.activeElement === currentSearch;
+    const caretStart = currentSearch.selectionStart;
+    const caretEnd = currentSearch.selectionEnd;
+    const retainSearchFocus = () => {
+      if (!restoreSearchFocus || !currentSearch.isConnected || byId('ppi-tour-picker').hidden) return;
+      // Restore focus even if a framework/background update has stolen it.
+      if (document.activeElement !== currentSearch) currentSearch.focus({preventScroll:true});
+      try { currentSearch.setSelectionRange(caretStart, caretEnd); } catch (_e) {}
+    };
+    if (!resultsOnly && !pickerData) {
+      folderBox.replaceChildren(node('p','Ordner werden geladen …'));
+      imageBox.replaceChildren();
+    }
+    byId('ppi-picker-results').setAttribute('aria-busy','true');
     const params=new URLSearchParams({
       folderId:String(folderId),
       q:pickerValue('ppi-picker-search').trim(),
+      searchMode:pickerValue('ppi-picker-search-mode'),
       sort:pickerValue('ppi-picker-sort'),
       date:pickerValue('ppi-picker-date'),
       size:pickerValue('ppi-picker-size'),
@@ -1168,28 +1187,86 @@
     try {
       const data=await request(filesApi+(filesApi.includes('?')?'&':'?')+params.toString());
       if(serial!==browseSerial)return;
+      // A stale PHP controller can silently ignore the search-mode parameter.
+      // Never display misleading filename hits as tag-only results.
+      if (data.searchMode !== params.get('searchMode')) {
+        throw new Error('Suchmodus wurde vom Server nicht bestätigt. Bitte den aktualisierten PHP-Controller der Test-App installieren.');
+      }
       browsing={id:Number(data.folderId),path:data.path,parentId:Number(data.parentId||0)};
       pickerFolderId=browsing.id;
       pickerData=data;
-      byId('ppi-picker-path').textContent=data.path;
-      byId('ppi-picker-up').disabled=Boolean(data.isRoot);
-      renderPickerItems();
+      if (!resultsOnly) {
+        byId('ppi-picker-path').textContent=data.path;
+        byId('ppi-picker-up').disabled=Boolean(data.isRoot);
+      }
+      renderPickerItems(!resultsOnly);
+      byId('ppi-picker-results').removeAttribute('aria-busy');
+      retainSearchFocus();
+      requestAnimationFrame(retainSearchFocus);
     }catch(e){
       if(serial!==browseSerial)return;
-      folderBox.replaceChildren(node('p','Ordner konnten nicht geladen werden: '+e.message));
-      byId('ppi-picker-path').textContent='Fehler beim Laden';
+      byId('ppi-picker-results').removeAttribute('aria-busy');
+      if (!resultsOnly && !pickerData) folderBox.replaceChildren(node('p','Ordner konnten nicht geladen werden: '+e.message));
+      retainSearchFocus();
+      requestAnimationFrame(retainSearchFocus);
       notify('Panorama-Auswahl: '+e.message,true);
     }
   }
   function reapplyPicker() {
-    if(!byId('ppi-tour-picker').hidden)browse(pickerFolderId);
+    if(!byId('ppi-tour-picker').hidden)browse(pickerFolderId,false,true);
   }
-  byId('ppi-picker-search').addEventListener('input',()=>{
+  // Debounced live search. Only the image-results container is rerendered.
+  // Invalidate any previous in-flight result as soon as the text changes.
+  const searchInput=byId('ppi-picker-search');
+  const searchMode=byId('ppi-picker-search-mode');
+  const searchModeLabel=byId('ppi-picker-search-mode-label');
+  const syncSearchModeLabel=()=>{
+    searchModeLabel.textContent=searchMode.options[searchMode.selectedIndex]?.textContent || 'Suchbereich';
+  };
+  searchMode.addEventListener('change',()=>{
+    syncSearchModeLabel();
+    ++browseSerial;
     clearTimeout(pickerDebounce);
-    pickerDebounce=setTimeout(reapplyPicker,300);
+    reapplyPicker();
+  });
+  syncSearchModeLabel();
+  // Genuine user interaction elsewhere ends the typing session.
+  root.addEventListener('pointerdown', event => {
+    if (!searchInput.contains(event.target)) searchEditing = false;
+  }, true);
+  document.addEventListener('pointerdown', event => {
+    if (!searchInput.contains(event.target)) searchEditing = false;
+  }, true);
+  searchInput.addEventListener('focus',()=>{searchEditing=true;});
+  // Some Nextcloud themes/browser integrations blur inputs when the results settle.
+  // Keep a real typing session focused unless the user intentionally moves elsewhere.
+  searchInput.addEventListener('blur',()=>{
+    if (!searchEditing) return;
+    requestAnimationFrame(()=>{
+      const current=document.activeElement;
+      if (searchEditing && searchInput.isConnected && !byId('ppi-tour-picker').hidden
+          && (!current || current === document.body || current === document.documentElement)) {
+        searchInput.focus({preventScroll:true});
+      }
+    });
+  });
+  searchInput.addEventListener('input',()=>{
+    searchEditing = true;
+    ++browseSerial;
+    clearTimeout(pickerDebounce);
+    pickerDebounce=setTimeout(reapplyPicker,350);
+  });
+  searchInput.addEventListener('keydown',event=>{
+    if (event.key === 'Tab') searchEditing = false;
+    if(event.key==='Enter' && !event.isComposing){
+      event.preventDefault();
+      clearTimeout(pickerDebounce);
+      reapplyPicker();
+    }
   });
   for(const id of ['ppi-picker-sort','ppi-picker-date','ppi-picker-size','ppi-picker-recursive']){
     byId(id).addEventListener('change',()=>{
+      ++browseSerial;
       clearTimeout(pickerDebounce);
       reapplyPicker();
     });
@@ -1214,11 +1291,13 @@
   });
   byId('ppi-picker-reset-filters').addEventListener('click',()=>{
     clearTimeout(pickerDebounce);
-    for(const id of ['ppi-picker-search','ppi-picker-sort','ppi-picker-status','ppi-picker-date','ppi-picker-size']){
+    for(const id of ['ppi-picker-search','ppi-picker-search-mode','ppi-picker-sort','ppi-picker-status','ppi-picker-date','ppi-picker-size']){
       byId(id).selectedIndex!==undefined && byId(id).tagName==='SELECT'
         ? byId(id).selectedIndex=0 : byId(id).value='';
     }
     byId('ppi-picker-recursive').checked=false;
+    syncSearchModeLabel();
+    ++browseSerial;
     reapplyPicker();
   });
   byId('ppi-tour-create').addEventListener('click',async()=>{

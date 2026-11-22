@@ -29,7 +29,7 @@ Photo Sphere erkennt geeignete 360°-JPEG-Panoramen und bietet einen manuell ges
 
 **Hinweise:** Für automatische Bildoptimierung muss PHP Imagick verfügbar sein und Nextcloud-Hintergrundjobs müssen laufen. Ohne vorbereitete App-Vorschaubilder bleibt ein Fallback auf reguläre Vorschaubilder oder Originale. Wasserzeichen verhindern nicht den Zugriff auf berechtigt herunterladbare Originaldateien.
   ]]></description>
-  <version>0.4.62.92</version>
+  <version>0.4.62.95</version>
   <licence>AGPL-3.0-or-later</licence>
   <author>Stefan Sührer</author>
   <namespace>PhotospherePhotosIntegration</namespace>
