@@ -87,6 +87,32 @@
     #ppi-watermark-admin .ppi-picker-path { overflow-wrap:anywhere; padding:9px; border-radius:7px; background:var(--color-background-dark,rgba(127,127,127,.08)); }
     #ppi-watermark-admin .ppi-help summary { cursor:pointer; font-weight:700; }
     #ppi-watermark-admin .ppi-help li { margin:6px 0; }
+    /* Cache help: native, keyboard-accessible disclosure with no JavaScript dependency. */
+    #ppi-watermark-admin .ppi-cache-help{margin-top:18px;border:1px solid var(--color-border,#ccc);border-radius:10px;background:var(--color-background-hover,rgba(128,128,128,.07));padding:0}
+    #ppi-watermark-admin .ppi-cache-help>summary{display:list-item;cursor:pointer;font-weight:700;padding:13px 16px;list-style-position:inside}
+    #ppi-watermark-admin .ppi-cache-help[open]>summary{border-bottom:1px solid var(--color-border,#ccc)}
+    #ppi-watermark-admin .ppi-cache-help-body{padding:14px 16px 16px;font-size:14px;line-height:1.65}
+    #ppi-watermark-admin .ppi-cache-help-body h4{font-size:15px;font-weight:700;margin:12px 0 6px}
+    #ppi-watermark-admin .ppi-cache-help-body h4:first-child{margin-top:0}
+    #ppi-watermark-admin .ppi-cache-help-body p{margin:5px 0 10px}
+    #ppi-watermark-admin .ppi-cache-help-body ul,#ppi-watermark-admin .ppi-cache-help-body ol{padding-left:24px;margin:6px 0 12px}
+    #ppi-watermark-admin .ppi-cache-help-body li{margin:4px 0}
+    #ppi-watermark-admin .ppi-cache-help-body code{overflow-wrap:anywhere;font-size:12px;background:var(--color-main-background,#fff);padding:2px 5px;border-radius:4px}
+    #ppi-watermark-admin .ppi-cache-help-body a{overflow-wrap:anywhere}
+
+    /* Visual overview of the separate 360° tour cache; remains readable on mobile. */
+    #ppi-watermark-admin .ppi-cache-flow{max-width:640px;width:100%;box-sizing:border-box;margin:12px auto 20px;padding:13px;display:flex;flex-direction:column;align-items:center;gap:4px;border:1px solid var(--color-border,#ccc);border-radius:12px;background:var(--color-main-background,#fff);color:var(--color-main-text,#222)}
+    #ppi-watermark-admin .ppi-cache-flow-step{width:100%;min-width:0;box-sizing:border-box;padding:13px 15px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;border:1px solid var(--color-border,#ccc);border-radius:10px;background:var(--color-background-hover,rgba(127,127,127,.07));overflow-wrap:anywhere}
+    #ppi-watermark-admin .ppi-cache-flow-step strong{font-size:14px}
+    #ppi-watermark-admin .ppi-cache-flow-step small{font-size:12px;line-height:1.45;color:var(--color-text-maxcontrast,#666)}
+    #ppi-watermark-admin .ppi-cache-flow-icon{font-size:22px;line-height:1.25}
+    #ppi-watermark-admin .ppi-cache-flow-arrow{font-size:24px;line-height:1.05;color:var(--color-text-maxcontrast,#666);padding:1px 0}
+    #ppi-watermark-admin .ppi-cache-flow-profiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%}
+    #ppi-watermark-admin .ppi-cache-flow-profiles .ppi-cache-flow-step{height:100%}
+    #ppi-watermark-admin .ppi-cache-flow-number{font-size:clamp(14px,2.4vw,19px);font-weight:700;line-height:1.3;white-space:nowrap}
+    @media(max-width:540px){#ppi-watermark-admin .ppi-cache-flow{padding:9px}#ppi-watermark-admin .ppi-cache-flow-profiles{grid-template-columns:1fr;gap:7px}#ppi-watermark-admin .ppi-cache-flow-step{padding:10px 8px}#ppi-watermark-admin .ppi-cache-flow-number{font-size:17px}}
+
+
   </style>
 
   <section class="ppi-settings-group" aria-labelledby="ppi-watermark-group-title">
@@ -327,6 +353,73 @@
       </div>
     </div>
     <p class="ppi-note">Eine laufende Bildberechnung wird bei einer Pause nicht abgebrochen. Neue Berechnungen werden nicht eingeplant; bereits wartende Jobs überspringen die Verarbeitung. Der normale Nextcloud-Cron bleibt aktiv. Falls alle Verarbeitungsplätze belegt sind, wird der Job übersprungen und kann später erneut eingeplant werden.</p>
+    <details class="ppi-cache-help" id="ppi-panorama-cache-help">
+      <summary>Hilfe &amp; Diagnose – Panorama-Cache und Vorschaugrößen</summary>
+      <div class="ppi-cache-help-body">
+        <h4>Was macht der Panorama-Cache?</h4>
+        <p>Diese Optimierung gilt nur für gespeicherte 360°-Touren. Beim Speichern oder bei einem berechtigten Touraufruf werden passende Panoramen über Nextcloud-Hintergrundjobs zur Verarbeitung vorgemerkt. Mit PHP Imagick erzeugt die App verkleinerte JPEG-Dateien aus dem Original und speichert sie getrennt im privaten AppData-Cache. Die Original-JPEGs und Nextclouds allgemeiner Vorschau-Cache werden nicht verändert.</p>
+        <h4 id="ppi-cache-flow-heading">So funktioniert unsere Lösung</h4>
+        <figure class="ppi-cache-flow" aria-labelledby="ppi-cache-flow-heading">
+          <div class="ppi-cache-flow-step">
+            <span class="ppi-cache-flow-icon" aria-hidden="true">🖼️</span>
+            <strong>Original-Panorama</strong>
+            <small>Beispiel: 15.520 × 7.760 Pixel · rund 120 Megapixel</small>
+          </div>
+          <div class="ppi-cache-flow-arrow" aria-hidden="true">↓</div>
+          <div class="ppi-cache-flow-step">
+            <strong>Photo Sphere + PHP Imagick</strong>
+            <small>Liest die Originaldatei direkt und erzeugt optimierte JPEGs – ohne Nextclouds Vorschau-API.</small>
+          </div>
+          <div class="ppi-cache-flow-arrow" aria-hidden="true">↓</div>
+          <div class="ppi-cache-flow-profiles">
+            <div class="ppi-cache-flow-step">
+              <span class="ppi-cache-flow-icon" aria-hidden="true">🖥️</span>
+              <strong>Desktop</strong>
+              <span class="ppi-cache-flow-number">8192 × 4096</span>
+              <small>max. 33,6 MP · JPEG</small>
+            </div>
+            <div class="ppi-cache-flow-step">
+              <span class="ppi-cache-flow-icon" aria-hidden="true">📱</span>
+              <strong>Mobil</strong>
+              <span class="ppi-cache-flow-number">4096 × 2048</span>
+              <small>max. 8,4 MP · JPEG</small>
+            </div>
+          </div>
+          <div class="ppi-cache-flow-arrow" aria-hidden="true">↓</div>
+          <div class="ppi-cache-flow-step">
+            <span class="ppi-cache-flow-icon" aria-hidden="true">🗂️</span>
+            <strong>Eigener Photo-Sphere-Cache</strong>
+            <small>Privates Nextcloud-AppData-Verzeichnis · bereits erzeugte Profile werden dem berechtigten Tour-Viewer bereitgestellt.</small>
+          </div>
+        </figure>
+        <p>Anders als bei Nextclouds normaler Vorschaugenerierung greift <code>preview_max_x</code> bei dieser direkten Imagick-Verarbeitung nicht. Die App ändert diese Nextcloud-Grenze nicht. Fehlt ein optimiertes Profil, versucht der Viewer zuerst die Nextcloud-Vorschau und kann anschließend auf das berechtigte Original zurückfallen.</p>
+        <h4>Welche zwei Bildgrößen entstehen?</h4>
+        <ul>
+          <li><strong>Desktop:</strong> bis zu <strong>8192 × 4096 Pixel</strong> (2:1, JPEG-Qualität 85).</li>
+          <li><strong>Mobil:</strong> bis zu <strong>4096 × 2048 Pixel</strong> (2:1, JPEG-Qualität 85).</li>
+        </ul>
+        <p>Kleinere Originale werden nicht hochskaliert. Der App-Cache verarbeitet nur geeignete 2:1-JPEG-Panoramen bis maximal 150 MB Quelldateigröße. Die Berechnung benötigt Imagick, freie Serverressourcen und laufende Cron-Hintergrundjobs. Vorhandene App-Vorschaubilder können auch nach einer Pause weiterverwendet werden. Das Vorschauraster in der Tour-Bildauswahl verwendet dagegen Nextclouds normale kleine Vorschauen (320 × 180 Pixel), <em>nicht</em> diese Tour-JPEGs.</p>
+        <h4>Warum kann Nextcloud selbst kleinere oder keine Vorschauen liefern?</h4>
+        <p>Die integrierte Nextcloud-Vorschaugenerierung hat eigene Sicherheits- und Ressourcengrenzen. Die dokumentierten Standardwerte sind <code>preview_max_x = 4096</code> und <code>preview_max_y = 4096</code> Pixel; für den GD-Bildgenerator gilt standardmäßig <code>preview_max_filesize_image = 50</code> MB. Darüber hinaus können <code>preview_max_memory</code>, PHP/ImageMagick-Ressourcen, unterstützte Vorschaugeneratoren und bereits vorhandene kleinere Cachevarianten eine Rolle spielen. Das sind <strong>Nextcloud-Standardwerte</strong>, nicht automatisch die Einstellungen dieses Servers.</p>
+        <h4>Was kann ich bei zu kleinen oder fehlenden Panoramen tun?</h4>
+        <ol>
+          <li>Zuerst prüfen, ob die <strong>automatische Panorama-Optimierung</strong> aktiviert ist und die App-Cache-Statistik beide Profile anzeigt. Bei großen Panoramen zunächst nur <strong>einen</strong> Worker einstellen.</li>
+          <li>Nextcloud-Cron, PHP Imagick, freien Arbeitsspeicher und Nextcloud-Protokolle kontrollieren. Solange die App-Vorschau nicht fertig ist, versucht die Tour zunächst die normale Nextcloud-Vorschau und bei Fehlern das berechtigte Original.</li>
+          <li>Falls die <em>allgemeinen</em> Nextcloud-Vorschauen verbessert werden sollen, die aktuellen Werte für <code>preview_max_x</code>, <code>preview_max_y</code>, <code>preview_max_filesize_image</code> und <code>preview_max_memory</code> mit <code>occ config:system:get</code> prüfen. Erst nach Sicherung und Ressourcenprüfung vorsichtig anpassen; größere Werte können CPU, RAM und Speicherbedarf deutlich erhöhen.</li>
+          <li>Bestehende kleine Vorschauen werden durch geänderte Limits nicht zwingend sofort neu erzeugt. Den globalen Nextcloud-Vorschau-Cache <strong>nicht pauschal löschen</strong>; für Touren zuerst die App-eigenen optimierten Profile verwenden. Einzelheiten stehen in der <a href="https://docs.nextcloud.com/server/stable/admin_manual/configuration_files/previews_configuration.html" target="_blank" rel="noopener noreferrer">offiziellen Nextcloud-Vorschau-Dokumentation</a>.</li>
+        </ol>
+        <h4>Diagnose-Links (nur für Administratoren)</h4>
+        <p>Die beiden folgenden Endpunkte gehören zur App, liefern lesbare JSON-Daten und ändern nichts:</p>
+        <ul>
+          <li><a href="<?php p($_['panoramaCacheStatusUrl']); ?>" target="_blank" rel="noopener noreferrer">Cache-Status anzeigen</a> – meldet, ob die Optimierung aktiviert ist und wie viele Worker eingestellt sind.</li>
+          <li><a href="<?php p($_['panoramaCacheStatisticsUrl']); ?>" target="_blank" rel="noopener noreferrer">Cache-Statistik (JSON) anzeigen</a> – zeigt den App-Cache-Status und die geschützte Zuordnung zu Touren.</li>
+        </ul>
+        <h4>Diagnose direkt im öffentlichen Tour-Viewer</h4>
+        <p>Hänge an <strong>deinen eigenen öffentlichen Tour-Link</strong> den Parameter <code>?ppi_preload_debug=1</code> an (wenn die URL bereits ein <code>?</code> enthält, <code>&amp;ppi_preload_debug=1</code>). Dann zeigt der Browser ein lokales Diagnosefenster zu Ladezeiten, Auflösungswahl, Vorladen und Texturverarbeitung. Das hilft bei langsamer Darstellung. Die Tour-Freigabeberechtigungen gelten unverändert; bitte öffentliche Freigabelinks und vertrauliche Diagnosedaten nicht ungeschützt weitergeben.</p>
+        <p>Hinweis: Die JSON-Links oben sind Admin-Diagnosefunktionen, während <code>ppi_preload_debug=1</code> eine browserseitige Viewer-Diagnose ist. Es werden dadurch keine globalen Nextcloud-Vorschauen gelöscht oder Grenzen geändert.</p>
+      </div>
+    </details>
+
   </div>
   </section>
   <section class="ppi-settings-group" aria-labelledby="ppi-navigation-group-title">
