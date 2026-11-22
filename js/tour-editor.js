@@ -526,6 +526,55 @@
     }
     if(insertion)insertDescriptionText(insertion);
   }));
+  // Markdown list editing in the plain-text intro textarea.
+  // Keep the stored description as text; the public renderer handles safe markup.
+  descriptionField.addEventListener('keydown',event=>{
+    if(event.defaultPrevented||event.isComposing||event.keyCode===229||
+       (event.key!=='Enter'&&event.key!=='Backspace')||
+       event.ctrlKey||event.metaKey||event.altKey||
+       (event.key==='Enter'&&event.shiftKey))return;
+    const start=descriptionField.selectionStart;
+    if(start!==descriptionField.selectionEnd)return;
+    const value=descriptionField.value;
+    const lineStart=value.lastIndexOf('\n',start-1)+1;
+    const lineEnd=value.indexOf('\n',start);
+    const end=lineEnd<0?value.length:lineEnd;
+    const before=value.slice(lineStart,start);
+    const after=value.slice(start,end);
+    const match=/^([ \t]*)([-*]|(\d+)[.)])([ \t]+)(.*)$/.exec(value.slice(lineStart,end));
+    if(!match)return;
+    const prefix=match[1]+match[2]+match[4];
+    const empty=match[5].trim()==='';
+    if(event.key==='Backspace'){
+      // Empty list marker -> plain paragraph, preserving the line.
+      if(empty&&start===lineStart+prefix.length){
+        event.preventDefault();
+        descriptionField.setRangeText('',lineStart,lineStart+prefix.length,'start');
+        descriptionField.dispatchEvent(new Event('input',{bubbles:true}));
+      }
+      return;
+    }
+    if(start<lineStart+prefix.length)return;
+    if(empty){
+      // Enter on an empty list item leaves the list instead of adding another marker.
+      event.preventDefault();
+      descriptionField.setRangeText('',lineStart,lineStart+prefix.length,'start');
+      descriptionField.dispatchEvent(new Event('input',{bubbles:true}));
+      return;
+    }
+    const nextMarker=match[3]!==undefined
+      ?String(Number(match[3])+1)+match[2].slice(-1)
+      :match[2];
+    const insertion='\n'+match[1]+nextMarker+match[4];
+    if(value.length+insertion.length>descriptionField.maxLength){
+      event.preventDefault();
+      notify('Beschreibung: maximal 1.200 Zeichen.',true);
+      return;
+    }
+    event.preventDefault();
+    descriptionField.setRangeText(insertion,start,start,'end');
+    descriptionField.dispatchEvent(new Event('input',{bubbles:true}));
+  });
   const iconToggle=byId('ppi-intro-icons-toggle'),iconPanel=byId('ppi-intro-icons');
   iconToggle.addEventListener('click',()=>{
     iconPanel.hidden=!iconPanel.hidden;
