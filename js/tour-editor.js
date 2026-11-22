@@ -1,10 +1,10 @@
-/* Photo Sphere Tour Editor – tag-search test build 0.4.62.95. */
+/* Photo Sphere Tour Editor – tour picker default-status build 0.4.62.96. */
 (() => {
   'use strict';
   const root = document.getElementById('ppi-tours-app');
   if (!root) return;
   // Diagnostic marker: verifies that the browser loaded the matching script.
-  root.dataset.tourEditorBuild = '0.4.62.95-tagsearch';
+  root.dataset.tourEditorBuild = '0.4.62.96-tagsearch';
   const byId = id => document.getElementById(id);
   const api = root.dataset.apiUrl;
   const filesApi = root.dataset.filesUrl;
@@ -1305,7 +1305,13 @@
     try{const data=await request(api,'POST',{name});await refresh();openTour(data.tour);notify('Tour erstellt. Jetzt Panoramen hinzufügen.');}catch(e){notify(e.message,true);}
   });
   byId('ppi-tour-back').addEventListener('click',()=>{active=null;show('overview');refresh().catch(e=>notify(e.message,true));});
-  byId('ppi-tour-add').addEventListener('click',event=>{ event.preventDefault(); browse(0, true); });
+  byId('ppi-tour-add').addEventListener('click',event=>{
+    event.preventDefault();
+    // Always start a new picker session with panoramas not yet in this tour.
+    // Keep any user-selected tour status while navigating within the open picker.
+    byId('ppi-picker-status').value='unused';
+    browse(0, true);
+  });
   byId('ppi-picker-close').addEventListener('click',()=>{++browseSerial;show('editor');});
   byId('ppi-picker-up').addEventListener('click',()=>browse(browsing?.parentId || 0));
   byId('ppi-tour-link').addEventListener('click',()=>{
