@@ -645,7 +645,7 @@
       byId('ppi-public-landing-title').textContent=tour.name;
       byId('ppi-public-landing-info').textContent=`${tour.images.length} ${tour.images.length===1?'Panorama':'Panoramen'} entdecken`;
       const intro=byId('ppi-public-landing-description');
-      intro.textContent=String(display.introText||'').trim();intro.hidden=!intro.textContent;
+      renderLandingDescription(intro,String(display.introText||'').trim());
       // The landing cover must not download a full-size 360 JPEG in parallel.
       cover.src=thumbnailUrl(startImage.id) + (thumbnailUrl(startImage.id).includes('?') ? '&' : '?') + 'cover=1';
       cover.onerror=()=>{cover.hidden=true;};
@@ -663,6 +663,70 @@
       },{once:true});
     }catch(error){status.textContent=error.message;landing.hidden=true;viewer.hidden=false;}
   }
+
+  // Public tour descriptions accept only a tiny Markdown subset.
+  // Build links, lists and the quad icon with DOM APIs; never inject user HTML.
+  function renderLandingDescription(container,source){
+    container.replaceChildren();container.hidden=!source;
+    if(!source)return;
+    const svgNS='http://www.w3.org/2000/svg';
+    const quadIcon=()=>{
+      const svg=document.createElementNS(svgNS,'svg');
+      svg.setAttribute('viewBox','0 0 64 36');
+      svg.setAttribute('role','img');svg.setAttribute('aria-label','Quad / ATV');
+      svg.classList.add('ppi-inline-quad');
+      const add=(name,attrs)=>{
+        const el=document.createElementNS(svgNS,name);
+        for(const [key,value] of Object.entries(attrs))el.setAttribute(key,String(value));
+        svg.append(el);
+      };
+      add('circle',{cx:14,cy:27,r:7});
+      add('circle',{cx:50,cy:27,r:7});
+      add('path',{d:'M12 19 L20 18 L26 14 L41 14 L48 18 L55 19 M20 18 L25 26 L42 26 L48 18 M27 13 L30 9 L38 9 M43 14 L44 8 L50 8'});
+      return svg;
+    };
+    const appendInline=(parent,line)=>{
+      const pattern=/(\[([^\]\r\n]{1,120})\]\((https?:\/\/[^\s)]+)\)|:quad:)/gi;
+      let last=0,match;
+      while((match=pattern.exec(line))!==null){
+        parent.append(document.createTextNode(line.slice(last,match.index)));
+        if(match[0].toLowerCase()===':quad:'){
+          parent.append(quadIcon());
+        }else{
+          try{
+            const url=new URL(match[3]);
+            if(!['http:','https:'].includes(url.protocol))throw Error('invalid protocol');
+            const anchor=document.createElement('a');
+            anchor.href=url.href;anchor.textContent=match[2];
+            anchor.target='_blank';anchor.rel='noopener noreferrer nofollow';
+            parent.append(anchor);
+          }catch(_error){
+            parent.append(document.createTextNode(match[0]));
+          }
+        }
+        last=pattern.lastIndex;
+      }
+      parent.append(document.createTextNode(line.slice(last)));
+    };
+    let list=null;
+    for(const line of source.replace(/\r\n?/g,'\n').split('\n')){
+      const bullet=/^\s*[-*]\s+(.+)$/.exec(line);
+      const numbered=/^\s*\d+[.)]\s+(.+)$/.exec(line);
+      if(bullet||numbered){
+        const type=bullet?'ul':'ol';
+        if(!list||list.tagName.toLowerCase()!==type){
+          list=document.createElement(type);container.append(list);
+        }
+        const item=document.createElement('li');
+        appendInline(item,(bullet||numbered)[1]);list.append(item);
+      }else if(line.trim()){
+        list=null;
+        const para=document.createElement('p');
+        appendInline(para,line);container.append(para);
+      }else{list=null;}
+    }
+  }
+
   async function toggleFullscreen(){
     try{if(document.fullscreenElement)await document.exitFullscreen?.();
       else await root.requestFullscreen?.();}
