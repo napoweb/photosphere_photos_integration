@@ -1150,13 +1150,15 @@
     // Only focus/scroll the picker when opening it, never on live filter refresh.
     if (byId('ppi-tour-picker').hidden) show('picker');
     const folderBox=byId('ppi-picker-folders'), imageBox=byId('ppi-picker-images');
-    pickerData=null;
-    folderBox.replaceChildren(node('p','Ordner werden geladen …'));
-    imageBox.replaceChildren();
-    byId('ppi-picker-results').textContent='';
-    byId('ppi-picker-limit-warning').hidden=true;
-    byId('ppi-picker-path').textContent='Ordner laden …';
-    byId('ppi-picker-up').disabled=true;
+    // Keep existing folders, previews and search controls stable while loading.
+    // This also avoids scroll/layout jumps when the user executes a search.
+    const currentSearch = byId('ppi-picker-search');
+    const restoreSearchFocus = document.activeElement === currentSearch;
+    if (!pickerData) {
+      folderBox.replaceChildren(node('p','Ordner werden geladen …'));
+      imageBox.replaceChildren();
+    }
+    byId('ppi-picker-results').setAttribute('aria-busy','true');
     const params=new URLSearchParams({
       folderId:String(folderId),
       q:pickerValue('ppi-picker-search').trim(),
@@ -1176,19 +1178,33 @@
       byId('ppi-picker-path').textContent=data.path;
       byId('ppi-picker-up').disabled=Boolean(data.isRoot);
       renderPickerItems();
+      byId('ppi-picker-results').removeAttribute('aria-busy');
+      if (restoreSearchFocus && document.activeElement !== currentSearch) {
+        currentSearch.focus({preventScroll:true});
+      }
     }catch(e){
       if(serial!==browseSerial)return;
-      folderBox.replaceChildren(node('p','Ordner konnten nicht geladen werden: '+e.message));
-      byId('ppi-picker-path').textContent='Fehler beim Laden';
+      byId('ppi-picker-results').removeAttribute('aria-busy');
+      if (!pickerData) folderBox.replaceChildren(node('p','Ordner konnten nicht geladen werden: '+e.message));
+      if (restoreSearchFocus && document.activeElement !== currentSearch) currentSearch.focus({preventScroll:true});
       notify('Panorama-Auswahl: '+e.message,true);
     }
   }
   function reapplyPicker() {
     if(!byId('ppi-tour-picker').hidden)browse(pickerFolderId);
   }
-  byId('ppi-picker-search').addEventListener('input',()=>{
+  // Never rebuild the folder/results UI during text entry: users can type freely.
+  // Run the search explicitly via Enter or the magnifier button.
+  byId('ppi-picker-search').addEventListener('keydown',event=>{
+    if(event.key==='Enter' && !event.isComposing){
+      event.preventDefault();
+      clearTimeout(pickerDebounce);
+      reapplyPicker();
+    }
+  });
+  byId('ppi-picker-search-run').addEventListener('click',()=>{
     clearTimeout(pickerDebounce);
-    pickerDebounce=setTimeout(reapplyPicker,300);
+    reapplyPicker();
   });
   for(const id of ['ppi-picker-search-mode','ppi-picker-sort','ppi-picker-date','ppi-picker-size','ppi-picker-recursive']){
     byId(id).addEventListener('change',()=>{
