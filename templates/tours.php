@@ -74,7 +74,20 @@
         </div>
         <div class="ppi-design-group" aria-label="Öffentliche Präsentation">
           <div class="ppi-design-field"><label for="ppi-design-size">Größe des Hotspot-Designs</label><div class="ppi-design-range"><input type="range" id="ppi-design-size" min="0" max="4" step="1" value="2" aria-describedby="ppi-design-size-label"><output id="ppi-design-size-label">Mittel</output></div></div>
-          <div class="ppi-design-field ppi-design-intro"><label for="ppi-design-intro">Beschreibung auf der öffentlichen Startseite</label><textarea id="ppi-design-intro" rows="3" maxlength="600" placeholder="Optionale Begrüßung für Besucher"></textarea><p>Optional, maximal 600 Zeichen.</p></div>
+          <div class="ppi-design-field ppi-design-intro">
+            <label for="ppi-design-intro">Beschreibung auf der öffentlichen Startseite</label>
+            <div class="ppi-desc-toolbar" role="toolbar" aria-label="Beschreibung formatieren">
+              <button type="button" data-ppi-description-action="bold" title="Ausgewählten Text fett formatieren"><strong>Fett</strong></button>
+              <button type="button" data-ppi-description-action="italic" title="Ausgewählten Text kursiv formatieren"><em>Kursiv</em></button>
+              <button type="button" data-ppi-description-action="bullet" title="Aufzählung einfügen">• Liste</button>
+              <button type="button" data-ppi-description-action="number" title="Nummerierte Liste einfügen">1. Liste</button>
+              <button type="button" data-ppi-description-action="link" title="Link zum ausgewählten Text hinzufügen">Link</button>
+              <button id="ppi-desc-preview-toggle" type="button" aria-expanded="false" aria-controls="ppi-desc-preview">Vorschau</button>
+            </div>
+            <textarea id="ppi-design-intro" rows="3" maxlength="1200" placeholder="Optionale Begrüßung für Besucher" aria-describedby="ppi-desc-help"></textarea>
+            <div id="ppi-desc-preview" class="ppi-desc-preview" role="region" aria-label="Formatierte Beschreibung" hidden></div>
+            <p id="ppi-desc-help">Optional, maximal 1200 Zeichen. Aufzählungen und Links werden auf der öffentlichen Startseite formatiert angezeigt.</p>
+          </div>
         </div>
       </div>
       <div class="ppi-design-future"><strong>Für kommende Versionen vorgesehen:</strong> Automatische Drehung.</div>
@@ -725,6 +738,18 @@
  #ppi-tours-app #ppi-step-design .ppi-design-layout{grid-template-columns:minmax(0,1fr)}
  #ppi-tours-app #ppi-step-design .ppi-design-intro{flex:0 1 auto;min-height:0}
  #ppi-tours-app #ppi-step-design .ppi-design-intro textarea{flex:0 1 auto;height:auto;min-height:140px}
+ #ppi-tours-app #ppi-step-design .ppi-desc-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin:4px 0 2px}
+ #ppi-tours-app #ppi-step-design .ppi-desc-toolbar button{flex:none;min-height:29px;padding:4px 8px;font-size:12px;line-height:1.35;border:1px solid var(--color-border);border-radius:6px;background:var(--color-main-background);color:var(--color-main-text)}
+ #ppi-tours-app #ppi-step-design .ppi-desc-toolbar button:hover{background:var(--color-background-hover)}
+ #ppi-tours-app #ppi-step-design .ppi-desc-toolbar #ppi-desc-preview-toggle{margin-left:auto}
+ #ppi-tours-app #ppi-step-design .ppi-desc-toolbar #ppi-desc-preview-toggle[aria-expanded="true"]{border-color:var(--color-primary-element)}
+ #ppi-tours-app #ppi-step-design .ppi-desc-preview{max-height:200px;overflow:auto;padding:10px 12px;margin:4px 0;border:1px solid var(--color-border);border-radius:8px;background:var(--color-background-hover);font:400 13px/1.5 system-ui,sans-serif;overflow-wrap:anywhere}
+ #ppi-tours-app #ppi-step-design .ppi-desc-preview[hidden]{display:none}
+ #ppi-tours-app #ppi-step-design .ppi-desc-preview p{margin:0 0 8px}
+ #ppi-tours-app #ppi-step-design .ppi-desc-preview ul,#ppi-tours-app #ppi-step-design .ppi-desc-preview ol{list-style-position:outside;padding-left:22px;margin:4px 0 9px}
+ #ppi-tours-app #ppi-step-design .ppi-desc-preview li{display:list-item}
+ #ppi-tours-app #ppi-step-design .ppi-desc-preview a{color:var(--color-primary-element);text-decoration:underline}
+
 }
 
 
