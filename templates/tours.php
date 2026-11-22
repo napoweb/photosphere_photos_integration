@@ -82,6 +82,13 @@
               <button type="button" data-ppi-description-action="bullet" title="Aufzählung einfügen">• Liste</button>
               <button type="button" data-ppi-description-action="number" title="Nummerierte Liste einfügen">1. Liste</button>
               <button type="button" data-ppi-description-action="link" title="Link zum ausgewählten Text hinzufügen">Link</button>
+              <span class="ppi-desc-icon-picker" role="group" aria-label="Themen-Symbole einfügen">
+                <button type="button" data-ppi-description-icon="🛞" title="Symbol für Quad einfügen" aria-label="Quad-Symbol einfügen">🛞</button>
+                <button type="button" data-ppi-description-icon="🏍️" title="Symbol für ATV einfügen" aria-label="ATV-Symbol einfügen">🏍️</button>
+                <button type="button" data-ppi-description-icon="🏖️" title="Symbol für Urlaub einfügen" aria-label="Urlaubs-Symbol einfügen">🏖️</button>
+                <button type="button" data-ppi-description-icon="🚵" title="Symbol für MTB einfügen" aria-label="MTB-Symbol einfügen">🚵</button>
+                <button type="button" data-ppi-description-icon="🏠" title="Symbol für Home einfügen" aria-label="Home-Symbol einfügen">🏠</button>
+              </span>
               <button id="ppi-desc-preview-toggle" type="button" aria-expanded="false" aria-controls="ppi-desc-preview">Vorschau</button>
             </div>
             <textarea id="ppi-design-intro" rows="3" maxlength="1200" placeholder="Optionale Begrüßung für Besucher" aria-describedby="ppi-desc-help"></textarea>
@@ -744,6 +751,8 @@
  #ppi-tours-app #ppi-step-design .ppi-desc-toolbar{display:flex;align-items:center;flex-wrap:wrap;gap:5px;margin:4px 0 2px}
  #ppi-tours-app #ppi-step-design .ppi-desc-toolbar button{flex:none;min-height:29px;padding:4px 8px;font-size:12px;line-height:1.35;border:1px solid var(--color-border);border-radius:6px;background:var(--color-main-background);color:var(--color-main-text)}
  #ppi-tours-app #ppi-step-design .ppi-desc-toolbar button:hover{background:var(--color-background-hover)}
+ #ppi-tours-app #ppi-step-design .ppi-desc-icon-picker{display:inline-flex;align-items:center;gap:3px;flex-wrap:wrap;padding:0 0 0 7px;border-left:1px solid var(--color-border)}
+ #ppi-tours-app #ppi-step-design .ppi-desc-toolbar .ppi-desc-icon-picker button{min-width:29px;min-height:29px;padding:2px 4px;font-size:17px;line-height:1.2;text-align:center}
  #ppi-tours-app #ppi-step-design .ppi-desc-toolbar #ppi-desc-preview-toggle{margin-left:auto}
  #ppi-tours-app #ppi-step-design .ppi-desc-toolbar #ppi-desc-preview-toggle[aria-expanded="true"]{border-color:var(--color-primary-element)}
  #ppi-tours-app #ppi-step-design .ppi-desc-preview{max-height:200px;overflow:auto;padding:10px 12px;margin:4px 0;border:1px solid var(--color-border);border-radius:8px;background:var(--color-background-hover);font:400 13px/1.5 system-ui,sans-serif;overflow-wrap:anywhere}
