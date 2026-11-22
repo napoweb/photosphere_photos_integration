@@ -1094,6 +1094,7 @@
   }
 
   let browseSerial = 0;
+  let pickerFolderId = 0; // Target folder, including when its request is still loading.
   let pickerData = null;
   let pickerDebounce = null;
   const pickerValue = id => byId(id).value;
@@ -1132,7 +1133,7 @@
       quickView.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();previewImage(item);});
       card.append(checkbox,thumb,caption,quickView);imageBox.append(card);
     }
-    byId('ppi-picker-results').textContent=images.length+' Treffer'+(pickerData.truncated?' (begrenzt)':'');
+    byId('ppi-picker-results').textContent=images.length+' Treffer'+(pickerData.panoramaOnly?' · 360°-Filter aktiv':'')+(pickerData.truncated?' (begrenzt)':'');
     const warning=byId('ppi-picker-limit-warning');
     warning.hidden=!pickerData.truncated;
     warning.textContent=pickerData.truncated
@@ -1144,6 +1145,7 @@
   // browsing into other folders keeps selected images from previous folders.
   async function browse(folderId=0, resetSelection=false) {
     const serial=++browseSerial;
+    pickerFolderId=Number(folderId)||0;
     if(resetSelection){selectedFiles.clear();updateSelection();}
     show('picker');
     const folderBox=byId('ppi-picker-folders'), imageBox=byId('ppi-picker-images');
@@ -1167,6 +1169,7 @@
       const data=await request(filesApi+(filesApi.includes('?')?'&':'?')+params.toString());
       if(serial!==browseSerial)return;
       browsing={id:Number(data.folderId),path:data.path,parentId:Number(data.parentId||0)};
+      pickerFolderId=browsing.id;
       pickerData=data;
       byId('ppi-picker-path').textContent=data.path;
       byId('ppi-picker-up').disabled=Boolean(data.isRoot);
@@ -1179,7 +1182,7 @@
     }
   }
   function reapplyPicker() {
-    if(!byId('ppi-tour-picker').hidden)browse(browsing?.id||0);
+    if(!byId('ppi-tour-picker').hidden)browse(pickerFolderId);
   }
   byId('ppi-picker-search').addEventListener('input',()=>{
     clearTimeout(pickerDebounce);
@@ -1197,11 +1200,15 @@
     const checkbox=byId('ppi-picker-panorama-only');
     const newValue=checkbox.checked, oldValue=!newValue;
     checkbox.disabled=true;
+    // Refresh immediately, regardless of how long saving the preference takes.
+    // The browse request carries the new filter state explicitly.
+    clearTimeout(pickerDebounce);
+    reapplyPicker();
     try {
       await request(root.dataset.pickerPreferencesUrl,'POST',{panoramaOnly:newValue?'1':'0'});
-      reapplyPicker();
     } catch(e) {
       checkbox.checked=oldValue;
+      reapplyPicker();
       notify('360°-Filter konnte nicht gespeichert werden: '+e.message,true);
     } finally {checkbox.disabled=false;}
   });
