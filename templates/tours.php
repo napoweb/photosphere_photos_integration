@@ -130,8 +130,8 @@
                 <button type="button" data-intro-icon="❤️" title="Favorit" aria-label="Favorit">❤️</button>
                 <button type="button" data-intro-icon="🏡" title="Ferienhaus" aria-label="Ferienhaus">🏡</button>
               </div></div>
-            </div>            <textarea id="ppi-design-intro" rows="4" maxlength="1200" placeholder="Begrüßung, Aufzählungen, Links und Symbole"></textarea>
-            <p>Optional, maximal 1.200 Zeichen. Listen, Links und Symbole erscheinen formatiert auf der öffentlichen Startseite. Quad, Drohne und 360° erscheinen dort als eigene Vektorsymbole.</p>
+            </div>            <textarea id="ppi-design-intro" rows="4" maxlength="300" placeholder="Begrüßung, Aufzählungen, Links und Symbole"></textarea>
+            <p>Optional, maximal 300 Zeichen (einschließlich Listenzeichen, Links und Symbolcodes). Listen, Links und Symbole erscheinen formatiert auf der öffentlichen Startseite. Quad, Drohne und 360° erscheinen dort als eigene Vektorsymbole.</p>
           </div>
         </div>
       </div>
