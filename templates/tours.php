@@ -83,7 +83,7 @@
               <button type="button" id="ppi-intro-icons-toggle" aria-controls="ppi-intro-icons" aria-expanded="false" title="Symbolauswahl öffnen">▦ Symbole</button>
             </div>
             <div class="ppi-intro-icons" id="ppi-intro-icons" role="group" aria-label="Symbole einfügen" hidden>
-              <button type="button" data-intro-icon=":quad:" title="Quad / ATV">🛞 Quad/ATV</button>
+              <button type="button" data-intro-icon=":quad:" title="Quad / ATV"><svg viewBox="0 0 64 36" aria-hidden="true" focusable="false"><circle cx="14" cy="27" r="7"/><circle cx="50" cy="27" r="7"/><path d="M12 19 L20 18 L26 14 L41 14 L48 18 L55 19 M20 18 L25 26 L42 26 L48 18 M27 13 L30 9 L38 9 M43 14 L44 8 L50 8"/></svg> Quad/ATV</button>
               <button type="button" data-intro-icon="🏁" title="Offroad und Motorsport">🏁 Offroad</button>
               <button type="button" data-intro-icon="🚵" title="Mountainbike">🚵 MTB</button>
               <button type="button" data-intro-icon="🏖️" title="Urlaub">🏖️ Urlaub</button>
@@ -1224,5 +1224,6 @@
 #ppi-tours-app #ppi-step-design .ppi-intro-icons button:hover{border-color:var(--color-primary-element)}
 #ppi-tours-app #ppi-step-design .ppi-intro-icons{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px;border:1px solid var(--color-border);border-radius:9px;background:var(--color-background-hover);margin:0 0 7px}
 #ppi-tours-app #ppi-step-design .ppi-intro-icons[hidden]{display:none!important}
-#ppi-tours-app #ppi-step-design .ppi-intro-icons button{background:var(--color-main-background);font-size:13px}
+#ppi-tours-app #ppi-step-design .ppi-intro-icons button{background:var(--color-main-background);font-size:13px;display:inline-flex;align-items:center;gap:5px}
+#ppi-tours-app #ppi-step-design .ppi-intro-icons button svg{width:24px;height:18px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 </style>
