@@ -35,6 +35,8 @@ use OCP\AppFramework\Http\RedirectResponse;
 use OCP\Files\IRootFolder;
 use OCP\Files\Folder;
 use OCP\Files\File;
+use OCP\SystemTag\ISystemTagObjectMapper;
+use OCP\SystemTag\ISystemTagManager;
 use OCP\Util;
 
 /** User-owned tour drafts with isolated, revocable token access for shared tours. */
@@ -50,6 +52,8 @@ final class TourController extends Controller {
         IRequest $request,
         private IConfig $config,
         private ICacheFactory $cacheFactory,
+        private ISystemTagObjectMapper $tagMapper,
+        private ISystemTagManager $tagManager,
         private IAppData $appData,
         private IUserSession $userSession,
         private IRootFolder $rootFolder,
@@ -321,6 +325,66 @@ final class TourController extends Controller {
         }
     }
 
+
+    /**
+     * Match Nextcloud system tags for visible, readable JPEG files in this folder.
+     * Batch file/tag relations; resolve each unique tag once with current-user
+     * visibility enforcement. Only the matching file IDs leave this method.
+     */
+    private function matchingTaggedFileIds(array $listing, string $query, int $limit): array {
+        if ($query === '' || $limit <= 0) { return []; }
+        $ids = [];
+        foreach ($listing as $node) {
+            if (count($ids) >= $limit) { break; }
+            if (!$node instanceof File || !$node->isReadable()
+                || $node->getMimetype() !== 'image/jpeg'
+                || mb_stripos($node->getName(), $query) !== false) { continue; }
+            $ids[] = (string)$node->getId();
+        }
+        if (!$ids) { return []; }
+
+        $mappings = [];
+        try {
+            foreach (array_chunk($ids, 200) as $chunk) {
+                foreach ($this->tagMapper->getTagIdsForObjects($chunk, 'files') as $fileId => $tagIds) {
+                    $mappings[(string)$fileId] = $tagIds;
+                }
+            }
+        } catch (\Throwable $e) {
+            // Tag subsystem problems must not break the original filename search.
+            return [];
+        }
+
+        $user = $this->userSession->getUser();
+        if ($user === null) { return []; }
+        $tagsMatchingQuery = [];
+        $matches = [];
+        foreach ($mappings as $fileId => $tagIds) {
+            foreach ($tagIds as $tagId) {
+                $tagId = (string)$tagId;
+                if (!array_key_exists($tagId, $tagsMatchingQuery)) {
+                    $tagsMatchingQuery[$tagId] = false;
+                    try {
+                        $tags = $this->tagManager->getTagsByIds([$tagId], $user);
+                        foreach ($tags as $tag) {
+                            if (mb_stripos($tag->getName(), $query) !== false) {
+                                $tagsMatchingQuery[$tagId] = true;
+                                break;
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        // Missing or invisible tags are never returned as matches.
+                    }
+                }
+                if ($tagsMatchingQuery[$tagId]) {
+                    $matches[$fileId] = true;
+                    break;
+                }
+            }
+        }
+        return $matches;
+    }
+
     /** List a folder by Nextcloud file ID, using the current user's own mount tree. */
     #[NoAdminRequired]
     #[NoCSRFRequired]
@@ -376,6 +440,7 @@ final class TourController extends Controller {
                 $visited[$currentId] = true;
                 try { $listing = $current->getDirectoryListing(); }
                 catch (\Throwable $e) { continue; }
+                $tagMatches = $this->matchingTaggedFileIds($listing, $query, max(0, 3000 - $scanned));
                 foreach ($listing as $node) {
                     if (++$scanned > 3000) { $truncated = true; break 2; }
                     if (!$node->isReadable()) { continue; }
@@ -392,7 +457,8 @@ final class TourController extends Controller {
                         if ($recursive) { $pending[] = $node; }
                         continue;
                     }
-                    if ($query !== '' && mb_stripos($node->getName(), $query) === false) { continue; }
+                    if ($query !== '' && mb_stripos($node->getName(), $query) === false
+                        && !isset($tagMatches[(string)$node->getId()])) { continue; }
                     $mtime = (int)$node->getMtime();
                     $bytes = (int)$node->getSize();
                     if ($threshold > 0 && $mtime < $threshold) { continue; }
