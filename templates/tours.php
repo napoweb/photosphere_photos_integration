@@ -153,11 +153,11 @@
       <label>Geändert<select id="ppi-picker-date"><option value="any">Beliebiges Datum</option><option value="30d">Letzte 30 Tage</option><option value="year">Dieses Jahr</option></select></label>
       <label>Dateigröße<select id="ppi-picker-size"><option value="any">Beliebige Größe</option><option value="lt10">Unter 10 MB</option><option value="10to50">10–50 MB</option><option value="gt50">Über 50 MB</option></select></label>
       <div class="ppi-picker-filter-actions">
-        <button id="ppi-picker-reset-filters" type="button">Filter zurücksetzen</button>
         <div class="ppi-picker-switches" role="group" aria-label="Ordner- und Panorama-Anzeige">
           <label class="ppi-picker-inline"><input type="checkbox" id="ppi-picker-recursive"> Unterordner einbeziehen</label>
           <label class="ppi-picker-inline" title="Die 360°-Filtereinstellung wird dauerhaft in deinem Nextcloud-Konto gespeichert"><input id="ppi-picker-panorama-only" type="checkbox" <?php if ($_['pickerPanoramaOnly']) { print_unescaped('checked'); } ?>> Nur erkannte 360°-Panoramen anzeigen</label>
         </div>
+        <button id="ppi-picker-reset-filters" type="button">Filter zurücksetzen</button>
       </div>
     </div>
     <p id="ppi-picker-limit-warning" role="status" hidden></p>
@@ -289,7 +289,7 @@
  #ppi-tours-app .ppi-picker-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
  #ppi-tours-app .ppi-picker-inline{display:flex;align-items:center;gap:6px;font-size:13px}
  #ppi-tours-app .ppi-picker-filter-actions{display:flex;align-items:center;justify-content:space-between;gap:8px 20px;flex:1 0 100%;min-width:0;flex-wrap:wrap;margin-top:2px}
- #ppi-tours-app .ppi-picker-filter-actions .ppi-picker-switches{display:flex;align-items:center;justify-content:flex-end;flex-wrap:wrap;gap:8px 20px;margin:0 0 0 auto;padding:0;background:transparent}
+ #ppi-tours-app .ppi-picker-filter-actions .ppi-picker-switches{display:flex;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:8px 20px;margin:0;padding:0;background:transparent}
  #ppi-tours-app .ppi-picker-filter-actions .ppi-picker-switches .ppi-picker-inline{display:inline-flex;align-items:center;flex:0 0 auto;width:auto;min-width:0;gap:6px;font-size:13px;line-height:1.3;white-space:nowrap;cursor:pointer}
  #ppi-tours-app .ppi-picker-filter-actions .ppi-picker-inline input[type="checkbox"]{display:inline-block;flex:0 0 16px;width:16px!important;min-width:16px!important;max-width:16px!important;height:16px!important;min-height:16px!important;max-height:16px!important;margin:0!important;padding:0!important;box-sizing:border-box;vertical-align:middle}
  #ppi-tours-app .ppi-picker-filters{display:flex;align-items:end;flex-wrap:wrap;gap:8px;margin:4px 0 14px}
@@ -310,7 +310,7 @@
  #ppi-tours-app .ppi-picker-search-chevron::after{content:'';display:block;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor}
  #ppi-tours-app .ppi-picker-search-mode-wrap:focus-within{background:var(--color-background-hover)}
  #ppi-tours-app .ppi-picker-filters input:not([type="checkbox"]),#ppi-tours-app .ppi-picker-filters select{min-width:0;width:100%;min-height:38px;box-sizing:border-box}
- #ppi-tours-app #ppi-picker-reset-filters{min-height:38px}
+ #ppi-tours-app #ppi-picker-reset-filters{min-height:38px;margin-left:auto}
  #ppi-tours-app #ppi-picker-results{font-size:14px;font-weight:600;line-height:1.4;color:var(--color-text-maxcontrast)}
  #ppi-tours-app #ppi-picker-limit-warning{padding:8px;background:var(--color-background-hover);border-radius:6px;font-size:13px}
  @media(max-width:620px){#ppi-tours-app .ppi-picker-filters>label{flex:1 1 45%}#ppi-tours-app .ppi-picker-filters .ppi-picker-filter-search{flex-basis:100%;min-width:0}#ppi-tours-app .ppi-picker-search-control input{font-size:14px;padding:0 8px}}
