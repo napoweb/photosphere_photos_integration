@@ -340,6 +340,34 @@
           #ppi-panorama-cache-statistics .ppi-cache-stats-scroll:focus-visible {
             outline:2px solid var(--color-primary-element,#0082c9);outline-offset:2px;
           }
+          #ppi-panorama-cache-statistics .ppi-cache-stats-pager {
+            display:flex;align-items:center;justify-content:space-between;
+            gap:8px 14px;flex-wrap:wrap;margin:12px 0 6px;
+            border-top:1px solid var(--color-border,#ddd);padding-top:12px;
+          }
+          #ppi-panorama-cache-statistics .ppi-cache-stats-pager[hidden]{display:none!important}
+          #ppi-panorama-cache-statistics .ppi-cache-stats-pager-controls {
+            display:flex;align-items:center;gap:5px;flex-wrap:wrap;
+          }
+          #ppi-panorama-cache-statistics .ppi-cache-stats-pager button {
+            min-width:34px;min-height:34px;padding:5px 9px;
+            border:1px solid var(--color-border,#ddd);border-radius:6px;
+            background:var(--color-main-background,#fff);color:var(--color-main-text,#222);
+            cursor:pointer;
+          }
+          #ppi-panorama-cache-statistics .ppi-cache-stats-pager button[aria-current="page"]{
+            background:var(--color-primary-element,#0082c9);
+            border-color:var(--color-primary-element,#0082c9);color:var(--color-primary-element-text,#fff);
+            font-weight:700;
+          }
+          #ppi-panorama-cache-statistics .ppi-cache-stats-pager button:disabled{
+            opacity:.45;cursor:default;
+          }
+          #ppi-panorama-cache-statistics .ppi-cache-stats-pager button:focus-visible {
+            outline:2px solid var(--color-primary-element,#0082c9);outline-offset:2px;
+          }
+          #ppi-panorama-cache-statistics .ppi-cache-stats-pager-range{font-size:13px;color:var(--color-text-maxcontrast,#666)}
+
         </style>
         <p class="ppi-note">Die Trennlinien in der Tabellen-Kopfzeile lassen sich mit der Maus ziehen (per Tastatur mit Pfeiltasten anpassen). Bei wenig Platz kannst du die Tabelle seitlich scrollen. Vollständige Dateinamen sind über den Mauszeiger lesbar.</p>
         <div class="ppi-cache-stats-scroll" tabindex="0" role="region" aria-label="Cache-Dateitabelle horizontal scrollbar">
@@ -349,6 +377,14 @@
             <tbody id="ppi-panorama-cache-stats-rows"></tbody>
           </table>
         </div>
+        <nav id="ppi-cache-stats-pager" class="ppi-cache-stats-pager" aria-label="Seiten der Cache-Dateiliste" hidden>
+          <span id="ppi-cache-stats-pager-range" class="ppi-cache-stats-pager-range" aria-live="polite"></span>
+          <div class="ppi-cache-stats-pager-controls">
+            <button type="button" id="ppi-cache-stats-prev" aria-label="Vorherige 10 Cache-Einträge">← Zurück</button>
+            <span id="ppi-cache-stats-pages" class="ppi-cache-stats-pager-controls" aria-label="Seite wählen"></span>
+            <button type="button" id="ppi-cache-stats-next" aria-label="Nächste 10 Cache-Einträge">Weitere 10 →</button>
+          </div>
+        </nav>
         <p id="ppi-panorama-cache-stats-limit" class="ppi-note"></p>
       </div>
     </div>
@@ -399,6 +435,14 @@
           <li><strong>Mobil:</strong> bis zu <strong>4096 × 2048 Pixel</strong> (2:1, JPEG-Qualität 85).</li>
         </ul>
         <p>Kleinere Originale werden nicht hochskaliert. Der App-Cache verarbeitet nur geeignete 2:1-JPEG-Panoramen bis maximal 150 MB Quelldateigröße. Die Berechnung benötigt Imagick, freie Serverressourcen und laufende Cron-Hintergrundjobs. Vorhandene App-Vorschaubilder können auch nach einer Pause weiterverwendet werden. Das Vorschauraster in der Tour-Bildauswahl verwendet dagegen Nextclouds normale kleine Vorschauen (320 × 180 Pixel), <em>nicht</em> diese Tour-JPEGs.</p>
+        <h4>Wie funktioniert das automatische Löschen im Cache?</h4>
+        <p>Die App bereinigt ausschließlich die <strong>eigenen optimierten Tour-JPEGs</strong>. Weder Panorama-Originaldateien noch Touren oder Nextclouds allgemeine Vorschauen werden gelöscht. Es gibt zwei voneinander getrennte Bereinigungswege:</p>
+        <ol>
+          <li><strong>Veraltete Bildversionen:</strong> Wird ein noch verwendetes Panorama geändert, entstehen neue Desktop- und Mobil-Dateien. Sobald <em>beide aktuellen Profile</em> vollständig vorhanden sind und das Original weiterhin zugänglich ist, dürfen alte App-Cache-Versionen entfernt werden. Bei der benutzerbezogenen Bereinigung nach Tour-Nutzung werden höchstens 20 verschiedene Panoramen und 40 veraltete Dateien pro Auftrag bearbeitet; diese Prüfung wird pro Benutzer höchstens einmal innerhalb von 24 Stunden eingeplant.</li>
+          <li><strong>Nicht mehr verwendete Panoramen:</strong> Ein eigenständiger Nextcloud-Hintergrundjob ist auf einen Abstand von <strong>24 Stunden</strong> eingestellt. Er kontrolliert pro Lauf höchstens <strong>40 Panorama-Datei-IDs</strong> und prüft dafür die gespeicherten Touren <em>aller Benutzer</em>. Ist ein Panorama nirgendwo mehr verknüpft, wird es zunächst nur als <strong>„Für Bereinigung vorgemerkt“</strong> gekennzeichnet. Erst nach <strong>7 vollen Tagen</strong> ohne Verwendung und einer erneuten vollständigen Prüfung dürfen seine App-Cache-Dateien gelöscht werden.</li>
+        </ol>
+        <p><strong>Sicherheitsregeln:</strong> Taucht ein vorgemerktes Panorama wieder in einer Tour auf, wird die Vormerkung aufgehoben. Ändert sich sein Cache-Dateibestand, beginnt die Schutzfrist erneut. Bei fehlerhaften oder unvollständigen Prüfungen wird vorsichtshalber nichts gelöscht. Eine abgelaufene Schutzfrist bedeutet nicht, dass die Löschung genau zu diesem Zeitpunkt erfolgt: Sie geschieht erst bei einem passenden späteren Hintergrundjob.</p>
+        <p><strong>Steuerung:</strong> Die Bereinigung läuft nur bei aktivierter <em>automatischer Panorama-Optimierung</em> und funktionierendem Nextcloud-Cron. Das Pausieren stoppt neue Bereinigungsdurchläufe, löscht aber keine vorhandenen Bilder. In der Cache-Statistik zeigt <em>„Schutzfrist bis“</em> den frühestmöglichen Löschzeitpunkt an, nicht einen verbindlichen Ausführungstermin.</p>
         <h4>Warum kann Nextcloud selbst kleinere oder keine Vorschauen liefern?</h4>
         <p>Die integrierte Nextcloud-Vorschaugenerierung hat eigene Sicherheits- und Ressourcengrenzen. Die dokumentierten Standardwerte sind <code>preview_max_x = 4096</code> und <code>preview_max_y = 4096</code> Pixel; für den GD-Bildgenerator gilt standardmäßig <code>preview_max_filesize_image = 50</code> MB. Darüber hinaus können <code>preview_max_memory</code>, PHP/ImageMagick-Ressourcen, unterstützte Vorschaugeneratoren und bereits vorhandene kleinere Cachevarianten eine Rolle spielen. Das sind <strong>Nextcloud-Standardwerte</strong>, nicht automatisch die Einstellungen dieses Servers.</p>
         <h4>Was kann ich bei zu kleinen oder fehlenden Panoramen tun?</h4>
