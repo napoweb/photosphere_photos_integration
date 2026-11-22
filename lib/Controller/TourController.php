@@ -366,6 +366,7 @@ final class TourController extends Controller {
             $visited = [];
             $scanned = 0;
             $truncated = false;
+            $nonPanoramasExcluded = 0;
             // Bound recursive traversal to keep large/external mounts responsive.
             // Only list readable nodes from the signed-in user's accessible tree.
             while ($pending !== [] && $scanned < 3000 && count($images) < 1200) {
@@ -398,7 +399,10 @@ final class TourController extends Controller {
                     if ($size === 'lt10' && $bytes >= $minMb) { continue; }
                     if ($size === '10to50' && ($bytes < $minMb || $bytes > $maxMb)) { continue; }
                     if ($size === 'gt50' && $bytes <= $maxMb) { continue; }
-                    if ($panoramaOnly && !$this->isPanoramaFile($node)) { continue; }
+                    if ($panoramaOnly && !$this->isPanoramaFile($node)) {
+                        ++$nonPanoramasExcluded;
+                        continue;
+                    }
                     $images[] = ['id' => $node->getId(), 'name' => $node->getName(),
                         'path' => '/' . ltrim($relative, '/'), 'type' => 'image',
                         'mtime' => $mtime, 'size' => $bytes];
@@ -431,7 +435,8 @@ final class TourController extends Controller {
                 }
             }
             return new JSONResponse(['success' => true, 'path' => $path, 'folderId' => $folder->getId(),
-                'parentId' => $parentId, 'isRoot' => $folder->getId() === $home->getId(), 'items' => $items, 'truncated' => $truncated]);
+                'parentId' => $parentId, 'isRoot' => $folder->getId() === $home->getId(), 'items' => $items, 'truncated' => $truncated,
+                'panoramaOnly' => $panoramaOnly, 'nonPanoramasExcluded' => $nonPanoramasExcluded]);
         } catch (\Throwable $e) {
             // Fail closed: never expose server paths or exception details to the browser.
             return $this->error('Ordner konnten nicht geladen werden. Bitte Nextcloud-Protokoll prüfen.', 500);
