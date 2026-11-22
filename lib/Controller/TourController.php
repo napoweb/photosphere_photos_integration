@@ -21,6 +21,7 @@ use OCA\PhotospherePhotosIntegration\Service\PanoramaCache;
 use OCP\IPreview;
 use OCP\AppFramework\Http\Response;
 use OCP\IConfig;
+use OCP\ICacheFactory;
 use OCP\IRequest;
 use OCP\IURLGenerator;
 use OCP\IUserSession;
@@ -43,10 +44,12 @@ final class TourController extends Controller {
     private const MAX_IMAGES = 50;
     private const MAX_EXTRA_SHARES = 12;
     private const SHARE_INDEX_PREFIX = 'tourpub_';
+    private const PICKER_PANORAMA_ONLY = 'picker_panorama_only';
 
     public function __construct(
         IRequest $request,
         private IConfig $config,
+        private ICacheFactory $cacheFactory,
         private IAppData $appData,
         private IUserSession $userSession,
         private IRootFolder $rootFolder,
@@ -183,6 +186,8 @@ final class TourController extends Controller {
         Util::addScript(self::APP_ID, 'tour-editor');
         return new TemplateResponse(self::APP_ID, 'tours', [
             'apiUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.listTours'),
+            'pickerPreferencesUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.savePickerPreferences'),
+            'pickerPanoramaOnly' => ($this->userId() !== null && $this->config->getUserValue($this->userId(), self::APP_ID, self::PICKER_PANORAMA_ONLY, '0') === '1'),
             'filesUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.browse'),
             'imageUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.imageBytes'),
             'watermarkLibraryUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.watermark.tourLibrary'),
@@ -258,6 +263,64 @@ final class TourController extends Controller {
         return $this->error('Panorama nicht verfügbar oder keine Leseberechtigung', 404);
     }
 
+
+    /** Persist the panorama-only checkbox for the signed-in user across devices. */
+    #[NoAdminRequired]
+    public function savePickerPreferences(): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $raw = (string)$this->request->getParam('panoramaOnly', '');
+        if ($raw !== '0' && $raw !== '1') { return $this->error('Ungültige Filtereinstellung'); }
+        $this->config->setUserValue($uid, self::APP_ID, self::PICKER_PANORAMA_ONLY, $raw);
+        return new JSONResponse(['success' => true, 'panoramaOnly' => $raw === '1']);
+    }
+
+    /** Read only the bounded beginning of a JPEG. Do not decode large panorama image data.
+     * Strict GPano metadata detection: image ratio alone must never qualify. */
+    private function hasPanoramaXmp(File $file): bool {
+        $stream = null;
+        try {
+            $stream = $file->fopen('r');
+            if (!is_resource($stream)) { return false; }
+            // XMP normally lives in JPEG APP1 near the file header.
+            $head = '';
+            $remaining = 768 * 1024;
+            while ($remaining > 0 && !feof($stream)) {
+                $chunk = fread($stream, min(32768, $remaining));
+                if ($chunk === false || $chunk === '') { break; }
+                $head .= $chunk;
+                $remaining -= strlen($chunk);
+            }
+            // Require the Adobe XMP header as well as a recognized GPano field.
+            if (strpos($head, 'http://ns.adobe.com/xap/1.0/') === false) { return false; }
+            return (bool)preg_match(
+                '~(?:\bGPano:ProjectionType\s*=\s*["\x27]equirectangular["\x27]|<GPano:ProjectionType>\s*equirectangular\s*</GPano:ProjectionType>)~i',
+                $head
+            );
+        } catch (\Throwable $e) {
+            return false;
+        } finally {
+            if (is_resource($stream)) { fclose($stream); }
+        }
+    }
+
+    private function isPanoramaFile(File $file): bool {
+        try {
+            $cache = $this->cacheFactory->createDistributed(self::APP_ID . '_pano_xmp');
+            $key = hash('sha256', (string)$file->getId() . ':' . (string)$file->getMtime()
+                . ':' . (string)$file->getSize() . ':' . (string)$file->getEtag());
+            $cached = $cache->get($key);
+            if ($cached === 'yes') { return true; }
+            if ($cached === 'no') { return false; }
+            $recognized = $this->hasPanoramaXmp($file);
+            $cache->set($key, $recognized ? 'yes' : 'no', 30 * 86400);
+            return $recognized;
+        } catch (\Throwable $e) {
+            // A cache failure must not expose ordinary JPEGs as verified panoramas.
+            return $this->hasPanoramaXmp($file);
+        }
+    }
+
     /** List a folder by Nextcloud file ID, using the current user's own mount tree. */
     #[NoAdminRequired]
     #[NoCSRFRequired]
@@ -280,19 +343,87 @@ final class TourController extends Controller {
                 }
                 if ($folder === null) { return $this->error('Ordner nicht verfügbar oder nicht freigegeben', 404); }
             }
-            $items = [];
-            foreach ($folder->getDirectoryListing() as $node) {
-                if (!$node->isReadable()) { continue; }
-                $isFolder = $node instanceof Folder;
-                $isImage = $node instanceof File && $node->getMimetype() === 'image/jpeg';
-                if (!$isFolder && !$isImage) { continue; }
-                $relative = $home->getRelativePath($node->getPath());
-                if (!is_string($relative)) { continue; }
-                $items[] = ['id' => $node->getId(), 'name' => $node->getName(), 'path' => '/' . ltrim($relative, '/'),
-                    'type' => $isFolder ? 'folder' : 'image'];
-                if (count($items) >= 300) { break; }
+
+            $query = trim((string)$this->request->getParam('q', ''));
+            if (mb_strlen($query) > 120) { return $this->error('Suchbegriff ist zu lang'); }
+            $recursive = (string)$this->request->getParam('recursive', '0') === '1';
+            $sort = (string)$this->request->getParam('sort', 'name_asc');
+            if (!in_array($sort, ['name_asc', 'name_desc', 'newest', 'oldest', 'size_desc'], true)) {
+                $sort = 'name_asc';
             }
-            usort($items, fn($a, $b) => ($a['type'] === $b['type'] ? strnatcasecmp($a['name'], $b['name']) : ($a['type'] === 'folder' ? -1 : 1)));
+            $date = (string)$this->request->getParam('date', 'any');
+            $size = (string)$this->request->getParam('size', 'any');
+            $panoramaOnly = (string)$this->request->getParam('panoramaOnly', '0') === '1';
+            if (!in_array($date, ['any', '30d', 'year'], true)) { $date = 'any'; }
+            if (!in_array($size, ['any', 'lt10', '10to50', 'gt50'], true)) { $size = 'any'; }
+            $threshold = $date === '30d' ? time() - 30 * 86400
+                : ($date === 'year' ? strtotime(gmdate('Y') . '-01-01 00:00:00 UTC') : 0);
+            $minMb = 10 * 1024 * 1024;
+            $maxMb = 50 * 1024 * 1024;
+            $folders = [];
+            $images = [];
+            $pending = [$folder];
+            $visited = [];
+            $scanned = 0;
+            $truncated = false;
+            $nonPanoramasExcluded = 0;
+            // Bound recursive traversal to keep large/external mounts responsive.
+            // Only list readable nodes from the signed-in user's accessible tree.
+            while ($pending !== [] && $scanned < 3000 && count($images) < 1200) {
+                $current = array_shift($pending);
+                $currentId = $current->getId();
+                if (isset($visited[$currentId])) { continue; }
+                $visited[$currentId] = true;
+                try { $listing = $current->getDirectoryListing(); }
+                catch (\Throwable $e) { continue; }
+                foreach ($listing as $node) {
+                    if (++$scanned > 3000) { $truncated = true; break 2; }
+                    if (!$node->isReadable()) { continue; }
+                    $isFolder = $node instanceof Folder;
+                    $isImage = $node instanceof File && $node->getMimetype() === 'image/jpeg';
+                    if (!$isFolder && !$isImage) { continue; }
+                    $relative = $home->getRelativePath($node->getPath());
+                    if (!is_string($relative)) { continue; }
+                    if ($isFolder) {
+                        if ($currentId === $folder->getId()) {
+                            $folders[] = ['id' => $node->getId(), 'name' => $node->getName(),
+                                'path' => '/' . ltrim($relative, '/'), 'type' => 'folder'];
+                        }
+                        if ($recursive) { $pending[] = $node; }
+                        continue;
+                    }
+                    if ($query !== '' && mb_stripos($node->getName(), $query) === false) { continue; }
+                    $mtime = (int)$node->getMtime();
+                    $bytes = (int)$node->getSize();
+                    if ($threshold > 0 && $mtime < $threshold) { continue; }
+                    if ($size === 'lt10' && $bytes >= $minMb) { continue; }
+                    if ($size === '10to50' && ($bytes < $minMb || $bytes > $maxMb)) { continue; }
+                    if ($size === 'gt50' && $bytes <= $maxMb) { continue; }
+                    if ($panoramaOnly && !$this->isPanoramaFile($node)) {
+                        ++$nonPanoramasExcluded;
+                        continue;
+                    }
+                    $images[] = ['id' => $node->getId(), 'name' => $node->getName(),
+                        'path' => '/' . ltrim($relative, '/'), 'type' => 'image',
+                        'mtime' => $mtime, 'size' => $bytes];
+                    if (count($images) >= 1200) { $truncated = true; break 2; }
+                }
+                if (!$recursive) { break; }
+            }
+            if ($pending !== []) { $truncated = true; }
+            usort($folders, fn($a, $b) => strnatcasecmp($a['name'], $b['name']));
+            usort($images, static function ($a, $b) use ($sort): int {
+                $name = strnatcasecmp($a['name'], $b['name']);
+                return match ($sort) {
+                    'name_desc' => -$name,
+                    'newest' => ($b['mtime'] <=> $a['mtime']) ?: $name,
+                    'oldest' => ($a['mtime'] <=> $b['mtime']) ?: $name,
+                    'size_desc' => ($b['size'] <=> $a['size']) ?: $name,
+                    default => $name,
+                };
+            });
+            if (count($images) > 400) { $truncated = true; }
+            $items = array_merge($folders, array_slice($images, 0, 400));
             $relativeFolder = $home->getRelativePath($folder->getPath());
             $path = '/' . ltrim((string)$relativeFolder, '/');
             $parentId = 0;
@@ -304,7 +435,8 @@ final class TourController extends Controller {
                 }
             }
             return new JSONResponse(['success' => true, 'path' => $path, 'folderId' => $folder->getId(),
-                'parentId' => $parentId, 'isRoot' => $folder->getId() === $home->getId(), 'items' => $items]);
+                'parentId' => $parentId, 'isRoot' => $folder->getId() === $home->getId(), 'items' => $items, 'truncated' => $truncated,
+                'panoramaOnly' => $panoramaOnly, 'nonPanoramasExcluded' => $nonPanoramasExcluded]);
         } catch (\Throwable $e) {
             // Fail closed: never expose server paths or exception details to the browser.
             return $this->error('Ordner konnten nicht geladen werden. Bitte Nextcloud-Protokoll prüfen.', 500);
