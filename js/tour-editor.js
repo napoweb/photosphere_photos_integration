@@ -1133,7 +1133,7 @@
       quickView.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();previewImage(item);});
       card.append(checkbox,thumb,caption,quickView);imageBox.append(card);
     }
-    byId('ppi-picker-results').textContent=images.length+' Treffer'+(pickerData.panoramaOnly?' · 360°-Filter aktiv':'')+(pickerData.truncated?' (begrenzt)':'');
+    byId('ppi-picker-results').textContent=images.length+' Treffer'+(pickerData.panoramaOnly?' · 360°-Filter aktiv · '+Number(pickerData.nonPanoramasExcluded||0)+' normale JPEGs ausgeblendet':'')+(pickerData.truncated?' (begrenzt)':'');
     const warning=byId('ppi-picker-limit-warning');
     warning.hidden=!pickerData.truncated;
     warning.textContent=pickerData.truncated
