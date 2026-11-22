@@ -4,6 +4,7 @@
 <div id="ppi-tours-app"
      data-api-url="<?php p($_['apiUrl']); ?>"
      data-files-url="<?php p($_['filesUrl']); ?>"
+     data-picker-tags-url="<?php p($_['pickerTagsUrl']); ?>"
      data-picker-preferences-url="<?php p($_['pickerPreferencesUrl']); ?>"
      data-picker-panorama-only="<?php p($_['pickerPanoramaOnly'] ? '1' : '0'); ?>"
      data-image-url="<?php p($_['imageUrl']); ?>"
@@ -74,7 +75,65 @@
         </div>
         <div class="ppi-design-group" aria-label="Öffentliche Präsentation">
           <div class="ppi-design-field"><label for="ppi-design-size">Größe des Hotspot-Designs</label><div class="ppi-design-range"><input type="range" id="ppi-design-size" min="0" max="4" step="1" value="2" aria-describedby="ppi-design-size-label"><output id="ppi-design-size-label">Mittel</output></div></div>
-          <div class="ppi-design-field ppi-design-intro"><label for="ppi-design-intro">Beschreibung auf der öffentlichen Startseite</label><textarea id="ppi-design-intro" rows="3" maxlength="600" placeholder="Optionale Begrüßung für Besucher"></textarea><p>Optional, maximal 600 Zeichen.</p></div>
+          <div class="ppi-design-field ppi-design-intro">
+            <label for="ppi-design-intro">Beschreibung auf der öffentlichen Startseite</label>
+            <div class="ppi-intro-toolbar" role="toolbar" aria-label="Beschreibung formatieren">
+              <button type="button" data-intro-insert="bullet" title="Aufzählung einfügen">• Aufzählung</button>
+              <button type="button" data-intro-insert="number" title="Nummerierung einfügen">1. Nummerierung</button>
+              <button type="button" data-intro-insert="link" title="Sicheren Internetlink einfügen">🔗 Link</button>
+              <button type="button" id="ppi-intro-icons-toggle" aria-controls="ppi-intro-icons" aria-expanded="false" title="Symbolauswahl öffnen">▦ Symbole</button>
+            </div>
+            <div class="ppi-intro-icons" id="ppi-intro-icons" role="group" aria-label="Symbole für die Tourbeschreibung einfügen" hidden>
+              <div class="ppi-intro-icon-group"><strong>Quad, MTB & Outdoor</strong><div class="ppi-intro-icon-grid">
+                <button type="button" data-intro-icon=":quad:" title="Quad / ATV" aria-label="Quad / ATV"><svg viewBox="0 0 64 36" aria-hidden="true" focusable="false"><circle cx="14" cy="27" r="7"/><circle cx="50" cy="27" r="7"/><path d="M12 19 L20 18 L26 14 L41 14 L48 18 L55 19 M20 18 L25 26 L42 26 L48 18 M27 13 L30 9 L38 9 M43 14 L44 8 L50 8"/></svg></button>
+                <button type="button" data-intro-icon="🏁" title="Offroad" aria-label="Offroad">🏁</button>
+                <button type="button" data-intro-icon="🚵" title="MTB" aria-label="MTB">🚵</button>
+                <button type="button" data-intro-icon="🚴" title="Radtour" aria-label="Radtour">🚴</button>
+                <button type="button" data-intro-icon="🚲" title="Fahrrad" aria-label="Fahrrad">🚲</button>
+                <button type="button" data-intro-icon="🛞" title="Reifen" aria-label="Reifen">🛞</button>
+                <button type="button" data-intro-icon="⛰️" title="Berge" aria-label="Berge">⛰️</button>
+                <button type="button" data-intro-icon="🥾" title="Wandern" aria-label="Wandern">🥾</button>
+                <button type="button" data-intro-icon="🌲" title="Wald" aria-label="Wald">🌲</button>
+                <button type="button" data-intro-icon="🧭" title="Kompass" aria-label="Kompass">🧭</button>
+                <button type="button" data-intro-icon="🏕️" title="Camping" aria-label="Camping">🏕️</button>
+              </div></div>
+              <div class="ppi-intro-icon-group"><strong>Foto, Video & 360°</strong><div class="ppi-intro-icon-grid">
+                <button type="button" data-intro-icon=":360:" title="360°-Panorama" aria-label="360°-Panorama"><span class="ppi-intro-360-badge">360°</span></button>
+                <button type="button" data-intro-icon=":drone:" title="Kameradrohne" aria-label="Kameradrohne"><svg viewBox="0 0 64 36" aria-hidden="true" focusable="false"><circle cx="12" cy="11" r="6"/><circle cx="52" cy="11" r="6"/><path d="M18 13 L27 19 L37 19 L46 13 M18 11 H26 M38 11 H46 M27 19 H37 L40 25 H24 Z"/><rect x="28" y="24" width="8" height="7" rx="2"/></svg></button>
+                <button type="button" data-intro-icon="📷" title="Fotokamera" aria-label="Fotokamera">📷</button>
+                <button type="button" data-intro-icon="📸" title="Fotoaufnahme" aria-label="Fotoaufnahme">📸</button>
+                <button type="button" data-intro-icon="🎥" title="Film-Kamera" aria-label="Film-Kamera">🎥</button>
+                <button type="button" data-intro-icon="📹" title="Videokamera" aria-label="Videokamera">📹</button>
+                <button type="button" data-intro-icon="🎬" title="Film" aria-label="Film">🎬</button>
+                <button type="button" data-intro-icon="🎞️" title="Filmrolle" aria-label="Filmrolle">🎞️</button>
+                <button type="button" data-intro-icon="🖼️" title="Galerie" aria-label="Galerie">🖼️</button>
+                <button type="button" data-intro-icon="🤳" title="Selfie" aria-label="Selfie">🤳</button>
+                <button type="button" data-intro-icon="🌄" title="Panorama" aria-label="Panorama">🌄</button>
+                <button type="button" data-intro-icon="🏞️" title="Landschaft" aria-label="Landschaft">🏞️</button>
+                <button type="button" data-intro-icon="🔍" title="Zoom" aria-label="Zoom">🔍</button>
+                <button type="button" data-intro-icon="🎦" title="Video" aria-label="Video">🎦</button>
+                <button type="button" data-intro-icon="📱" title="Handyfoto" aria-label="Handyfoto">📱</button>
+                <button type="button" data-intro-icon="👁️" title="Ansicht" aria-label="Ansicht">👁️</button>
+                <button type="button" data-intro-icon="✨" title="Besonderes Motiv" aria-label="Besonderes Motiv">✨</button>
+                <button type="button" data-intro-icon="🌐" title="Rundumblick" aria-label="Rundumblick">🌐</button>
+              </div></div>
+              <div class="ppi-intro-icon-group"><strong>Urlaub & Orte</strong><div class="ppi-intro-icon-grid">
+                <button type="button" data-intro-icon="🏖️" title="Urlaub" aria-label="Urlaub">🏖️</button>
+                <button type="button" data-intro-icon="✈️" title="Flugreise" aria-label="Flugreise">✈️</button>
+                <button type="button" data-intro-icon="🧳" title="Reise" aria-label="Reise">🧳</button>
+                <button type="button" data-intro-icon="🏠" title="Home" aria-label="Home">🏠</button>
+                <button type="button" data-intro-icon="📍" title="Standort" aria-label="Standort">📍</button>
+                <button type="button" data-intro-icon="🗺️" title="Karte" aria-label="Karte">🗺️</button>
+                <button type="button" data-intro-icon="🌍" title="Welt" aria-label="Welt">🌍</button>
+                <button type="button" data-intro-icon="☀️" title="Sonne" aria-label="Sonne">☀️</button>
+                <button type="button" data-intro-icon="🌅" title="Sonnenuntergang" aria-label="Sonnenuntergang">🌅</button>
+                <button type="button" data-intro-icon="⭐" title="Highlight" aria-label="Highlight">⭐</button>
+                <button type="button" data-intro-icon="❤️" title="Favorit" aria-label="Favorit">❤️</button>
+                <button type="button" data-intro-icon="🏡" title="Ferienhaus" aria-label="Ferienhaus">🏡</button>
+              </div></div>
+            </div>            <textarea id="ppi-design-intro" rows="4" maxlength="300" placeholder="Begrüßung, Aufzählungen, Links und Symbole"></textarea>
+            <p>Optional, maximal 300 Zeichen (einschließlich Listenzeichen, Links und Symbolcodes). Listen, Links und Symbole erscheinen formatiert auf der öffentlichen Startseite. Quad, Drohne und 360° erscheinen dort als eigene Vektorsymbole.</p>
+          </div>
         </div>
       </div>
       <div class="ppi-design-future"><strong>Für kommende Versionen vorgesehen:</strong> Automatische Drehung.</div>
@@ -147,11 +206,11 @@
     <div id="ppi-picker-folders" class="ppi-picker-folder-grid"></div>
     <div class="ppi-picker-section-title"><h3 class="ppi-picker-heading">Panorama-Vorschaubilder</h3><span id="ppi-picker-results" aria-live="polite"></span></div>
     <div class="ppi-picker-filters" role="search" aria-label="Panorama-Suche und Filter">
-      <div class="ppi-picker-filter-search ppi-picker-search-combined"><div class="ppi-picker-search-labels"><label for="ppi-picker-search">Suche</label><label for="ppi-picker-search-mode" id="ppi-picker-search-mode-label">Dateiname + Tags</label></div><div class="ppi-picker-search-control"><input id="ppi-picker-search" type="search" autocomplete="off" placeholder="Suchbegriff eingeben …" aria-label="Suchbegriff"><div class="ppi-picker-search-mode-wrap"><select id="ppi-picker-search-mode" aria-label="Suchbereich wählen" title="Suchbereich wählen"><option value="both">Dateiname + Tags</option><option value="name">Dateiname</option><option value="tags">Tags</option></select><span class="ppi-picker-search-chevron" aria-hidden="true">⌄</span></div></div></div>
+      <div class="ppi-picker-filter-search ppi-picker-search-combined"><div class="ppi-picker-search-labels"><label for="ppi-picker-search">Suche</label><label for="ppi-picker-search-mode" id="ppi-picker-search-mode-label">Dateiname</label></div><div class="ppi-picker-search-control"><input id="ppi-picker-search" type="search" autocomplete="off" placeholder="Suchbegriff eingeben …" aria-label="Suchbegriff"><div id="ppi-picker-tag-wrap" class="ppi-picker-tag-wrap" hidden><select id="ppi-picker-tag" aria-label="Nextcloud-Tag auswählen" title="Vorhandenen Nextcloud-Tag auswählen"><option value="">Alle Tags</option></select></div><div class="ppi-picker-search-mode-wrap"><select id="ppi-picker-search-mode" aria-label="Suchbereich wählen" title="Suchbereich wählen"><option value="name">Dateiname</option><option value="tags">Tags</option></select><span class="ppi-picker-search-chevron" aria-hidden="true">⌄</span></div></div></div>
       <label>Sortieren<select id="ppi-picker-sort"><option value="name_asc">Name A–Z</option><option value="name_desc">Name Z–A</option><option value="newest">Neueste zuerst</option><option value="oldest">Älteste zuerst</option><option value="size_desc">Größte zuerst</option></select></label>
       <label>Tourstatus<select id="ppi-picker-status"><option value="unused" selected>Noch nicht in dieser Tour</option><option value="all">Alle Panoramen</option><option value="used">Bereits in dieser Tour</option></select></label>
       <label>Geändert<select id="ppi-picker-date"><option value="any">Beliebiges Datum</option><option value="30d">Letzte 30 Tage</option><option value="year">Dieses Jahr</option></select></label>
-      <label>Dateigröße<select id="ppi-picker-size"><option value="any">Beliebige Größe</option><option value="lt10">Unter 10 MB</option><option value="10to50">10–50 MB</option><option value="gt50">Über 50 MB</option></select></label>
+      <label>Dateigröße<select id="ppi-picker-size"><option value="any">Beliebige Größe</option><option value="lt20">&lt; 20 MB</option><option value="gt20">Über 20 MB</option><option value="gt30">Über 30 MB</option><option value="gt40">Über 40 MB</option><option value="gt50">Über 50 MB</option></select></label>
       <div class="ppi-picker-filter-actions">
         <div class="ppi-picker-switches" role="group" aria-label="Ordner- und Panorama-Anzeige">
           <label class="ppi-picker-inline"><input type="checkbox" id="ppi-picker-recursive"> Unterordner einbeziehen</label>
@@ -295,16 +354,22 @@
  #ppi-tours-app .ppi-picker-filters{display:flex;align-items:end;flex-wrap:wrap;gap:8px;margin:4px 0 14px}
  #ppi-tours-app .ppi-picker-filters>label{display:flex;flex:1 1 135px;min-width:120px;flex-direction:column;gap:4px;font-size:12px;line-height:16px}
  #ppi-tours-app .ppi-picker-filters .ppi-picker-filter-search{flex:2 1 300px;min-width:220px;width:auto}
- #ppi-tours-app .ppi-picker-search-combined{display:flex;flex-direction:column;gap:4px;margin-bottom:4px;align-self:flex-end}
+ #ppi-tours-app .ppi-picker-search-combined{display:flex;flex-direction:column;gap:4px;margin-bottom:4px;align-self:auto}
  #ppi-tours-app .ppi-picker-search-labels{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:8px;min-height:16px;height:16px;box-sizing:border-box}
  #ppi-tours-app .ppi-picker-filters .ppi-picker-search-labels>label{display:block;flex:none;min-width:0;width:auto;margin:0;padding:0;font-size:12px;line-height:16px;white-space:nowrap}
- #ppi-tours-app #ppi-picker-search-mode-label{font-size:11px;color:var(--color-text-maxcontrast);max-width:165px;overflow:hidden;text-overflow:ellipsis;text-align:right;cursor:pointer}
- #ppi-tours-app .ppi-picker-search-control{display:flex;align-items:stretch;min-width:0;width:100%;height:38px;min-height:38px;max-height:38px;box-sizing:border-box;border:1px solid color-mix(in srgb, var(--color-main-text) 55%, var(--color-main-background));border-radius:7px;overflow:hidden;background:var(--color-main-background)}
- #ppi-tours-app .ppi-picker-filters .ppi-picker-search-control input{flex:1 1 auto;min-width:0;width:0;height:36px!important;min-height:36px!important;max-height:36px!important;box-sizing:border-box;margin:0!important;border:0!important;border-radius:0!important;background:transparent;box-shadow:none!important;font-size:14px;line-height:36px;padding:0 10px!important;appearance:none}
- #ppi-tours-app .ppi-picker-search-control input:focus{outline:0;box-shadow:none}
- #ppi-tours-app .ppi-picker-search-control:focus-within{outline:2px solid var(--color-primary-element);outline-offset:1px}
- #ppi-tours-app .ppi-picker-search-control:hover{border-color:color-mix(in srgb, var(--color-main-text) 75%, var(--color-main-background))}
- #ppi-tours-app .ppi-picker-search-mode-wrap{position:relative;flex:0 0 36px;width:36px;border-left:1px solid color-mix(in srgb, var(--color-main-text) 28%, var(--color-main-background));background:var(--color-main-background)}
+ #ppi-tours-app #ppi-picker-search-mode-label{font-size:11px;color:#7D7D7D;max-width:165px;overflow:hidden;text-overflow:ellipsis;text-align:right;cursor:pointer}
+ #ppi-tours-app .ppi-picker-search-control{display:flex;align-items:stretch;min-width:0;width:100%;height:38px;min-height:38px;max-height:38px;box-sizing:border-box;border:2px solid #7D7D7D;border-radius:10px;overflow:hidden;background:var(--color-main-background);outline:none;box-shadow:none}
+ #ppi-tours-app .ppi-picker-filters #ppi-picker-search{flex:1 1 auto;min-width:0;width:0;height:100%!important;min-height:0!important;max-height:none!important;box-sizing:border-box;margin:0!important;border:0!important;border-radius:0!important;background:transparent!important;outline:none!important;box-shadow:none!important;font-size:14px;line-height:normal;padding:0 10px!important;appearance:none!important;-webkit-appearance:none!important}
+ #ppi-tours-app .ppi-picker-search-control #ppi-picker-search:focus,#ppi-tours-app .ppi-picker-search-control #ppi-picker-search:focus-visible{outline:none!important;box-shadow:none!important;border:0!important}
+  /* On hover or keyboard focus use the active color; keep it when a tag remains selected. */
+ #ppi-tours-app .ppi-picker-search-control:hover,#ppi-tours-app .ppi-picker-search-control:focus-within,#ppi-tours-app .ppi-picker-search-control.ppi-has-selected-tag{border-color:#222222;outline:none;box-shadow:none}
+ #ppi-tours-app .ppi-picker-search-combined:hover #ppi-picker-search-mode-label,#ppi-tours-app .ppi-picker-search-combined:focus-within #ppi-picker-search-mode-label,#ppi-tours-app .ppi-picker-search-combined.ppi-has-selected-tag #ppi-picker-search-mode-label{color:#222222}
+ #ppi-tours-app .ppi-picker-tag-wrap{display:flex;align-items:stretch;flex:0 1 43%;min-width:105px;max-width:43%;border-left:1px solid #7D7D7D}
+ #ppi-tours-app .ppi-picker-tag-wrap[hidden]{display:none!important}
+ #ppi-tours-app .ppi-picker-filters #ppi-picker-tag{display:block;height:100%!important;min-height:0!important;max-height:100%!important;width:100%;margin:0!important;border:0!important;border-radius:0!important;background:var(--color-main-background);outline:none!important;box-shadow:none!important;font-size:12px;line-height:normal;padding:0 6px!important;color:#7D7D7D;cursor:pointer}
+  #ppi-tours-app .ppi-picker-tag-wrap:hover #ppi-picker-tag,#ppi-tours-app .ppi-picker-tag-wrap:focus-within #ppi-picker-tag,#ppi-tours-app .ppi-picker-tag-wrap.ppi-tag-active #ppi-picker-tag{color:#222222!important}
+ #ppi-tours-app .ppi-picker-filters #ppi-picker-tag:focus,#ppi-tours-app .ppi-picker-filters #ppi-picker-tag:focus-visible{outline:none!important;box-shadow:none!important}
+ #ppi-tours-app .ppi-picker-search-mode-wrap{position:relative;flex:0 0 36px;width:36px;border-left:1px solid var(--color-border);background:var(--color-main-background)}
  #ppi-tours-app .ppi-picker-filters .ppi-picker-search-mode-wrap select{position:absolute;inset:0;width:100%;height:100%;min-height:0;opacity:0;cursor:pointer;z-index:2}
  #ppi-tours-app .ppi-picker-search-chevron{display:flex;align-items:center;justify-content:center;position:absolute;inset:0;pointer-events:none;font-size:0;color:var(--color-main-text)}
  #ppi-tours-app .ppi-picker-search-chevron::after{content:'';display:block;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor}
@@ -314,7 +379,7 @@
  #ppi-tours-app #ppi-picker-results{font-size:14px;font-weight:600;line-height:1.4;color:var(--color-text-maxcontrast)}
  #ppi-tours-app #ppi-picker-limit-warning{padding:8px;background:var(--color-background-hover);border-radius:6px;font-size:13px}
  @media(max-width:620px){#ppi-tours-app .ppi-picker-filters>label{flex:1 1 45%}#ppi-tours-app .ppi-picker-filters .ppi-picker-filter-search{flex-basis:100%;min-width:0}#ppi-tours-app .ppi-picker-search-control input{font-size:14px;padding:0 8px}}
- @media(max-width:620px){#ppi-tours-app .ppi-picker-search-combined{margin-bottom:0}#ppi-tours-app .ppi-picker-filter-actions .ppi-picker-switches{gap:8px 12px}#ppi-tours-app .ppi-picker-filter-actions .ppi-picker-switches .ppi-picker-inline{white-space:normal}}
+ @media(max-width:620px){#ppi-tours-app .ppi-picker-search-combined{margin-bottom:0}#ppi-tours-app .ppi-picker-tag-wrap{flex-basis:42%;max-width:42%;min-width:100px}#ppi-tours-app .ppi-picker-filter-actions .ppi-picker-switches{gap:8px 12px}#ppi-tours-app .ppi-picker-filter-actions .ppi-picker-switches .ppi-picker-inline{white-space:normal}}
  #ppi-tours-app .ppi-picker-folder-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px}
  #ppi-tours-app .ppi-folder-tile{border:1px solid var(--color-border);background:var(--color-background-hover);border-radius:10px;padding:12px;text-align:left;display:flex;align-items:center;gap:10px;min-height:55px;overflow-wrap:anywhere}
  #ppi-tours-app .ppi-folder-icon{font-size:23px}
@@ -357,6 +422,21 @@
  .ppi-preview-link-controls[hidden]{display:none!important}
  .ppi-preview-link-controls select{min-width:180px;max-width:100%;flex:1}
  @media(max-width:620px){.ppi-tour-preview{padding:2px}.ppi-preview-window{width:100%;height:calc(100dvh - 4px);max-height:calc(100dvh - 4px);padding:8px;border-radius:7px}.ppi-preview-sphere{height:clamp(240px,58dvh,620px)}.ppi-preview-action-footer{max-height:none}.ppi-preview-link-controls{gap:8px}.ppi-preview-link-controls button{min-height:38px}#ppi-tours-app .ppi-tour-image-row{grid-template-columns:95px 1fr}#ppi-tours-app .ppi-tour-thumb-wrap{width:95px;height:60px}#ppi-tours-app .ppi-image-controls{grid-column:1/-1}#ppi-tours-app .ppi-picker-image-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Hover preview floats above the scrolling destination gallery without clipping. */
+.ppi-target-hover-preview{
+  position:fixed!important;z-index:2147483647!important;
+  pointer-events:none!important;box-sizing:border-box!important;
+  padding:6px!important;border:2px solid #fff!important;
+  border-radius:12px!important;background:#102033!important;
+  box-shadow:0 12px 38px rgba(0,0,0,.68),0 0 0 1px rgba(255,255,255,.20)!important;
+}
+.ppi-target-hover-preview[hidden]{display:none!important}
+.ppi-target-hover-preview img{
+  display:block!important;width:100%!important;height:auto!important;
+  aspect-ratio:16/9;max-height:none!important;object-fit:cover!important;
+  border-radius:6px!important;background:#132434!important;
+}
 
 /* 0.4.43: Scrollbarer Tour-Dialog mit kompakter, stets erreichbarer Zielbildgalerie. */
 .ppi-tour-preview{padding:8px!important;align-items:center!important;justify-content:center!important;overscroll-behavior:contain}
@@ -1195,4 +1275,19 @@
   align-self:stretch;
 }
 
+/* Compact safe-formatting toolbar for tour landing descriptions. */
+#ppi-tours-app #ppi-step-design .ppi-intro-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 4px}
+#ppi-tours-app #ppi-step-design .ppi-intro-toolbar button,
+#ppi-tours-app #ppi-step-design .ppi-intro-icons button{min-height:32px;min-width:0;width:auto;padding:5px 10px;font-size:12px;border:1px solid var(--color-border);border-radius:7px;background:var(--color-background-hover);color:var(--color-main-text);cursor:pointer}
+#ppi-tours-app #ppi-step-design .ppi-intro-toolbar button:hover,
+#ppi-tours-app #ppi-step-design .ppi-intro-icons button:hover{border-color:var(--color-primary-element)}
+#ppi-tours-app #ppi-step-design .ppi-intro-icons{display:block;max-height:270px;overflow-y:auto;padding:10px;border:1px solid var(--color-border);border-radius:9px;background:var(--color-background-hover);margin:0 0 7px}
+#ppi-tours-app #ppi-step-design .ppi-intro-icons[hidden]{display:none!important}
+#ppi-tours-app #ppi-step-design .ppi-intro-icon-group+.ppi-intro-icon-group{margin-top:12px}
+#ppi-tours-app #ppi-step-design .ppi-intro-icon-group>strong{display:block;font-size:12px;margin:0 0 6px;color:var(--color-text-maxcontrast)}
+#ppi-tours-app #ppi-step-design .ppi-intro-icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:6px}
+#ppi-tours-app #ppi-step-design .ppi-intro-icon-grid button{display:flex;align-items:center;justify-content:center;min-height:42px;height:42px;width:100%;min-width:0;padding:4px;font-size:24px;line-height:1.1;background:var(--color-main-background);border:1px solid var(--color-border);border-radius:8px;cursor:pointer}
+#ppi-tours-app #ppi-step-design .ppi-intro-icon-grid button:hover,#ppi-tours-app #ppi-step-design .ppi-intro-icon-grid button:focus-visible{border-color:var(--color-primary-element);outline:1px solid var(--color-primary-element)}
+#ppi-tours-app #ppi-step-design .ppi-intro-icon-grid svg{width:31px;height:24px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+#ppi-tours-app #ppi-step-design .ppi-intro-360-badge{display:inline-flex;align-items:center;justify-content:center;border:2px solid currentColor;border-radius:50%;font-weight:800;font-size:13px;letter-spacing:-.04em;width:33px;height:30px}
 </style>

@@ -47,6 +47,13 @@
         const statsRows = document.getElementById('ppi-panorama-cache-stats-rows');
         const statsFilter = document.getElementById('ppi-panorama-cache-stats-filter');
         const statsLimit = document.getElementById('ppi-panorama-cache-stats-limit');
+        const statsPager = document.getElementById('ppi-cache-stats-pager');
+        const statsPrev = document.getElementById('ppi-cache-stats-prev');
+        const statsNext = document.getElementById('ppi-cache-stats-next');
+        const statsPages = document.getElementById('ppi-cache-stats-pages');
+        const statsRange = document.getElementById('ppi-cache-stats-pager-range');
+        const PAGE_SIZE = 10;
+        let statsPage = 0;
         // Resize columns independently by dragging header separators. Only widths
         // change: we never alter or reload the statistics data.
         const initializeResizableTable = () => {
@@ -154,6 +161,11 @@
                 (filter === 'used' && row.used) ||
                 (filter === 'unused' && !row.used) ||
                 (filter === 'marked' && !row.used && row.markedSince !== null));
+            // Keep the summary global, but only render 10 matching rows at a time.
+            const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+            statsPage = Math.min(statsPage, pageCount - 1);
+            const pageStart = statsPage * PAGE_SIZE;
+            const pageRows = rows.slice(pageStart, pageStart + PAGE_SIZE);
             statsRows.replaceChildren();
             if (!rows.length) {
                 const tr = document.createElement('tr');
@@ -163,16 +175,25 @@
                 tr.appendChild(td);
                 statsRows.appendChild(tr);
             }
-            for (const row of rows) {
+            for (const row of pageRows) {
                 const tr = document.createElement('tr');
                 const visibility = row.visibility || 'unknown';
-                cell(tr, visibility === 'own' ? row.id : '–');
-                cell(tr, visibility === 'own' ? (row.name || 'Dateiname nicht hinterlegt')
-                    : visibility === 'other' ? '🔒 Datei eines anderen Benutzers'
-                    : '🔒 Besitzer nicht ermittelbar', 'filename');
-                cell(tr, visibility === 'own' && Array.isArray(row.tourNames) && row.tourNames.length
+                const hasOwnTour = visibility === 'own';
+                const accessibleSource = row.sourceAvailable === true;
+                // ID/name may come from the user's own tour or from an
+                // original actually readable through their current mounts.
+                cell(tr, (hasOwnTour || accessibleSource) && row.id != null ? row.id : '–');
+                const filename = accessibleSource && row.name
+                    ? row.name
+                    : hasOwnTour && row.name
+                        ? row.name + ' (aus eigener Tour; Original nicht erreichbar)'
+                        : hasOwnTour
+                            ? 'Dateiname nicht hinterlegt (Original nicht erreichbar)'
+                            : '🔒 Original nicht erreichbar oder kein Zugriff';
+                cell(tr, filename, 'filename');
+                cell(tr, hasOwnTour && Array.isArray(row.tourNames) && row.tourNames.length
                     ? row.tourNames.join(', ')
-                    : visibility === 'other' ? '🔒 Andere Tour (geschützt)'
+                    : row.used && !hasOwnTour ? '🔒 Andere Tour (geschützt)'
                     : row.used ? 'Tourname nicht hinterlegt' : '–', 'tourname');
                 cell(tr, row.used ? 'Verwendet' : row.markedSince !== null ? 'Vorgemerkt' : 'Nicht verwendet');
                 cell(tr, row.desktop ? 'Ja' : 'Nein');
@@ -180,6 +201,29 @@
                 cell(tr, fmt(row.bytes));
                 cell(tr, date(row.eligibleAfter));
                 statsRows.appendChild(tr);
+            }
+            if (statsPager && statsPrev && statsNext && statsPages && statsRange) {
+                statsPager.hidden = pageCount <= 1;
+                statsPrev.disabled = statsPage === 0;
+                statsNext.disabled = statsPage >= pageCount - 1;
+                statsRange.textContent = rows.length
+                    ? 'Einträge ' + (pageStart + 1) + '–' + (pageStart + pageRows.length) + ' von ' + rows.length
+                    : 'Keine passenden Einträge';
+                statsPages.replaceChildren();
+                // Show at most five page tabs for large caches; arrows reach every page.
+                const firstPage = Math.max(0, Math.min(statsPage - 2, pageCount - 5));
+                for (let page = firstPage; page < Math.min(firstPage + 5, pageCount); page++) {
+                    const tab = document.createElement('button');
+                    tab.type = 'button';
+                    tab.textContent = String(page + 1);
+                    tab.setAttribute('aria-label', 'Seite ' + (page + 1) + ' von ' + pageCount);
+                    if (page === statsPage) tab.setAttribute('aria-current', 'page');
+                    tab.addEventListener('click', () => {
+                        statsPage = page;
+                        renderStats();
+                    });
+                    statsPages.appendChild(tab);
+                }
             }
             statsLimit.textContent = data.cachedPanoramas > data.entries.length
                 ? 'Zur Schonung des Servers werden maximal ' + data.shownLimit + ' Einträge angezeigt. Die Summen umfassen alle erkannten Cache-Dateien.'
@@ -208,7 +252,19 @@
             }
         };
         statsButton?.addEventListener('click', loadStats);
-        statsFilter?.addEventListener('change', renderStats);
+        statsFilter?.addEventListener('change', () => {
+            statsPage = 0; // Every filter starts at its first set of ten entries.
+            renderStats();
+        });
+        statsPrev?.addEventListener('click', () => {
+            if (statsPage <= 0) return;
+            statsPage--;
+            renderStats();
+        });
+        statsNext?.addEventListener('click', () => {
+            statsPage++;
+            renderStats(); // Clamps at the last available page.
+        });
         if (statsButton && panel.dataset.statisticsUrl) loadStats();
         button.addEventListener('click', async () => {
             button.disabled = true;

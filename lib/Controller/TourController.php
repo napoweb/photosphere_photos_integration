@@ -193,6 +193,7 @@ final class TourController extends Controller {
             'pickerPreferencesUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.savePickerPreferences'),
             'pickerPanoramaOnly' => ($this->userId() !== null && $this->config->getUserValue($this->userId(), self::APP_ID, self::PICKER_PANORAMA_ONLY, '0') === '1'),
             'filesUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.browse'),
+            'pickerTagsUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.listPickerTags'),
             'imageUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.imageBytes'),
             'watermarkLibraryUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.watermark.tourLibrary'),
             'watermarkThumbnailUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.watermark.tourThumbnail'),
@@ -385,6 +386,51 @@ final class TourController extends Controller {
         return $matches;
     }
 
+    /** Available collaborative Nextcloud system tags, filtered for the signed-in user. */
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
+    public function listPickerTags(): JSONResponse {
+        $user = $this->userSession->getUser();
+        if ($user === null) { return $this->error('Anmeldung erforderlich', 401); }
+        try {
+            $visible = [];
+            foreach ($this->tagManager->getAllTags(true) as $tag) {
+                if (!$this->tagManager->canUserSeeTag($tag, $user)) { continue; }
+                $visible[] = ['id' => (string)$tag->getId(), 'name' => $tag->getName()];
+            }
+            usort($visible, static fn(array $a, array $b): int => strnatcasecmp($a['name'], $b['name']));
+            return new JSONResponse(['success' => true, 'tags' => $visible]);
+        } catch (\Throwable $e) {
+            return $this->error('Nextcloud-Tags konnten nicht geladen werden.', 500);
+        }
+    }
+
+    /** Exact tag-ID matching, limited to readable JPEGs in the current user's folder. */
+    private function matchingSelectedTagFileIds(array $listing, string $selectedTagId, int $limit): array {
+        if ($limit <= 0) { return []; }
+        $ids = [];
+        foreach ($listing as $node) {
+            if (count($ids) >= $limit) { break; }
+            if ($node instanceof File && $node->isReadable() && $node->getMimetype() === 'image/jpeg') {
+                $ids[] = (string)$node->getId();
+            }
+        }
+        $matches = [];
+        try {
+            foreach (array_chunk($ids, 200) as $chunk) {
+                foreach ($this->tagMapper->getTagIdsForObjects($chunk, 'files') as $fileId => $tagIds) {
+                    if (in_array($selectedTagId, array_map('strval', $tagIds), true)) {
+                        $matches[(string)$fileId] = true;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fail closed: do not expose files when tag relations could not be checked.
+            return [];
+        }
+        return $matches;
+    }
+
     /** List a folder by Nextcloud file ID, using the current user's own mount tree. */
     #[NoAdminRequired]
     #[NoCSRFRequired]
@@ -409,9 +455,25 @@ final class TourController extends Controller {
             }
 
             $query = trim((string)$this->request->getParam('q', ''));
-            $searchMode = (string)$this->request->getParam('searchMode', 'both');
-            if (!in_array($searchMode, ['both', 'name', 'tags'], true)) { $searchMode = 'both'; }
+            $searchMode = (string)$this->request->getParam('searchMode', 'name');
+            if (!in_array($searchMode, ['name', 'tags'], true)) { $searchMode = 'name'; }
             if (mb_strlen($query) > 120) { return $this->error('Suchbegriff ist zu lang'); }
+            // Exact tag selection is independent from the optional text search.
+            $selectedTagId = $searchMode === 'tags' ? trim((string)$this->request->getParam('tagId', '')) : '';
+            if ($selectedTagId !== '' && (!ctype_digit($selectedTagId) || strlen($selectedTagId) > 18 || (int)$selectedTagId <= 0)) {
+                return $this->error('Ungültiges Schlagwort');
+            }
+            if ($selectedTagId !== '') {
+                // Never allow a guessed tag id to bypass user/group visibility.
+                $user = $this->userSession->getUser();
+                try {
+                    $tags = $user !== null ? $this->tagManager->getTagsByIds([$selectedTagId], $user) : [];
+                    $tag = reset($tags);
+                    if ($tag === false || !$this->tagManager->canUserSeeTag($tag, $user)) {
+                        return $this->error('Schlagwort nicht verfügbar', 404);
+                    }
+                } catch (\Throwable $e) { return $this->error('Schlagwort nicht verfügbar', 404); }
+            }
             $recursive = (string)$this->request->getParam('recursive', '0') === '1';
             $sort = (string)$this->request->getParam('sort', 'name_asc');
             if (!in_array($sort, ['name_asc', 'name_desc', 'newest', 'oldest', 'size_desc'], true)) {
@@ -421,11 +483,13 @@ final class TourController extends Controller {
             $size = (string)$this->request->getParam('size', 'any');
             $panoramaOnly = (string)$this->request->getParam('panoramaOnly', '0') === '1';
             if (!in_array($date, ['any', '30d', 'year'], true)) { $date = 'any'; }
-            if (!in_array($size, ['any', 'lt10', '10to50', 'gt50'], true)) { $size = 'any'; }
+            if (!in_array($size, ['any', 'lt20', 'gt20', 'gt30', 'gt40', 'gt50'], true)) { $size = 'any'; }
             $threshold = $date === '30d' ? time() - 30 * 86400
                 : ($date === 'year' ? strtotime(gmdate('Y') . '-01-01 00:00:00 UTC') : 0);
-            $minMb = 10 * 1024 * 1024;
-            $maxMb = 50 * 1024 * 1024;
+            $mb20 = 20 * 1024 * 1024;
+            $mb30 = 30 * 1024 * 1024;
+            $mb40 = 40 * 1024 * 1024;
+            $mb50 = 50 * 1024 * 1024;
             $folders = [];
             $images = [];
             $pending = [$folder];
@@ -433,9 +497,13 @@ final class TourController extends Controller {
             $scanned = 0;
             $truncated = false;
             $nonPanoramasExcluded = 0;
+            $totalPanoramas = 0;
+            $filteredPanoramas = 0;
+            // Count recognized panoramas BEFORE applying search/date/size conditions.
+            // This provides a stable denominator across all picker filters.
             // Bound recursive traversal to keep large/external mounts responsive.
             // Only list readable nodes from the signed-in user's accessible tree.
-            while ($pending !== [] && $scanned < 3000 && count($images) < 1200) {
+            while ($pending !== [] && $scanned < 3000) {
                 $current = array_shift($pending);
                 $currentId = $current->getId();
                 if (isset($visited[$currentId])) { continue; }
@@ -443,7 +511,9 @@ final class TourController extends Controller {
                 try { $listing = $current->getDirectoryListing(); }
                 catch (\Throwable $e) { continue; }
                 $tagMatches = $searchMode === 'name' ? []
-                    : $this->matchingTaggedFileIds($listing, $query, max(0, 3000 - $scanned), $searchMode === 'both');
+                    : $this->matchingTaggedFileIds($listing, $query, max(0, 3000 - $scanned), false);
+                $selectedTagMatches = $selectedTagId !== ''
+                    ? $this->matchingSelectedTagFileIds($listing, $selectedTagId, max(0, 3000 - $scanned)) : [];
                 foreach ($listing as $node) {
                     if (++$scanned > 3000) { $truncated = true; break 2; }
                     if (!$node->isReadable()) { continue; }
@@ -460,25 +530,32 @@ final class TourController extends Controller {
                         if ($recursive) { $pending[] = $node; }
                         continue;
                     }
+                    $isPanorama = $this->isPanoramaFile($node);
+                    if ($isPanorama) { ++$totalPanoramas; }
+                    if ($selectedTagId !== '' && !isset($selectedTagMatches[(string)$node->getId()])) { continue; }
                     if ($query !== '') {
-                        $nameMatch = $searchMode !== 'tags' && mb_stripos($node->getName(), $query) !== false;
-                        $tagMatch = $searchMode !== 'name' && isset($tagMatches[(string)$node->getId()]);
+                        $nameMatch = $searchMode === 'name' && mb_stripos($node->getName(), $query) !== false;
+                        $tagMatch = $searchMode === 'tags' && isset($tagMatches[(string)$node->getId()]);
                         if (!$nameMatch && !$tagMatch) { continue; }
                     }
                     $mtime = (int)$node->getMtime();
                     $bytes = (int)$node->getSize();
                     if ($threshold > 0 && $mtime < $threshold) { continue; }
-                    if ($size === 'lt10' && $bytes >= $minMb) { continue; }
-                    if ($size === '10to50' && ($bytes < $minMb || $bytes > $maxMb)) { continue; }
-                    if ($size === 'gt50' && $bytes <= $maxMb) { continue; }
-                    if ($panoramaOnly && !$this->isPanoramaFile($node)) {
+                    // Thresholds are intentionally cumulative; "over" means strictly greater.
+                    if ($size === 'lt20' && $bytes >= $mb20) { continue; }
+                    if ($size === 'gt20' && $bytes <= $mb20) { continue; }
+                    if ($size === 'gt30' && $bytes <= $mb30) { continue; }
+                    if ($size === 'gt40' && $bytes <= $mb40) { continue; }
+                    if ($size === 'gt50' && $bytes <= $mb50) { continue; }
+                    if ($isPanorama) { ++$filteredPanoramas; }
+                    if ($panoramaOnly && !$isPanorama) {
                         ++$nonPanoramasExcluded;
                         continue;
                     }
                     $images[] = ['id' => $node->getId(), 'name' => $node->getName(),
                         'path' => '/' . ltrim($relative, '/'), 'type' => 'image',
+                        'isPanorama' => $isPanorama,
                         'mtime' => $mtime, 'size' => $bytes];
-                    if (count($images) >= 1200) { $truncated = true; break 2; }
                 }
                 if (!$recursive) { break; }
             }
@@ -509,7 +586,8 @@ final class TourController extends Controller {
             return new JSONResponse(['success' => true, 'path' => $path, 'folderId' => $folder->getId(),
                 'parentId' => $parentId, 'isRoot' => $folder->getId() === $home->getId(), 'items' => $items, 'truncated' => $truncated,
                 'panoramaOnly' => $panoramaOnly, 'nonPanoramasExcluded' => $nonPanoramasExcluded,
-                'searchMode' => $searchMode]);
+                'totalPanoramas' => $totalPanoramas, 'filteredPanoramas' => $filteredPanoramas,
+                'searchMode' => $searchMode, 'tagId' => $selectedTagId]);
         } catch (\Throwable $e) {
             // Fail closed: never expose server paths or exception details to the browser.
             return $this->error('Ordner konnten nicht geladen werden. Bitte Nextcloud-Protokoll prüfen.', 500);
@@ -915,7 +993,12 @@ final class TourController extends Controller {
             $description = 'Interaktive 360°-Tour';
             if (!$protected) {
                 $title = mb_substr(trim((string)($tour['name'] ?? '360°-Tour')), 0, 100);
-                $description = mb_substr(trim((string)($tour['display']['introText'] ?? '')), 0, 250);
+                $description = trim((string)($tour['display']['introText'] ?? ''));
+                // Social previews are plain text, not raw Markdown or icon shortcodes.
+                $description = preg_replace('/\[([^\]]+)\]\(https?:\/\/[^\s)]+\)/i', '$1', $description) ?? $description;
+                $description = str_replace([':quad:', ':drone:', ':360:'], ['Quad/ATV', 'Drohne', '360°'], $description);
+                $description = preg_replace('/(?:^|\n)\s*(?:[-*]|\d+[.)])\s+/m', ' ', $description) ?? $description;
+                $description = mb_substr(trim(preg_replace('/\s+/u', ' ', $description) ?? $description), 0, 250);
                 if ($description === '') { $description = 'Entdecke diese interaktive 360°-Tour.'; }
                 if ($mode === 'cover' && $this->socialCoverFile($found) !== null) {
                     $previewImage = $this->urlGenerator->getAbsoluteURL(
@@ -1163,7 +1246,7 @@ final class TourController extends Controller {
                 $startId = filter_var($input['startImageId'] ?? 0, FILTER_VALIDATE_INT);
                 $startYaw = filter_var($input['startYaw'] ?? 0, FILTER_VALIDATE_INT);
                 $description = trim((string)($input['introText'] ?? ''));
-                if (mb_strlen($description) > 600) { return $this->error('Beschreibung: maximal 600 Zeichen'); }
+                if (mb_strlen($description) > 1200) { return $this->error('Beschreibung: maximal 1.200 Zeichen'); }
                 $size = (string)($input['hotspotSize'] ?? 'medium');
                 // Preserve older tours: replace the retired chat pin when display is saved.
                 $style = (string)($input['hotspotStyle'] ?? 'classic');

@@ -35,7 +35,7 @@
       <span class="ppi-public-landing-kicker">INTERAKTIVE 360°-TOUR</span>
       <h1 id="ppi-public-landing-title">360°-Tour</h1>
       <p id="ppi-public-landing-info">Entdecke die Panoramen dieser Tour.</p>
-      <p id="ppi-public-landing-description" hidden></p>
+      <div id="ppi-public-landing-description" hidden></div>
       <button id="ppi-public-start" type="button">Tour starten <span aria-hidden="true">→</span></button>
     </div>
   </section>
@@ -123,8 +123,19 @@
   #ppi-public-nav .ppi-public-nav-card img{display:block;width:100%;height:69px;object-fit:cover;border-radius:6px;background:#2d3d4a}
   #ppi-public-nav .ppi-public-nav-card span{font:500 11px/1.25 system-ui,sans-serif;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
   #ppi-public-nav .ppi-public-nav-card.ppi-public-no-thumb{justify-content:center;min-height:70px}
-  #ppi-public-landing-description{font:400 clamp(14px,1.4vw,18px)/1.55 system-ui,sans-serif;white-space:pre-line;max-width:680px;max-height:min(22dvh,180px);overflow-y:auto;margin:8px 0 16px;opacity:.93;text-shadow:0 2px 10px #0008}
+  #ppi-public-landing-description{font:400 clamp(13px,1.4vw,17px)/1.4 system-ui,sans-serif;white-space:normal;max-width:680px;max-height:none;overflow:visible;margin:8px 0 14px;opacity:.93;text-align:left;text-shadow:0 2px 10px #0008;overflow-wrap:anywhere}
   #ppi-public-landing-description[hidden]{display:none!important}
+  #ppi-public-landing-description p{font:inherit!important;color:inherit!important;margin:0 0 7px!important}
+  #ppi-public-landing-description ul,#ppi-public-landing-description ol{display:block;max-width:100%;box-sizing:border-box;margin:5px 0 9px;padding-left:26px;text-align:left;overflow-wrap:anywhere}
+  #ppi-public-landing-description ul{list-style-type:disc!important;list-style-position:outside!important}
+  #ppi-public-landing-description ol{list-style-type:decimal!important;list-style-position:outside!important}
+  #ppi-public-landing-description li{display:list-item!important;margin:2px 0;color:#fff!important;list-style:inherit}
+  #ppi-public-landing-description li::marker{color:#fff!important}
+  #ppi-public-landing-description a{color:#bde3ff;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
+  #ppi-public-landing-description a:hover,#ppi-public-landing-description a:focus-visible{color:#fff}
+  #ppi-public-landing-description svg.ppi-inline-quad{display:inline-block;width:1.65em;height:1em;vertical-align:-.16em;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+  #ppi-public-landing-description svg.ppi-inline-drone{display:inline-block;width:1.65em;height:1em;vertical-align:-.16em;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+  #ppi-public-landing-description .ppi-inline-360{display:inline-flex;align-items:center;justify-content:center;vertical-align:.04em;border:1.5px solid currentColor;border-radius:50%;font:bold .72em/1 system-ui,sans-serif;width:2.5em;height:1.4em;white-space:nowrap;letter-spacing:-.03em}
   #ppi-public-message{position:absolute;z-index:6;left:50%;top:50%;transform:translate(-50%,-50%);max-width:90vw;pointer-events:none;padding:11px 16px;color:#fff;background:rgba(7,20,31,.7);border-radius:10px;text-align:center;backdrop-filter:blur(8px)}
   #ppi-public-message:empty{display:none!important}
   #ppi-public-guide{position:absolute;z-index:7;right:16px;top:76px;max-width:min(400px,85vw);background:rgba(7,20,31,.78);backdrop-filter:blur(10px);border:1px solid #ffffff56;border-radius:12px;color:#fff;padding:14px;line-height:1.65}
@@ -236,10 +247,11 @@
   #ppi-public-landing{position:absolute;inset:0;z-index:12;display:flex;align-items:end;justify-content:flex-start;overflow:hidden;background:#0e1924}
   #ppi-public-cover{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;filter:brightness(.82)}
   #ppi-public-landing .ppi-public-landing-shade{position:absolute;inset:0;background:linear-gradient(0deg,rgba(3,11,20,.9),rgba(3,11,20,.45) 43%,rgba(3,11,20,.03) 85%)}
-  #ppi-public-landing .ppi-public-landing-content{position:relative;z-index:1;width:min(760px,calc(100% - 48px));margin:0 max(24px,env(safe-area-inset-left)) max(64px,env(safe-area-inset-bottom));color:#fff;text-shadow:0 1px 9px #0008}
+  #ppi-public-landing .ppi-public-landing-content{position:relative;z-index:1;width:min(760px,calc(100% - 48px));margin:0 max(24px,env(safe-area-inset-left)) max(40px,env(safe-area-inset-bottom));color:#fff;text-align:left;text-shadow:0 1px 9px #0008}
   #ppi-public-landing .ppi-public-landing-kicker{font-weight:750;letter-spacing:.15em;font-size:12px;color:#e0efff}
   #ppi-public-landing h1{font:750 clamp(30px,5.5vw,64px)/1.12 system-ui,sans-serif;margin:12px 0 12px;color:#fff;overflow-wrap:anywhere}
   #ppi-public-landing p{font:400 clamp(14px,2vw,18px)/1.5 system-ui,sans-serif;margin:0 0 25px;color:#f0f4f8}
+  @media(max-height:650px){#ppi-public-landing h1{font-size:clamp(24px,4.5vw,44px);margin:5px 0 6px}#ppi-public-landing p{margin-bottom:10px}#ppi-public-landing-description{font-size:13px;line-height:1.25;margin:4px 0 8px}#ppi-public-landing-description p{margin-bottom:3px!important}#ppi-public-landing-description ul,#ppi-public-landing-description ol{margin:2px 0 4px}#ppi-public-start{min-height:42px;padding:10px 18px}}
   #ppi-public-start{display:inline-flex;gap:18px;align-items:center;justify-content:center;padding:14px 25px;border:1px solid #ffffff80;border-radius:12px;background:#fff!important;color:#102132!important;font-weight:750;font-size:16px;cursor:pointer;box-shadow:0 8px 28px #0005;min-height:50px}
   #ppi-public-start:hover,#ppi-public-start:focus-visible{background:#e9f4ff!important;transform:translateY(-1px);outline-offset:3px}
   #ppi-public-start:disabled{opacity:.6;cursor:wait}

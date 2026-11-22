@@ -4,7 +4,7 @@
   const root = document.getElementById('ppi-tours-app');
   if (!root) return;
   // Diagnostic marker: verifies that the browser loaded the matching script.
-  root.dataset.tourEditorBuild = '0.4.62.96-tagsearch';
+  root.dataset.tourEditorBuild = '0.4.62.106-tag-picker';
   const byId = id => document.getElementById(id);
   const api = root.dataset.apiUrl;
   const filesApi = root.dataset.filesUrl;
@@ -85,6 +85,7 @@
     sphere?.setPlacementMode(false);
   }
   function closePreview() {
+    hideTargetHoverPreview();
     clearPlacement(); sphere?.destroy(); sphere = null;
     previewDialog.hidden = true; previewDialog.style.display = 'none';
     byId('ppi-preview-image').removeAttribute('src'); previewImageId = null;
@@ -132,6 +133,60 @@
     } catch (error) { status.textContent = '3D-Betrachter: ' + error.message; loadingVeil.remove(); }
     updateAvailableTargets();
   }
+  // Test-only hover preview for the list of available panorama destinations.
+  // Reuses Nextcloud's authenticated /core/preview endpoint, never the source JPEG.
+  const targetHoverPreview = document.createElement('div');
+  targetHoverPreview.className = 'ppi-target-hover-preview';
+  targetHoverPreview.hidden = true;
+  targetHoverPreview.setAttribute('aria-hidden', 'true');
+  const targetHoverImage = document.createElement('img');
+  targetHoverImage.alt = '';
+  targetHoverImage.decoding = 'async';
+  targetHoverPreview.append(targetHoverImage);
+  document.body.append(targetHoverPreview);
+  let hoverTargetCard = null;
+  const hideTargetHoverPreview = () => {
+    hoverTargetCard = null;
+    targetHoverPreview.hidden = true;
+    targetHoverImage.removeAttribute('src');
+  };
+  function positionTargetHoverPreview(card) {
+    if (!card || targetHoverPreview.hidden || previewDialog.hidden) return;
+    const rect = card.getBoundingClientRect();
+    const margin = 12;
+    const width = Math.min(320, window.innerWidth - 2 * margin);
+    const height = width * 9 / 16;
+    const left = Math.max(margin, Math.min(window.innerWidth - width - margin,
+      rect.left + rect.width / 2 - width / 2));
+    const above = rect.top - height - margin;
+    const top = above >= margin ? above :
+      Math.max(margin, Math.min(window.innerHeight - height - margin, rect.bottom + margin));
+    targetHoverPreview.style.width = width + 'px';
+    targetHoverPreview.style.left = left + 'px';
+    targetHoverPreview.style.top = top + 'px';
+  }
+  function showTargetHoverPreview(card) {
+    if (hoverTargetCard === card) return;
+    const id = Number(card.dataset.imageId);
+    if (!Number.isSafeInteger(id) || id <= 0 || previewDialog.hidden) return;
+    hoverTargetCard = card;
+    targetHoverImage.src = previewUrl(id, 640, 360);
+    targetHoverPreview.hidden = false;
+    positionTargetHoverPreview(card);
+  }
+  const targetGallery = byId('ppi-preview-target-gallery');
+  targetGallery.addEventListener('pointerover', event => {
+    if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
+    const card = event.target.closest('.ppi-target-card');
+    if (card && targetGallery.contains(card)) showTargetHoverPreview(card);
+  });
+  targetGallery.addEventListener('pointerout', event => {
+    if (!hoverTargetCard || hoverTargetCard.contains(event.relatedTarget)) return;
+    hideTargetHoverPreview();
+  });
+  targetGallery.addEventListener('scroll', hideTargetHoverPreview, {passive:true});
+  previewDialog.querySelector('.ppi-preview-window')?.addEventListener('scroll', hideTargetHoverPreview, {passive:true});
+  window.addEventListener('resize', hideTargetHoverPreview, {passive:true});
   // Show only destinations that are not already connected FROM the panorama being edited.
   // All links in active.links include unsaved draft changes, so the gallery updates instantly.
   function updateAvailableTargets() {
@@ -146,6 +201,7 @@
     const available = active.images.filter(item =>
       Number(item.id) !== from && !connected.has(Number(item.id)));
     target.replaceChildren();
+    hideTargetHoverPreview();
     gallery.replaceChildren();
     for (const item of available) {
       const opt = node('option', item.name); opt.value = String(item.id); target.append(opt);
@@ -495,9 +551,101 @@
   root.querySelectorAll('[data-pin-color]').forEach(button=>button.addEventListener('click',()=>{byId('ppi-design-pin-color').value=button.dataset.pinColor;refreshDesignPreviews();}));
   ['ppi-design-start','ppi-design-style','ppi-design-size'].forEach(id=>byId(id).addEventListener(id==='ppi-design-size'?'input':'change',refreshDesignPreviews));
   byId('ppi-design-yaw').addEventListener('input',()=>{byId('ppi-design-yaw-value').textContent=byId('ppi-design-yaw').value+'°';});
+  // Lightweight description formatting: store only text, not user HTML.
+  const descriptionField=byId('ppi-design-intro');
+  const insertDescriptionText=(replacement)=>{
+    const start=descriptionField.selectionStart,end=descriptionField.selectionEnd;
+    if(descriptionField.value.length-(end-start)+replacement.length>descriptionField.maxLength){
+      notify('Beschreibung: maximal 300 Zeichen.',true);return false;
+    }
+    descriptionField.setRangeText(replacement,start,end,'end');
+    descriptionField.focus({preventScroll:true});
+    descriptionField.dispatchEvent(new Event('input',{bubbles:true}));
+    return true;
+  };
+  root.querySelectorAll('[data-intro-insert]').forEach(button=>button.addEventListener('click',()=>{
+    const start=descriptionField.selectionStart,end=descriptionField.selectionEnd;
+    const selected=descriptionField.value.slice(start,end);
+    const action=button.dataset.introInsert;
+    let insertion='';
+    if(action==='bullet'||action==='number'){
+      const lines=(selected||'Listenpunkt').split('\n');
+      insertion=lines.map((line,i)=>(action==='bullet'?'- ':(i+1)+'. ')+line).join('\n');
+      if(start>0&&descriptionField.value[start-1]!=='\n')insertion='\n'+insertion;
+    }else if(action==='link'){
+      const address=window.prompt('HTTPS- oder HTTP-Link eingeben:','https://');
+      if(address===null)return;
+      let url;
+      try{url=new URL(address);if(!['http:','https:'].includes(url.protocol))throw Error('scheme');}
+      catch(_e){notify('Bitte eine gültige HTTPS- oder HTTP-Adresse eingeben.',true);return;}
+      insertion='['+(selected||'Linktext').replace(/[\[\]\r\n]/g,'')+']('+url.href+')';
+    }
+    if(insertion)insertDescriptionText(insertion);
+  }));
+  // Markdown list editing in the plain-text intro textarea.
+  // Keep the stored description as text; the public renderer handles safe markup.
+  descriptionField.addEventListener('keydown',event=>{
+    if(event.defaultPrevented||event.isComposing||event.keyCode===229||
+       (event.key!=='Enter'&&event.key!=='Backspace')||
+       event.ctrlKey||event.metaKey||event.altKey||
+       (event.key==='Enter'&&event.shiftKey))return;
+    const start=descriptionField.selectionStart;
+    if(start!==descriptionField.selectionEnd)return;
+    const value=descriptionField.value;
+    const lineStart=value.lastIndexOf('\n',start-1)+1;
+    const lineEnd=value.indexOf('\n',start);
+    const end=lineEnd<0?value.length:lineEnd;
+    const before=value.slice(lineStart,start);
+    const after=value.slice(start,end);
+    const match=/^([ \t]*)([-*]|(\d+)[.)])([ \t]+)(.*)$/.exec(value.slice(lineStart,end));
+    if(!match)return;
+    const prefix=match[1]+match[2]+match[4];
+    const empty=match[5].trim()==='';
+    if(event.key==='Backspace'){
+      // Empty list marker -> plain paragraph, preserving the line.
+      if(empty&&start===lineStart+prefix.length){
+        event.preventDefault();
+        descriptionField.setRangeText('',lineStart,lineStart+prefix.length,'start');
+        descriptionField.dispatchEvent(new Event('input',{bubbles:true}));
+      }
+      return;
+    }
+    if(start<lineStart+prefix.length)return;
+    if(empty){
+      // Enter on an empty list item leaves the list instead of adding another marker.
+      event.preventDefault();
+      descriptionField.setRangeText('',lineStart,lineStart+prefix.length,'start');
+      descriptionField.dispatchEvent(new Event('input',{bubbles:true}));
+      return;
+    }
+    const nextMarker=match[3]!==undefined
+      ?String(Number(match[3])+1)+match[2].slice(-1)
+      :match[2];
+    const insertion='\n'+match[1]+nextMarker+match[4];
+    if(value.length+insertion.length>descriptionField.maxLength){
+      event.preventDefault();
+      notify('Beschreibung: maximal 300 Zeichen.',true);
+      return;
+    }
+    event.preventDefault();
+    descriptionField.setRangeText(insertion,start,start,'end');
+    descriptionField.dispatchEvent(new Event('input',{bubbles:true}));
+  });
+  const iconToggle=byId('ppi-intro-icons-toggle'),iconPanel=byId('ppi-intro-icons');
+  iconToggle.addEventListener('click',()=>{
+    iconPanel.hidden=!iconPanel.hidden;
+    iconToggle.setAttribute('aria-expanded',String(!iconPanel.hidden));
+  });
+  root.querySelectorAll('[data-intro-icon]').forEach(button=>button.addEventListener('click',()=>{
+    if(insertDescriptionText(button.dataset.introIcon)){
+      iconPanel.hidden=true;iconToggle.setAttribute('aria-expanded','false');
+    }
+  }));
+
   byId('ppi-design-save').addEventListener('click',async()=>{
     if(!active)return;
     try{
+      if(descriptionField.value.trim().length>300){notify('Beschreibung: maximal 300 Zeichen. Bitte vorhandenen Text kürzen.',true);descriptionField.focus();return;}
       if(!byId('ppi-tour-name').value.trim()){notify('Bitte einen Namen für die Tour eingeben.',true);byId('ppi-tour-name').focus();return;}
       const display={startImageId:Number(byId('ppi-design-start').value)||0,startYaw:Number(byId('ppi-design-yaw').value),
         introText:byId('ppi-design-intro').value.trim(),socialPreviewMode:byId('ppi-design-social').value,hotspotSize:sizeSteps[Number(byId('ppi-design-size').value)]||'medium',hotspotStyle:byId('ppi-design-style').value,svgPinColor:byId('ppi-design-pin-color').value,showTitle:byId('ppi-design-title').checked,
@@ -1140,7 +1288,25 @@
       quickView.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();previewImage(item);});
       card.append(checkbox,thumb,caption,quickView);imageBox.append(card);
     }
-    byId('ppi-picker-results').textContent=images.length+' Treffer'+(pickerData.panoramaOnly?' · 360°-Filter aktiv · '+Number(pickerData.nonPanoramasExcluded||0)+' normale JPEGs ausgeblendet':'')+(pickerData.truncated?' (begrenzt)':'');
+    // Count only recognized 360° panoramas; ordinary JPEGs never affect this statistic.
+    // Server totals are measured before search, tags, date, size and tour-status filters.
+    const totalPanoramas=Number(pickerData.totalPanoramas);
+    const filteredPanoramas=Number(pickerData.filteredPanoramas);
+    const visiblePanoramas=images.filter(item=>item.isPanorama===true).length;
+    const completeList=Number.isFinite(filteredPanoramas) &&
+      pickerData.items.filter(item=>item.type==='image' && item.isPanorama===true).length===filteredPanoramas;
+    const exactTotals=!pickerData.truncated && completeList && Number.isFinite(totalPanoramas);
+    const resultsLabel=byId('ppi-picker-results');
+    if (exactTotals) {
+      const hiddenPanoramas=Math.max(0,totalPanoramas-visiblePanoramas);
+      resultsLabel.textContent=visiblePanoramas+' Treffer · '+hiddenPanoramas+
+        ' Panoramen ausgeblendet · '+totalPanoramas+' insgesamt';
+    } else {
+      // A capped or incomplete listing cannot yield an honest hidden count,
+      // particularly when the tour-status filter is applied client-side.
+      resultsLabel.textContent=visiblePanoramas+' sichtbare Panoramen · Zählung unvollständig'+
+        (Number.isFinite(totalPanoramas)?' · mindestens '+totalPanoramas+' erkannt':'');
+    }
     const warning=byId('ppi-picker-limit-warning');
     warning.hidden=!pickerData.truncated;
     warning.textContent=pickerData.truncated
@@ -1178,6 +1344,7 @@
       folderId:String(folderId),
       q:pickerValue('ppi-picker-search').trim(),
       searchMode:pickerValue('ppi-picker-search-mode'),
+      tagId:pickerValue('ppi-picker-search-mode')==='tags'?pickerValue('ppi-picker-tag'):'',
       sort:pickerValue('ppi-picker-sort'),
       date:pickerValue('ppi-picker-date'),
       size:pickerValue('ppi-picker-size'),
@@ -1189,7 +1356,7 @@
       if(serial!==browseSerial)return;
       // A stale PHP controller can silently ignore the search-mode parameter.
       // Never display misleading filename hits as tag-only results.
-      if (data.searchMode !== params.get('searchMode')) {
+      if (data.searchMode !== params.get('searchMode') || String(data.tagId ?? '') !== params.get('tagId')) {
         throw new Error('Suchmodus wurde vom Server nicht bestätigt. Bitte den aktualisierten PHP-Controller der Test-App installieren.');
       }
       browsing={id:Number(data.folderId),path:data.path,parentId:Number(data.parentId||0)};
@@ -1220,8 +1387,53 @@
   const searchInput=byId('ppi-picker-search');
   const searchMode=byId('ppi-picker-search-mode');
   const searchModeLabel=byId('ppi-picker-search-mode-label');
+  const tagSelect=byId('ppi-picker-tag');
+  const tagWrap=byId('ppi-picker-tag-wrap');
+  const tagSearchControl=tagWrap.closest('.ppi-picker-search-control');
+  const tagSearchGroup=tagWrap.closest('.ppi-picker-search-combined');
+  const updateTagAppearance=()=>{
+    const selected=searchMode.value==='tags' && tagSelect.value!=='';
+    tagWrap.classList.toggle('ppi-tag-active',selected);
+    tagSearchControl?.classList.toggle('ppi-has-selected-tag',selected);
+    tagSearchGroup?.classList.toggle('ppi-has-selected-tag',selected);
+  };
+  let pickerTagRequest=null;
+  async function loadPickerTags() {
+    // Reload on each switch to Tags, so recently created tags can be selected.
+    if (pickerTagRequest) return pickerTagRequest;
+    const remembered=tagSelect.value;
+    tagSelect.disabled=true;
+    tagSelect.replaceChildren(new Option('Tags werden geladen …',''));
+    pickerTagRequest=(async()=>{
+      try {
+        const data=await request(root.dataset.pickerTagsUrl);
+        const options=[new Option('Alle Tags','')];
+        for(const tag of data.tags||[]) {
+          if (typeof tag.id !== 'string' || typeof tag.name !== 'string') continue;
+          options.push(new Option(tag.name,tag.id));
+        }
+        if (options.length===1) options[0].textContent='Keine sichtbaren Tags';
+        tagSelect.replaceChildren(...options);
+        if ([...tagSelect.options].some(option=>option.value===remembered)) tagSelect.value=remembered;
+        updateTagAppearance();
+      } catch(e) {
+        tagSelect.replaceChildren(new Option('Tags nicht verfügbar',''));
+        notify('Nextcloud-Tags konnten nicht geladen werden: '+e.message,true);
+      } finally {
+        tagSelect.disabled=false;
+        pickerTagRequest=null;
+      }
+    })();
+    return pickerTagRequest;
+  }
   const syncSearchModeLabel=()=>{
     searchModeLabel.textContent=searchMode.options[searchMode.selectedIndex]?.textContent || 'Suchbereich';
+    const showTags=searchMode.value==='tags';
+    tagWrap.hidden=!showTags;
+    if (!showTags) tagSelect.value='';
+    updateTagAppearance();
+    searchInput.placeholder=showTags?'Tag-Name suchen (optional) …':'Suchbegriff eingeben …';
+    if (showTags) loadPickerTags();
   };
   searchMode.addEventListener('change',()=>{
     syncSearchModeLabel();
@@ -1230,6 +1442,16 @@
     reapplyPicker();
   });
   syncSearchModeLabel();
+  tagSelect.addEventListener('change',()=>{
+    updateTagAppearance();
+    // An explicitly chosen tag takes precedence over an earlier free-text query;
+    // users can add a supplementary text search afterwards if desired.
+    if (tagSelect.value) searchInput.value='';
+    searchEditing=false;
+    ++browseSerial;
+    clearTimeout(pickerDebounce);
+    reapplyPicker();
+  });
   // Genuine user interaction elsewhere ends the typing session.
   root.addEventListener('pointerdown', event => {
     if (!searchInput.contains(event.target)) searchEditing = false;
@@ -1296,6 +1518,7 @@
         ? byId(id).selectedIndex=0 : byId(id).value='';
     }
     byId('ppi-picker-recursive').checked=false;
+    tagSelect.value='';
     syncSearchModeLabel();
     ++browseSerial;
     reapplyPicker();
