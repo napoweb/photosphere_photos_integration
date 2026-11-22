@@ -365,7 +365,7 @@
       requestAnimationFrame(() => {
         if (!dialog.hidden) {
           dialog.scrollIntoView({block: 'start', behavior: 'instant'});
-          dialog.focus({preventScroll: true});
+          // Do not focus the picker wrapper: this can steal focus from the search input.
         }
       });
     }
@@ -1097,6 +1097,7 @@
   let pickerFolderId = 0; // Target folder, including when its request is still loading.
   let pickerData = null;
   let pickerDebounce = null;
+  let searchEditing = false;
   const pickerValue = id => byId(id).value;
   function renderPickerItems(updateFolders=true) {
     if (!pickerData) return;
@@ -1157,7 +1158,15 @@
     // Keep existing folders, previews and search controls stable while loading.
     // This also avoids scroll/layout jumps when the user executes a search.
     const currentSearch = byId('ppi-picker-search');
-    const restoreSearchFocus = document.activeElement === currentSearch;
+    const restoreSearchFocus = searchEditing || document.activeElement === currentSearch;
+    const caretStart = currentSearch.selectionStart;
+    const caretEnd = currentSearch.selectionEnd;
+    const retainSearchFocus = () => {
+      if (!restoreSearchFocus || !currentSearch.isConnected || byId('ppi-tour-picker').hidden) return;
+      // Restore focus even if a framework/background update has stolen it.
+      if (document.activeElement !== currentSearch) currentSearch.focus({preventScroll:true});
+      try { currentSearch.setSelectionRange(caretStart, caretEnd); } catch (_e) {}
+    };
     if (!resultsOnly && !pickerData) {
       folderBox.replaceChildren(node('p','Ordner werden geladen …'));
       imageBox.replaceChildren();
@@ -1185,14 +1194,14 @@
       }
       renderPickerItems(!resultsOnly);
       byId('ppi-picker-results').removeAttribute('aria-busy');
-      if (restoreSearchFocus && document.activeElement !== currentSearch) {
-        currentSearch.focus({preventScroll:true});
-      }
+      retainSearchFocus();
+      requestAnimationFrame(retainSearchFocus);
     }catch(e){
       if(serial!==browseSerial)return;
       byId('ppi-picker-results').removeAttribute('aria-busy');
       if (!resultsOnly && !pickerData) folderBox.replaceChildren(node('p','Ordner konnten nicht geladen werden: '+e.message));
-      if (restoreSearchFocus && document.activeElement !== currentSearch) currentSearch.focus({preventScroll:true});
+      retainSearchFocus();
+      requestAnimationFrame(retainSearchFocus);
       notify('Panorama-Auswahl: '+e.message,true);
     }
   }
@@ -1202,7 +1211,13 @@
   // Debounced live search. Only the image-results container is rerendered.
   // Invalidate any previous in-flight result as soon as the text changes.
   const searchInput=byId('ppi-picker-search');
+  // Genuine user interaction elsewhere ends the typing session.
+  root.addEventListener('pointerdown', event => {
+    if (!searchInput.contains(event.target)) searchEditing = false;
+  }, true);
+  searchInput.addEventListener('focus',()=>{searchEditing=true;});
   searchInput.addEventListener('input',()=>{
+    searchEditing = true;
     ++browseSerial;
     clearTimeout(pickerDebounce);
     pickerDebounce=setTimeout(reapplyPicker,350);
