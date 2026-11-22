@@ -1092,54 +1092,84 @@
     // A hidden graph has clientWidth=0 and would overlap all panorama cards.
     if (!byId('ppi-step-edit').hidden) renderGraph();
   }
+
   let browseSerial = 0;
-  // Folder navigation uses a dedicated breadcrumb and separate folder and image areas.
-  // Multi-selection stays available while navigating through multiple folders.
-  async function browse(folderId = 0, resetSelection = false) {
+  let pickerData = null;
+  let pickerDebounce = null;
+  const pickerValue = id => byId(id).value;
+  function renderPickerItems() {
+    if (!pickerData) return;
+    const folderBox=byId('ppi-picker-folders'), imageBox=byId('ppi-picker-images');
+    const folders=pickerData.items.filter(item=>item.type==='folder');
+    const tourIds=new Set((active?.images||[]).map(item=>Number(item.id)));
+    const status=pickerValue('ppi-picker-status');
+    const images=pickerData.items.filter(item=>item.type==='image' &&
+      (status==='all'||(status==='used')===tourIds.has(Number(item.id))));
+    folderBox.replaceChildren();imageBox.replaceChildren();
+    if(!folders.length)folderBox.append(node('p','Keine Unterordner.'));
+    for(const item of folders){
+      const button=node('button',undefined,'ppi-folder-tile');button.type='button';
+      button.append(node('span','📁','ppi-folder-icon'),node('span',item.name));
+      button.addEventListener('click',()=>browse(item.id));folderBox.append(button);
+    }
+    if(!images.length)imageBox.append(node('p','Keine passenden JPEG-Bilder gefunden.'));
+    for(const item of images){
+      const card=node('label',undefined,'ppi-pano-card');
+      const checkbox=node('input');checkbox.type='checkbox';checkbox.checked=selectedFiles.has(Number(item.id));
+      checkbox.setAttribute('aria-label','Panorama '+item.name+' auswählen');
+      checkbox.addEventListener('change',()=>{
+        if(checkbox.checked)selectedFiles.set(Number(item.id),item);
+        else selectedFiles.delete(Number(item.id));
+        card.classList.toggle('ppi-selected',checkbox.checked);updateSelection();
+      });
+      card.classList.toggle('ppi-selected',checkbox.checked);
+      const thumb=node('div',undefined,'ppi-picker-thumb');
+      thumb.append(imageThumb(item.id,320,180),node('span','🌐','ppi-thumb-fallback'));
+      const caption=node('span',item.name,'ppi-picker-filename');
+      if(item.path && byId('ppi-picker-recursive').checked)caption.title=item.path;
+      const quickView=node('button','Vorschau öffnen','ppi-picker-view');
+      quickView.type='button';
+      quickView.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();previewImage(item);});
+      card.append(checkbox,thumb,caption,quickView);imageBox.append(card);
+    }
+    byId('ppi-picker-results').textContent=images.length+' Treffer'+(pickerData.truncated?' (begrenzt)':'');
+    const warning=byId('ppi-picker-limit-warning');
+    warning.hidden=!pickerData.truncated;
+    warning.textContent=pickerData.truncated
+      ? 'Sehr viele Dateien gefunden. Die Ergebnisliste ist begrenzt; bitte Suche oder Ordner eingrenzen.'
+      : '';
+    updateSelection();
+  }
+  // The server applies the filename/date/size search before limiting results;
+  // browsing into other folders keeps selected images from previous folders.
+  async function browse(folderId=0, resetSelection=false) {
     const serial=++browseSerial;
     if(resetSelection){selectedFiles.clear();updateSelection();}
     show('picker');
     const folderBox=byId('ppi-picker-folders'), imageBox=byId('ppi-picker-images');
+    pickerData=null;
     folderBox.replaceChildren(node('p','Ordner werden geladen …'));
     imageBox.replaceChildren();
+    byId('ppi-picker-results').textContent='';
+    byId('ppi-picker-limit-warning').hidden=true;
     byId('ppi-picker-path').textContent='Ordner laden …';
     byId('ppi-picker-up').disabled=true;
+    const params=new URLSearchParams({
+      folderId:String(folderId),
+      q:pickerValue('ppi-picker-search').trim(),
+      sort:pickerValue('ppi-picker-sort'),
+      date:pickerValue('ppi-picker-date'),
+      size:pickerValue('ppi-picker-size'),
+      recursive:byId('ppi-picker-recursive').checked?'1':'0'
+    });
     try {
-      const data=await request(`${filesApi}?folderId=${encodeURIComponent(folderId)}`);
+      const data=await request(filesApi+(filesApi.includes('?')?'&':'?')+params.toString());
       if(serial!==browseSerial)return;
       browsing={id:Number(data.folderId),path:data.path,parentId:Number(data.parentId||0)};
+      pickerData=data;
       byId('ppi-picker-path').textContent=data.path;
       byId('ppi-picker-up').disabled=Boolean(data.isRoot);
-      folderBox.replaceChildren();imageBox.replaceChildren();
-      const folders=data.items.filter(item=>item.type==='folder');
-      const images=data.items.filter(item=>item.type==='image');
-      if(!folders.length) folderBox.append(node('p','Keine Unterordner.'));
-      for(const item of folders){
-        const button=node('button',undefined,'ppi-folder-tile');button.type='button';
-        button.append(node('span','📁','ppi-folder-icon'),node('span',item.name));
-        button.addEventListener('click',()=>browse(item.id));folderBox.append(button);
-      }
-      if(!images.length)imageBox.append(node('p','Keine JPEG-Bilder in diesem Ordner.'));
-      for(const item of images){
-        const card=node('label',undefined,'ppi-pano-card');
-        const checkbox=node('input');checkbox.type='checkbox';checkbox.checked=selectedFiles.has(Number(item.id));
-        checkbox.setAttribute('aria-label',`Panorama ${item.name} auswählen`);
-        checkbox.addEventListener('change',()=>{
-          if(checkbox.checked)selectedFiles.set(Number(item.id),item);
-          else selectedFiles.delete(Number(item.id));
-          card.classList.toggle('ppi-selected',checkbox.checked);updateSelection();
-        });
-        card.classList.toggle('ppi-selected',checkbox.checked);
-        const thumb=node('div',undefined,'ppi-picker-thumb');thumb.append(imageThumb(item.id,320,180),node('span','🌐','ppi-thumb-fallback'));
-        const caption=node('span',item.name,'ppi-picker-filename');
-        const quickView=node('button','Vorschau öffnen','ppi-picker-view');
-        quickView.type='button';
-        quickView.addEventListener('click', event => {
-          event.preventDefault();event.stopPropagation();previewImage(item);
-        });
-        card.append(checkbox,thumb,caption,quickView);imageBox.append(card);
-      }
-      updateSelection();
+      renderPickerItems();
     }catch(e){
       if(serial!==browseSerial)return;
       folderBox.replaceChildren(node('p','Ordner konnten nicht geladen werden: '+e.message));
@@ -1147,6 +1177,29 @@
       notify('Panorama-Auswahl: '+e.message,true);
     }
   }
+  function reapplyPicker() {
+    if(!byId('ppi-tour-picker').hidden)browse(browsing?.id||0);
+  }
+  byId('ppi-picker-search').addEventListener('input',()=>{
+    clearTimeout(pickerDebounce);
+    pickerDebounce=setTimeout(reapplyPicker,300);
+  });
+  for(const id of ['ppi-picker-sort','ppi-picker-date','ppi-picker-size','ppi-picker-recursive']){
+    byId(id).addEventListener('change',()=>{
+      clearTimeout(pickerDebounce);
+      reapplyPicker();
+    });
+  }
+  byId('ppi-picker-status').addEventListener('change',renderPickerItems);
+  byId('ppi-picker-reset-filters').addEventListener('click',()=>{
+    clearTimeout(pickerDebounce);
+    for(const id of ['ppi-picker-search','ppi-picker-sort','ppi-picker-status','ppi-picker-date','ppi-picker-size']){
+      byId(id).selectedIndex!==undefined && byId(id).tagName==='SELECT'
+        ? byId(id).selectedIndex=0 : byId(id).value='';
+    }
+    byId('ppi-picker-recursive').checked=false;
+    reapplyPicker();
+  });
   byId('ppi-tour-create').addEventListener('click',async()=>{
     const name=prompt('Wie soll die neue Tour heißen?');if(name===null)return;
     try{const data=await request(api,'POST',{name});await refresh();openTour(data.tour);notify('Tour erstellt. Jetzt Panoramen hinzufügen.');}catch(e){notify(e.message,true);}
