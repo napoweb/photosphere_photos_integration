@@ -281,7 +281,9 @@
 
  #ppi-tours-app .ppi-picker-toolbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0}
  #ppi-tours-app #ppi-picker-selection-count{margin-left:auto;font-weight:600}
- #ppi-tours-app .ppi-picker-heading{font-size:15px;margin:20px 0 10px}
+ #ppi-tours-app .ppi-picker-heading{font-size:15px;margin:8px 0 6px}
+ #ppi-tours-app #ppi-tour-picker .ppi-picker-toolbar{margin:8px 0 4px}
+ #ppi-tours-app #ppi-tour-picker .ppi-picker-section-title:first-of-type .ppi-picker-heading{margin-top:4px}
  #ppi-tours-app .ppi-picker-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
  #ppi-tours-app .ppi-picker-inline{display:flex;align-items:center;gap:6px;font-size:13px}
  #ppi-tours-app .ppi-picker-switches{display:flex;align-items:center;flex-wrap:wrap;column-gap:20px;row-gap:8px;margin:4px 0 8px;padding:7px 10px;background:var(--color-background-hover);border-radius:8px}
