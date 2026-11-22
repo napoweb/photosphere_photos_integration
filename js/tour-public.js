@@ -645,7 +645,11 @@
       byId('ppi-public-landing-title').textContent=tour.name;
       byId('ppi-public-landing-info').textContent=`${tour.images.length} ${tour.images.length===1?'Panorama':'Panoramen'} entdecken`;
       const intro=byId('ppi-public-landing-description');
-      intro.textContent=String(display.introText||'').trim();intro.hidden=!intro.textContent;
+      const introText=String(display.introText||'').trim();
+      const descriptionRenderer=window.PPI_TOUR_DESCRIPTION;
+      if(descriptionRenderer?.render)descriptionRenderer.render(intro,introText);
+      else intro.textContent=introText;
+      intro.hidden=!introText;
       // The landing cover must not download a full-size 360 JPEG in parallel.
       cover.src=thumbnailUrl(startImage.id) + (thumbnailUrl(startImage.id).includes('?') ? '&' : '?') + 'cover=1';
       cover.onerror=()=>{cover.hidden=true;};
