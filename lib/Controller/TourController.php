@@ -294,10 +294,10 @@ final class TourController extends Controller {
             // Require the Adobe XMP header as well as a recognized GPano field.
             if (strpos($head, 'http://ns.adobe.com/xap/1.0/') === false) { return false; }
             return (bool)preg_match(
-                '~(?:\\bGPano:ProjectionType\\s*=\\s*["\\x27]equirectangular["\\x27]|<GPano:ProjectionType>\\s*equirectangular\\s*</GPano:ProjectionType>)~i',
+                '~(?:\bGPano:ProjectionType\s*=\s*["\x27]equirectangular["\x27]|<GPano:ProjectionType>\s*equirectangular\s*</GPano:ProjectionType>)~i',
                 $head
             );
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             return false;
         } finally {
             if (is_resource($stream)) { fclose($stream); }
@@ -315,7 +315,7 @@ final class TourController extends Controller {
             $recognized = $this->hasPanoramaXmp($file);
             $cache->set($key, $recognized ? 'yes' : 'no', 30 * 86400);
             return $recognized;
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             // A cache failure must not expose ordinary JPEGs as verified panoramas.
             return $this->hasPanoramaXmp($file);
         }
