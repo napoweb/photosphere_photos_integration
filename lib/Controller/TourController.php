@@ -280,19 +280,81 @@ final class TourController extends Controller {
                 }
                 if ($folder === null) { return $this->error('Ordner nicht verfügbar oder nicht freigegeben', 404); }
             }
-            $items = [];
-            foreach ($folder->getDirectoryListing() as $node) {
-                if (!$node->isReadable()) { continue; }
-                $isFolder = $node instanceof Folder;
-                $isImage = $node instanceof File && $node->getMimetype() === 'image/jpeg';
-                if (!$isFolder && !$isImage) { continue; }
-                $relative = $home->getRelativePath($node->getPath());
-                if (!is_string($relative)) { continue; }
-                $items[] = ['id' => $node->getId(), 'name' => $node->getName(), 'path' => '/' . ltrim($relative, '/'),
-                    'type' => $isFolder ? 'folder' : 'image'];
-                if (count($items) >= 300) { break; }
+
+            $query = trim((string)$this->request->getParam('q', ''));
+            if (mb_strlen($query) > 120) { return $this->error('Suchbegriff ist zu lang'); }
+            $recursive = (string)$this->request->getParam('recursive', '0') === '1';
+            $sort = (string)$this->request->getParam('sort', 'name_asc');
+            if (!in_array($sort, ['name_asc', 'name_desc', 'newest', 'oldest', 'size_desc'], true)) {
+                $sort = 'name_asc';
             }
-            usort($items, fn($a, $b) => ($a['type'] === $b['type'] ? strnatcasecmp($a['name'], $b['name']) : ($a['type'] === 'folder' ? -1 : 1)));
+            $date = (string)$this->request->getParam('date', 'any');
+            $size = (string)$this->request->getParam('size', 'any');
+            if (!in_array($date, ['any', '30d', 'year'], true)) { $date = 'any'; }
+            if (!in_array($size, ['any', 'lt10', '10to50', 'gt50'], true)) { $size = 'any'; }
+            $threshold = $date === '30d' ? time() - 30 * 86400
+                : ($date === 'year' ? strtotime(gmdate('Y') . '-01-01 00:00:00 UTC') : 0);
+            $minMb = 10 * 1024 * 1024;
+            $maxMb = 50 * 1024 * 1024;
+            $folders = [];
+            $images = [];
+            $pending = [$folder];
+            $visited = [];
+            $scanned = 0;
+            $truncated = false;
+            // Bound recursive traversal to keep large/external mounts responsive.
+            // Only list readable nodes from the signed-in user's accessible tree.
+            while ($pending !== [] && $scanned < 3000 && count($images) < 1200) {
+                $current = array_shift($pending);
+                $currentId = $current->getId();
+                if (isset($visited[$currentId])) { continue; }
+                $visited[$currentId] = true;
+                try { $listing = $current->getDirectoryListing(); }
+                catch (\Throwable $e) { continue; }
+                foreach ($listing as $node) {
+                    if (++$scanned > 3000) { $truncated = true; break 2; }
+                    if (!$node->isReadable()) { continue; }
+                    $isFolder = $node instanceof Folder;
+                    $isImage = $node instanceof File && $node->getMimetype() === 'image/jpeg';
+                    if (!$isFolder && !$isImage) { continue; }
+                    $relative = $home->getRelativePath($node->getPath());
+                    if (!is_string($relative)) { continue; }
+                    if ($isFolder) {
+                        if ($currentId === $folder->getId()) {
+                            $folders[] = ['id' => $node->getId(), 'name' => $node->getName(),
+                                'path' => '/' . ltrim($relative, '/'), 'type' => 'folder'];
+                        }
+                        if ($recursive) { $pending[] = $node; }
+                        continue;
+                    }
+                    if ($query !== '' && mb_stripos($node->getName(), $query) === false) { continue; }
+                    $mtime = (int)$node->getMtime();
+                    $bytes = (int)$node->getSize();
+                    if ($threshold > 0 && $mtime < $threshold) { continue; }
+                    if ($size === 'lt10' && $bytes >= $minMb) { continue; }
+                    if ($size === '10to50' && ($bytes < $minMb || $bytes > $maxMb)) { continue; }
+                    if ($size === 'gt50' && $bytes <= $maxMb) { continue; }
+                    $images[] = ['id' => $node->getId(), 'name' => $node->getName(),
+                        'path' => '/' . ltrim($relative, '/'), 'type' => 'image',
+                        'mtime' => $mtime, 'size' => $bytes];
+                    if (count($images) >= 1200) { $truncated = true; break 2; }
+                }
+                if (!$recursive) { break; }
+            }
+            if ($pending !== []) { $truncated = true; }
+            usort($folders, fn($a, $b) => strnatcasecmp($a['name'], $b['name']));
+            usort($images, static function ($a, $b) use ($sort): int {
+                $name = strnatcasecmp($a['name'], $b['name']);
+                return match ($sort) {
+                    'name_desc' => -$name,
+                    'newest' => ($b['mtime'] <=> $a['mtime']) ?: $name,
+                    'oldest' => ($a['mtime'] <=> $b['mtime']) ?: $name,
+                    'size_desc' => ($b['size'] <=> $a['size']) ?: $name,
+                    default => $name,
+                };
+            });
+            if (count($images) > 400) { $truncated = true; }
+            $items = array_merge($folders, array_slice($images, 0, 400));
             $relativeFolder = $home->getRelativePath($folder->getPath());
             $path = '/' . ltrim((string)$relativeFolder, '/');
             $parentId = 0;
@@ -304,7 +366,7 @@ final class TourController extends Controller {
                 }
             }
             return new JSONResponse(['success' => true, 'path' => $path, 'folderId' => $folder->getId(),
-                'parentId' => $parentId, 'isRoot' => $folder->getId() === $home->getId(), 'items' => $items]);
+                'parentId' => $parentId, 'isRoot' => $folder->getId() === $home->getId(), 'items' => $items, 'truncated' => $truncated]);
         } catch (\Throwable $e) {
             // Fail closed: never expose server paths or exception details to the browser.
             return $this->error('Ordner konnten nicht geladen werden. Bitte Nextcloud-Protokoll prüfen.', 500);
