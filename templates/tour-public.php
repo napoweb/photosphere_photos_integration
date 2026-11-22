@@ -127,7 +127,10 @@
   #ppi-public-landing-description[hidden]{display:none!important}
   #ppi-public-landing-description p{font:inherit!important;color:inherit!important;margin:0 0 7px!important}
   #ppi-public-landing-description ul,#ppi-public-landing-description ol{display:block;max-width:100%;box-sizing:border-box;margin:5px 0 9px;padding-left:26px;text-align:left;overflow-wrap:anywhere}
-  #ppi-public-landing-description li{margin:2px 0}
+  #ppi-public-landing-description ul{list-style-type:disc!important;list-style-position:outside!important}
+  #ppi-public-landing-description ol{list-style-type:decimal!important;list-style-position:outside!important}
+  #ppi-public-landing-description li{display:list-item!important;margin:2px 0;color:#fff!important;list-style:inherit}
+  #ppi-public-landing-description li::marker{color:#fff!important}
   #ppi-public-landing-description a{color:#bde3ff;text-decoration:underline;text-underline-offset:2px;overflow-wrap:anywhere}
   #ppi-public-landing-description a:hover,#ppi-public-landing-description a:focus-visible{color:#fff}
   #ppi-public-landing-description svg.ppi-inline-quad{display:inline-block;width:1.65em;height:1em;vertical-align:-.16em;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
