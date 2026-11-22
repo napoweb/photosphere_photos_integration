@@ -74,7 +74,28 @@
         </div>
         <div class="ppi-design-group" aria-label="Öffentliche Präsentation">
           <div class="ppi-design-field"><label for="ppi-design-size">Größe des Hotspot-Designs</label><div class="ppi-design-range"><input type="range" id="ppi-design-size" min="0" max="4" step="1" value="2" aria-describedby="ppi-design-size-label"><output id="ppi-design-size-label">Mittel</output></div></div>
-          <div class="ppi-design-field ppi-design-intro"><label for="ppi-design-intro">Beschreibung auf der öffentlichen Startseite</label><textarea id="ppi-design-intro" rows="3" maxlength="600" placeholder="Optionale Begrüßung für Besucher"></textarea><p>Optional, maximal 600 Zeichen.</p></div>
+          <div class="ppi-design-field ppi-design-intro">
+            <label for="ppi-design-intro">Beschreibung auf der öffentlichen Startseite</label>
+            <div class="ppi-intro-toolbar" role="toolbar" aria-label="Beschreibung formatieren">
+              <button type="button" data-intro-insert="bullet" title="Aufzählung einfügen">• Aufzählung</button>
+              <button type="button" data-intro-insert="number" title="Nummerierung einfügen">1. Nummerierung</button>
+              <button type="button" data-intro-insert="link" title="Sicheren Internetlink einfügen">🔗 Link</button>
+              <button type="button" id="ppi-intro-icons-toggle" aria-controls="ppi-intro-icons" aria-expanded="false" title="Symbolauswahl öffnen">▦ Symbole</button>
+            </div>
+            <div class="ppi-intro-icons" id="ppi-intro-icons" role="group" aria-label="Symbole einfügen" hidden>
+              <button type="button" data-intro-icon=":quad:" title="Quad / ATV">🛞 Quad/ATV</button>
+              <button type="button" data-intro-icon="🏁" title="Offroad und Motorsport">🏁 Offroad</button>
+              <button type="button" data-intro-icon="🚵" title="Mountainbike">🚵 MTB</button>
+              <button type="button" data-intro-icon="🏖️" title="Urlaub">🏖️ Urlaub</button>
+              <button type="button" data-intro-icon="🏠" title="Zuhause">🏠 Home</button>
+              <button type="button" data-intro-icon="📍" title="Standort">📍 Standort</button>
+              <button type="button" data-intro-icon="🌲" title="Wald und Natur">🌲 Natur</button>
+              <button type="button" data-intro-icon="🏕️" title="Camping">🏕️ Camping</button>
+              <button type="button" data-intro-icon="📷" title="Kamera">📷 Foto</button>
+            </div>
+            <textarea id="ppi-design-intro" rows="4" maxlength="1200" placeholder="Begrüßung, Aufzählungen, Links und Symbole"></textarea>
+            <p>Optional, maximal 1.200 Zeichen. Listen, Links und Symbole erscheinen formatiert auf der öffentlichen Startseite. Das Kürzel :quad: wird dort als Quad-Symbol dargestellt.</p>
+          </div>
         </div>
       </div>
       <div class="ppi-design-future"><strong>Für kommende Versionen vorgesehen:</strong> Automatische Drehung.</div>
@@ -1195,4 +1216,13 @@
   align-self:stretch;
 }
 
+/* Compact safe-formatting toolbar for tour landing descriptions. */
+#ppi-tours-app #ppi-step-design .ppi-intro-toolbar{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 4px}
+#ppi-tours-app #ppi-step-design .ppi-intro-toolbar button,
+#ppi-tours-app #ppi-step-design .ppi-intro-icons button{min-height:32px;min-width:0;width:auto;padding:5px 10px;font-size:12px;border:1px solid var(--color-border);border-radius:7px;background:var(--color-background-hover);color:var(--color-main-text);cursor:pointer}
+#ppi-tours-app #ppi-step-design .ppi-intro-toolbar button:hover,
+#ppi-tours-app #ppi-step-design .ppi-intro-icons button:hover{border-color:var(--color-primary-element)}
+#ppi-tours-app #ppi-step-design .ppi-intro-icons{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px;border:1px solid var(--color-border);border-radius:9px;background:var(--color-background-hover);margin:0 0 7px}
+#ppi-tours-app #ppi-step-design .ppi-intro-icons[hidden]{display:none!important}
+#ppi-tours-app #ppi-step-design .ppi-intro-icons button{background:var(--color-main-background);font-size:13px}
 </style>
