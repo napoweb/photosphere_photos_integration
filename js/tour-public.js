@@ -664,45 +664,58 @@
     }catch(error){status.textContent=error.message;landing.hidden=true;viewer.hidden=false;}
   }
 
-  // Public tour descriptions accept only a tiny Markdown subset.
-  // Build links, lists and the quad icon with DOM APIs; never inject user HTML.
+  // Safe minimal Markdown rendering: no user HTML, only text, lists, links and predefined pictograms.
   function renderLandingDescription(container,source){
     container.replaceChildren();container.hidden=!source;
     if(!source)return;
     const svgNS='http://www.w3.org/2000/svg';
-    const quadIcon=()=>{
+    const makeSvg=(kind)=>{
       const svg=document.createElementNS(svgNS,'svg');
       svg.setAttribute('viewBox','0 0 64 36');
-      svg.setAttribute('role','img');svg.setAttribute('aria-label','Quad / ATV');
-      svg.classList.add('ppi-inline-quad');
+      svg.setAttribute('role','img');
+      svg.setAttribute('aria-label',kind==='quad'?'Quad / ATV':'Kameradrohne');
+      svg.classList.add(kind==='quad'?'ppi-inline-quad':'ppi-inline-drone');
       const add=(name,attrs)=>{
-        const el=document.createElementNS(svgNS,name);
-        for(const [key,value] of Object.entries(attrs))el.setAttribute(key,String(value));
-        svg.append(el);
+        const element=document.createElementNS(svgNS,name);
+        for(const [key,value] of Object.entries(attrs))element.setAttribute(key,String(value));
+        svg.append(element);
       };
-      add('circle',{cx:14,cy:27,r:7});
-      add('circle',{cx:50,cy:27,r:7});
-      add('path',{d:'M12 19 L20 18 L26 14 L41 14 L48 18 L55 19 M20 18 L25 26 L42 26 L48 18 M27 13 L30 9 L38 9 M43 14 L44 8 L50 8'});
+      if(kind==='quad'){
+        add('circle',{cx:14,cy:27,r:7});
+        add('circle',{cx:50,cy:27,r:7});
+        add('path',{d:'M12 19 L20 18 L26 14 L41 14 L48 18 L55 19 M20 18 L25 26 L42 26 L48 18 M27 13 L30 9 L38 9 M43 14 L44 8 L50 8'});
+      }else{
+        add('circle',{cx:12,cy:11,r:6});
+        add('circle',{cx:52,cy:11,r:6});
+        add('path',{d:'M18 13 L27 19 L37 19 L46 13 M18 11 H26 M38 11 H46 M27 19 L37 19 L40 25 H24 Z'});
+        add('rect',{x:28,y:24,width:8,height:7,rx:2});
+      }
       return svg;
     };
     const appendInline=(parent,line)=>{
-      const pattern=/(\[([^\]\r\n]{1,120})\]\((https?:\/\/[^\s)]+)\)|:quad:)/gi;
+      const pattern=/(\[([^\]\r\n]{1,120})\]\((https?:\/\/[^\s)]+)\)|:quad:|:drone:|:360:)/gi;
       let last=0,match;
       while((match=pattern.exec(line))!==null){
         parent.append(document.createTextNode(line.slice(last,match.index)));
-        if(match[0].toLowerCase()===':quad:'){
-          parent.append(quadIcon());
+        const code=match[0].toLowerCase();
+        if(code===':quad:'||code===':drone:'){
+          parent.append(makeSvg(code===':quad:'?'quad':'drone'));
+        }else if(code===':360:'){
+          const badge=document.createElement('span');
+          badge.className='ppi-inline-360';
+          badge.setAttribute('role','img');
+          badge.setAttribute('aria-label','360 Grad Panorama');
+          badge.textContent='360°';
+          parent.append(badge);
         }else{
           try{
             const url=new URL(match[3]);
             if(!['http:','https:'].includes(url.protocol))throw Error('invalid protocol');
-            const anchor=document.createElement('a');
-            anchor.href=url.href;anchor.textContent=match[2];
-            anchor.target='_blank';anchor.rel='noopener noreferrer nofollow';
-            parent.append(anchor);
-          }catch(_error){
-            parent.append(document.createTextNode(match[0]));
-          }
+            const link=document.createElement('a');link.href=url.href;
+            link.textContent=match[2];link.target='_blank';
+            link.rel='noopener noreferrer nofollow';
+            parent.append(link);
+          }catch(_error){parent.append(document.createTextNode(match[0]));}
         }
         last=pattern.lastIndex;
       }
@@ -720,8 +733,7 @@
         const item=document.createElement('li');
         appendInline(item,(bullet||numbered)[1]);list.append(item);
       }else if(line.trim()){
-        list=null;
-        const para=document.createElement('p');
+        list=null;const para=document.createElement('p');
         appendInline(para,line);container.append(para);
       }else{list=null;}
     }
