@@ -915,7 +915,12 @@ final class TourController extends Controller {
             $description = 'Interaktive 360°-Tour';
             if (!$protected) {
                 $title = mb_substr(trim((string)($tour['name'] ?? '360°-Tour')), 0, 100);
-                $description = mb_substr(trim((string)($tour['display']['introText'] ?? '')), 0, 250);
+                $description = trim((string)($tour['display']['introText'] ?? ''));
+                // Social previews are plain text, not raw Markdown or icon shortcodes.
+                $description = preg_replace('/\[([^\]]+)\]\(https?:\/\/[^\s)]+\)/i', '$1', $description) ?? $description;
+                $description = str_replace(':quad:', 'Quad/ATV', $description);
+                $description = preg_replace('/(?:^|\n)\s*(?:[-*]|\d+[.)])\s+/m', ' ', $description) ?? $description;
+                $description = mb_substr(trim(preg_replace('/\s+/u', ' ', $description) ?? $description), 0, 250);
                 if ($description === '') { $description = 'Entdecke diese interaktive 360°-Tour.'; }
                 if ($mode === 'cover' && $this->socialCoverFile($found) !== null) {
                     $previewImage = $this->urlGenerator->getAbsoluteURL(
@@ -1163,7 +1168,7 @@ final class TourController extends Controller {
                 $startId = filter_var($input['startImageId'] ?? 0, FILTER_VALIDATE_INT);
                 $startYaw = filter_var($input['startYaw'] ?? 0, FILTER_VALIDATE_INT);
                 $description = trim((string)($input['introText'] ?? ''));
-                if (mb_strlen($description) > 600) { return $this->error('Beschreibung: maximal 600 Zeichen'); }
+                if (mb_strlen($description) > 1200) { return $this->error('Beschreibung: maximal 1.200 Zeichen'); }
                 $size = (string)($input['hotspotSize'] ?? 'medium');
                 // Preserve older tours: replace the retired chat pin when display is saved.
                 $style = (string)($input['hotspotStyle'] ?? 'classic');
