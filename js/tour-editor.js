@@ -1,10 +1,10 @@
-/* Photo Sphere Tour Editor – tag-search test build 0.4.62.94. */
+/* Photo Sphere Tour Editor – tag-search test build 0.4.62.95. */
 (() => {
   'use strict';
   const root = document.getElementById('ppi-tours-app');
   if (!root) return;
   // Diagnostic marker: verifies that the browser loaded the matching script.
-  root.dataset.tourEditorBuild = '0.4.62.94-tagsearch';
+  root.dataset.tourEditorBuild = '0.4.62.95-tagsearch';
   const byId = id => document.getElementById(id);
   const api = root.dataset.apiUrl;
   const filesApi = root.dataset.filesUrl;
@@ -1187,6 +1187,11 @@
     try {
       const data=await request(filesApi+(filesApi.includes('?')?'&':'?')+params.toString());
       if(serial!==browseSerial)return;
+      // A stale PHP controller can silently ignore the search-mode parameter.
+      // Never display misleading filename hits as tag-only results.
+      if (data.searchMode !== params.get('searchMode')) {
+        throw new Error('Suchmodus wurde vom Server nicht bestätigt. Bitte den aktualisierten PHP-Controller der Test-App installieren.');
+      }
       browsing={id:Number(data.folderId),path:data.path,parentId:Number(data.parentId||0)};
       pickerFolderId=browsing.id;
       pickerData=data;
@@ -1218,8 +1223,12 @@
   const syncSearchModeLabel=()=>{
     searchModeLabel.textContent=searchMode.options[searchMode.selectedIndex]?.textContent || 'Suchbereich';
   };
-  searchMode.addEventListener('input',syncSearchModeLabel);
-  searchMode.addEventListener('change',syncSearchModeLabel);
+  searchMode.addEventListener('change',()=>{
+    syncSearchModeLabel();
+    ++browseSerial;
+    clearTimeout(pickerDebounce);
+    reapplyPicker();
+  });
   syncSearchModeLabel();
   // Genuine user interaction elsewhere ends the typing session.
   root.addEventListener('pointerdown', event => {
@@ -1255,7 +1264,7 @@
       reapplyPicker();
     }
   });
-  for(const id of ['ppi-picker-search-mode','ppi-picker-sort','ppi-picker-date','ppi-picker-size','ppi-picker-recursive']){
+  for(const id of ['ppi-picker-sort','ppi-picker-date','ppi-picker-size','ppi-picker-recursive']){
     byId(id).addEventListener('change',()=>{
       ++browseSerial;
       clearTimeout(pickerDebounce);
@@ -1287,6 +1296,8 @@
         ? byId(id).selectedIndex=0 : byId(id).value='';
     }
     byId('ppi-picker-recursive').checked=false;
+    syncSearchModeLabel();
+    ++browseSerial;
     reapplyPicker();
   });
   byId('ppi-tour-create').addEventListener('click',async()=>{
