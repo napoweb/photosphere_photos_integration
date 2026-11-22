@@ -82,19 +82,56 @@
               <button type="button" data-intro-insert="link" title="Sicheren Internetlink einfügen">🔗 Link</button>
               <button type="button" id="ppi-intro-icons-toggle" aria-controls="ppi-intro-icons" aria-expanded="false" title="Symbolauswahl öffnen">▦ Symbole</button>
             </div>
-            <div class="ppi-intro-icons" id="ppi-intro-icons" role="group" aria-label="Symbole einfügen" hidden>
-              <button type="button" data-intro-icon=":quad:" title="Quad / ATV"><svg viewBox="0 0 64 36" aria-hidden="true" focusable="false"><circle cx="14" cy="27" r="7"/><circle cx="50" cy="27" r="7"/><path d="M12 19 L20 18 L26 14 L41 14 L48 18 L55 19 M20 18 L25 26 L42 26 L48 18 M27 13 L30 9 L38 9 M43 14 L44 8 L50 8"/></svg> Quad/ATV</button>
-              <button type="button" data-intro-icon="🏁" title="Offroad und Motorsport">🏁 Offroad</button>
-              <button type="button" data-intro-icon="🚵" title="Mountainbike">🚵 MTB</button>
-              <button type="button" data-intro-icon="🏖️" title="Urlaub">🏖️ Urlaub</button>
-              <button type="button" data-intro-icon="🏠" title="Zuhause">🏠 Home</button>
-              <button type="button" data-intro-icon="📍" title="Standort">📍 Standort</button>
-              <button type="button" data-intro-icon="🌲" title="Wald und Natur">🌲 Natur</button>
-              <button type="button" data-intro-icon="🏕️" title="Camping">🏕️ Camping</button>
-              <button type="button" data-intro-icon="📷" title="Kamera">📷 Foto</button>
-            </div>
-            <textarea id="ppi-design-intro" rows="4" maxlength="1200" placeholder="Begrüßung, Aufzählungen, Links und Symbole"></textarea>
-            <p>Optional, maximal 1.200 Zeichen. Listen, Links und Symbole erscheinen formatiert auf der öffentlichen Startseite. Das Kürzel :quad: wird dort als Quad-Symbol dargestellt.</p>
+            <div class="ppi-intro-icons" id="ppi-intro-icons" role="group" aria-label="Symbole für die Tourbeschreibung einfügen" hidden>
+              <div class="ppi-intro-icon-group"><strong>Quad, MTB & Outdoor</strong><div class="ppi-intro-icon-grid">
+                <button type="button" data-intro-icon=":quad:" title="Quad / ATV" aria-label="Quad / ATV"><svg viewBox="0 0 64 36" aria-hidden="true" focusable="false"><circle cx="14" cy="27" r="7"/><circle cx="50" cy="27" r="7"/><path d="M12 19 L20 18 L26 14 L41 14 L48 18 L55 19 M20 18 L25 26 L42 26 L48 18 M27 13 L30 9 L38 9 M43 14 L44 8 L50 8"/></svg></button>
+                <button type="button" data-intro-icon="🏁" title="Offroad" aria-label="Offroad">🏁</button>
+                <button type="button" data-intro-icon="🚵" title="MTB" aria-label="MTB">🚵</button>
+                <button type="button" data-intro-icon="🚴" title="Radtour" aria-label="Radtour">🚴</button>
+                <button type="button" data-intro-icon="🚲" title="Fahrrad" aria-label="Fahrrad">🚲</button>
+                <button type="button" data-intro-icon="🛞" title="Reifen" aria-label="Reifen">🛞</button>
+                <button type="button" data-intro-icon="⛰️" title="Berge" aria-label="Berge">⛰️</button>
+                <button type="button" data-intro-icon="🥾" title="Wandern" aria-label="Wandern">🥾</button>
+                <button type="button" data-intro-icon="🌲" title="Wald" aria-label="Wald">🌲</button>
+                <button type="button" data-intro-icon="🧭" title="Kompass" aria-label="Kompass">🧭</button>
+                <button type="button" data-intro-icon="🏕️" title="Camping" aria-label="Camping">🏕️</button>
+              </div></div>
+              <div class="ppi-intro-icon-group"><strong>Foto, Video & 360°</strong><div class="ppi-intro-icon-grid">
+                <button type="button" data-intro-icon=":360:" title="360°-Panorama" aria-label="360°-Panorama"><span class="ppi-intro-360-badge">360°</span></button>
+                <button type="button" data-intro-icon=":drone:" title="Kameradrohne" aria-label="Kameradrohne"><svg viewBox="0 0 64 36" aria-hidden="true" focusable="false"><circle cx="12" cy="11" r="6"/><circle cx="52" cy="11" r="6"/><path d="M18 13 L27 19 L37 19 L46 13 M18 11 H26 M38 11 H46 M27 19 H37 L40 25 H24 Z"/><rect x="28" y="24" width="8" height="7" rx="2"/></svg></button>
+                <button type="button" data-intro-icon="📷" title="Fotokamera" aria-label="Fotokamera">📷</button>
+                <button type="button" data-intro-icon="📸" title="Fotoaufnahme" aria-label="Fotoaufnahme">📸</button>
+                <button type="button" data-intro-icon="🎥" title="Film-Kamera" aria-label="Film-Kamera">🎥</button>
+                <button type="button" data-intro-icon="📹" title="Videokamera" aria-label="Videokamera">📹</button>
+                <button type="button" data-intro-icon="🎬" title="Film" aria-label="Film">🎬</button>
+                <button type="button" data-intro-icon="🎞️" title="Filmrolle" aria-label="Filmrolle">🎞️</button>
+                <button type="button" data-intro-icon="🖼️" title="Galerie" aria-label="Galerie">🖼️</button>
+                <button type="button" data-intro-icon="🤳" title="Selfie" aria-label="Selfie">🤳</button>
+                <button type="button" data-intro-icon="🌄" title="Panorama" aria-label="Panorama">🌄</button>
+                <button type="button" data-intro-icon="🏞️" title="Landschaft" aria-label="Landschaft">🏞️</button>
+                <button type="button" data-intro-icon="🔍" title="Zoom" aria-label="Zoom">🔍</button>
+                <button type="button" data-intro-icon="🎦" title="Video" aria-label="Video">🎦</button>
+                <button type="button" data-intro-icon="📱" title="Handyfoto" aria-label="Handyfoto">📱</button>
+                <button type="button" data-intro-icon="👁️" title="Ansicht" aria-label="Ansicht">👁️</button>
+                <button type="button" data-intro-icon="✨" title="Besonderes Motiv" aria-label="Besonderes Motiv">✨</button>
+                <button type="button" data-intro-icon="🌐" title="Rundumblick" aria-label="Rundumblick">🌐</button>
+              </div></div>
+              <div class="ppi-intro-icon-group"><strong>Urlaub & Orte</strong><div class="ppi-intro-icon-grid">
+                <button type="button" data-intro-icon="🏖️" title="Urlaub" aria-label="Urlaub">🏖️</button>
+                <button type="button" data-intro-icon="✈️" title="Flugreise" aria-label="Flugreise">✈️</button>
+                <button type="button" data-intro-icon="🧳" title="Reise" aria-label="Reise">🧳</button>
+                <button type="button" data-intro-icon="🏠" title="Home" aria-label="Home">🏠</button>
+                <button type="button" data-intro-icon="📍" title="Standort" aria-label="Standort">📍</button>
+                <button type="button" data-intro-icon="🗺️" title="Karte" aria-label="Karte">🗺️</button>
+                <button type="button" data-intro-icon="🌍" title="Welt" aria-label="Welt">🌍</button>
+                <button type="button" data-intro-icon="☀️" title="Sonne" aria-label="Sonne">☀️</button>
+                <button type="button" data-intro-icon="🌅" title="Sonnenuntergang" aria-label="Sonnenuntergang">🌅</button>
+                <button type="button" data-intro-icon="⭐" title="Highlight" aria-label="Highlight">⭐</button>
+                <button type="button" data-intro-icon="❤️" title="Favorit" aria-label="Favorit">❤️</button>
+                <button type="button" data-intro-icon="🏡" title="Ferienhaus" aria-label="Ferienhaus">🏡</button>
+              </div></div>
+            </div>            <textarea id="ppi-design-intro" rows="4" maxlength="1200" placeholder="Begrüßung, Aufzählungen, Links und Symbole"></textarea>
+            <p>Optional, maximal 1.200 Zeichen. Listen, Links und Symbole erscheinen formatiert auf der öffentlichen Startseite. Quad, Drohne und 360° erscheinen dort als eigene Vektorsymbole.</p>
           </div>
         </div>
       </div>
@@ -1222,8 +1259,13 @@
 #ppi-tours-app #ppi-step-design .ppi-intro-icons button{min-height:32px;min-width:0;width:auto;padding:5px 10px;font-size:12px;border:1px solid var(--color-border);border-radius:7px;background:var(--color-background-hover);color:var(--color-main-text);cursor:pointer}
 #ppi-tours-app #ppi-step-design .ppi-intro-toolbar button:hover,
 #ppi-tours-app #ppi-step-design .ppi-intro-icons button:hover{border-color:var(--color-primary-element)}
-#ppi-tours-app #ppi-step-design .ppi-intro-icons{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:8px;border:1px solid var(--color-border);border-radius:9px;background:var(--color-background-hover);margin:0 0 7px}
+#ppi-tours-app #ppi-step-design .ppi-intro-icons{display:block;max-height:270px;overflow-y:auto;padding:10px;border:1px solid var(--color-border);border-radius:9px;background:var(--color-background-hover);margin:0 0 7px}
 #ppi-tours-app #ppi-step-design .ppi-intro-icons[hidden]{display:none!important}
-#ppi-tours-app #ppi-step-design .ppi-intro-icons button{background:var(--color-main-background);font-size:13px;display:inline-flex;align-items:center;gap:5px}
-#ppi-tours-app #ppi-step-design .ppi-intro-icons button svg{width:24px;height:18px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+#ppi-tours-app #ppi-step-design .ppi-intro-icon-group+.ppi-intro-icon-group{margin-top:12px}
+#ppi-tours-app #ppi-step-design .ppi-intro-icon-group>strong{display:block;font-size:12px;margin:0 0 6px;color:var(--color-text-maxcontrast)}
+#ppi-tours-app #ppi-step-design .ppi-intro-icon-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:6px}
+#ppi-tours-app #ppi-step-design .ppi-intro-icon-grid button{display:flex;align-items:center;justify-content:center;min-height:42px;height:42px;width:100%;min-width:0;padding:4px;font-size:24px;line-height:1.1;background:var(--color-main-background);border:1px solid var(--color-border);border-radius:8px;cursor:pointer}
+#ppi-tours-app #ppi-step-design .ppi-intro-icon-grid button:hover,#ppi-tours-app #ppi-step-design .ppi-intro-icon-grid button:focus-visible{border-color:var(--color-primary-element);outline:1px solid var(--color-primary-element)}
+#ppi-tours-app #ppi-step-design .ppi-intro-icon-grid svg{width:31px;height:24px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+#ppi-tours-app #ppi-step-design .ppi-intro-360-badge{display:inline-flex;align-items:center;justify-content:center;border:2px solid currentColor;border-radius:50%;font-weight:800;font-size:13px;letter-spacing:-.04em;width:33px;height:30px}
 </style>
