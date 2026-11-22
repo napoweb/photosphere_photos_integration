@@ -498,6 +498,21 @@
     });
   });
 
+  root.querySelectorAll('[data-ppi-description-icon]').forEach(button => {
+    button.addEventListener('click', () => {
+      const icon = button.dataset.ppiDescriptionIcon || '';
+      if (!icon) return;
+      const start = introInput.selectionStart;
+      const end = introInput.selectionEnd;
+      const before = introInput.value.slice(0, start);
+      const after = introInput.value.slice(end);
+      // Keep pictograms readable beside a word without adding stray spaces.
+      const prefix = before && !/\\s$/.test(before) ? ' ' : '';
+      const suffix = after && !/^\\s/.test(after) ? ' ' : '';
+      replaceIntroRange(start, end, prefix + icon + suffix);
+    });
+  });
+
   introInput.addEventListener('input', refreshIntroPreview);
   introPreviewToggle.addEventListener('click', () => {
     const showPreview = introPreview.hidden;
