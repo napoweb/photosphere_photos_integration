@@ -143,10 +143,13 @@
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><h2>Panorama aus Dateien auswählen</h2><button id="ppi-picker-close" type="button">Schließen</button></div>
     <p id="ppi-picker-path" style="word-break:break-all;color:var(--color-text-maxcontrast)">/</p>
     <div class="ppi-picker-toolbar"><button id="ppi-picker-up" type="button">← Eine Ebene zurück</button><span id="ppi-picker-selection-count">0 ausgewählt</span><button id="ppi-picker-add-selected" class="primary" type="button" disabled>Panoramen hinzufügen</button></div>
-    <div class="ppi-picker-section-title"><h3 class="ppi-picker-heading">Ordner</h3><label class="ppi-picker-inline"><input type="checkbox" id="ppi-picker-recursive"> Unterordner einbeziehen</label></div>
+    <div class="ppi-picker-section-title"><h3 class="ppi-picker-heading">Ordner</h3></div>
+    <div class="ppi-picker-switches" role="group" aria-label="Ordner- und Panorama-Anzeige">
+      <label class="ppi-picker-inline"><input type="checkbox" id="ppi-picker-recursive"> Unterordner einbeziehen</label>
+      <label class="ppi-picker-inline" title="Die 360°-Filtereinstellung wird dauerhaft in deinem Nextcloud-Konto gespeichert"><input id="ppi-picker-panorama-only" type="checkbox" <?php if ($_['pickerPanoramaOnly']) { print_unescaped('checked'); } ?>> Nur erkannte 360°-Panoramen anzeigen</label>
+    </div>
     <div id="ppi-picker-folders" class="ppi-picker-folder-grid"></div>
     <div class="ppi-picker-section-title"><h3 class="ppi-picker-heading">Panorama-Vorschaubilder</h3><span id="ppi-picker-results" aria-live="polite"></span></div>
-    <div class="ppi-picker-panorama-toggle"><label class="ppi-picker-inline"><input id="ppi-picker-panorama-only" type="checkbox" <?php if ($_['pickerPanoramaOnly']) { print_unescaped('checked'); } ?>> Nur erkannte 360°-Panoramen anzeigen</label><span id="ppi-picker-panorama-hint">Standardmäßig aus · Einstellung wird im Nextcloud-Konto gespeichert</span></div>
     <div class="ppi-picker-filters" role="search" aria-label="Panorama-Suche und Filter">
       <label class="ppi-picker-filter-search">Dateiname<input id="ppi-picker-search" type="search" autocomplete="off" placeholder="Panorama suchen …"></label>
       <label>Sortieren<select id="ppi-picker-sort"><option value="name_asc">Name A–Z</option><option value="name_desc">Name Z–A</option><option value="newest">Neueste zuerst</option><option value="oldest">Älteste zuerst</option><option value="size_desc">Größte zuerst</option></select></label>
@@ -281,8 +284,8 @@
  #ppi-tours-app .ppi-picker-heading{font-size:15px;margin:20px 0 10px}
  #ppi-tours-app .ppi-picker-section-title{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
  #ppi-tours-app .ppi-picker-inline{display:flex;align-items:center;gap:6px;font-size:13px}
- #ppi-tours-app .ppi-picker-panorama-toggle{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin:8px 0;padding:8px 10px;background:var(--color-background-hover);border-radius:8px}
- #ppi-tours-app #ppi-picker-panorama-hint{font-size:12px;color:var(--color-text-maxcontrast)}
+ #ppi-tours-app .ppi-picker-switches{display:flex;align-items:center;flex-wrap:wrap;column-gap:20px;row-gap:8px;margin:4px 0 8px;padding:7px 10px;background:var(--color-background-hover);border-radius:8px}
+ #ppi-tours-app .ppi-picker-switches .ppi-picker-inline{flex:0 1 auto;min-width:0;white-space:normal;cursor:pointer}
  #ppi-tours-app .ppi-picker-filters{display:flex;align-items:end;flex-wrap:wrap;gap:8px;margin:4px 0 14px}
  #ppi-tours-app .ppi-picker-filters label{display:flex;flex:1 1 135px;min-width:120px;flex-direction:column;gap:4px;font-size:12px}
  #ppi-tours-app .ppi-picker-filters .ppi-picker-filter-search{flex:2 1 210px}
