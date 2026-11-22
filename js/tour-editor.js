@@ -85,6 +85,7 @@
     sphere?.setPlacementMode(false);
   }
   function closePreview() {
+    hideTargetHoverPreview();
     clearPlacement(); sphere?.destroy(); sphere = null;
     previewDialog.hidden = true; previewDialog.style.display = 'none';
     byId('ppi-preview-image').removeAttribute('src'); previewImageId = null;
@@ -132,6 +133,60 @@
     } catch (error) { status.textContent = '3D-Betrachter: ' + error.message; loadingVeil.remove(); }
     updateAvailableTargets();
   }
+  // Test-only hover preview for the list of available panorama destinations.
+  // Reuses Nextcloud's authenticated /core/preview endpoint, never the source JPEG.
+  const targetHoverPreview = document.createElement('div');
+  targetHoverPreview.className = 'ppi-target-hover-preview';
+  targetHoverPreview.hidden = true;
+  targetHoverPreview.setAttribute('aria-hidden', 'true');
+  const targetHoverImage = document.createElement('img');
+  targetHoverImage.alt = '';
+  targetHoverImage.decoding = 'async';
+  targetHoverPreview.append(targetHoverImage);
+  document.body.append(targetHoverPreview);
+  let hoverTargetCard = null;
+  const hideTargetHoverPreview = () => {
+    hoverTargetCard = null;
+    targetHoverPreview.hidden = true;
+    targetHoverImage.removeAttribute('src');
+  };
+  function positionTargetHoverPreview(card) {
+    if (!card || targetHoverPreview.hidden || previewDialog.hidden) return;
+    const rect = card.getBoundingClientRect();
+    const margin = 12;
+    const width = Math.min(320, window.innerWidth - 2 * margin);
+    const height = width * 9 / 16;
+    const left = Math.max(margin, Math.min(window.innerWidth - width - margin,
+      rect.left + rect.width / 2 - width / 2));
+    const above = rect.top - height - margin;
+    const top = above >= margin ? above :
+      Math.max(margin, Math.min(window.innerHeight - height - margin, rect.bottom + margin));
+    targetHoverPreview.style.width = width + 'px';
+    targetHoverPreview.style.left = left + 'px';
+    targetHoverPreview.style.top = top + 'px';
+  }
+  function showTargetHoverPreview(card) {
+    if (hoverTargetCard === card) return;
+    const id = Number(card.dataset.imageId);
+    if (!Number.isSafeInteger(id) || id <= 0 || previewDialog.hidden) return;
+    hoverTargetCard = card;
+    targetHoverImage.src = previewUrl(id, 640, 360);
+    targetHoverPreview.hidden = false;
+    positionTargetHoverPreview(card);
+  }
+  const targetGallery = byId('ppi-preview-target-gallery');
+  targetGallery.addEventListener('pointerover', event => {
+    if (event.pointerType !== 'mouse' && event.pointerType !== 'pen') return;
+    const card = event.target.closest('.ppi-target-card');
+    if (card && targetGallery.contains(card)) showTargetHoverPreview(card);
+  });
+  targetGallery.addEventListener('pointerout', event => {
+    if (!hoverTargetCard || hoverTargetCard.contains(event.relatedTarget)) return;
+    hideTargetHoverPreview();
+  });
+  targetGallery.addEventListener('scroll', hideTargetHoverPreview, {passive:true});
+  previewDialog.querySelector('.ppi-preview-window')?.addEventListener('scroll', hideTargetHoverPreview, {passive:true});
+  window.addEventListener('resize', hideTargetHoverPreview, {passive:true});
   // Show only destinations that are not already connected FROM the panorama being edited.
   // All links in active.links include unsaved draft changes, so the gallery updates instantly.
   function updateAvailableTargets() {
@@ -146,6 +201,7 @@
     const available = active.images.filter(item =>
       Number(item.id) !== from && !connected.has(Number(item.id)));
     target.replaceChildren();
+    hideTargetHoverPreview();
     gallery.replaceChildren();
     for (const item of available) {
       const opt = node('option', item.name); opt.value = String(item.id); target.append(opt);
