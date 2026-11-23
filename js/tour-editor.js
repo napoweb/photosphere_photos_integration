@@ -1495,7 +1495,7 @@
   }
   const effectButtons = [...root.querySelectorAll('[data-startpage-effect]')];
   function setStartPageEffect(effect) {
-    if (!['subtle','glass'].includes(effect)) return;
+    if (!['subtle','glass','glossy'].includes(effect)) return;
     byId('ppi-start-page-effect').value = effect;
     for (const button of effectButtons) {
       button.setAttribute('aria-pressed',String(button.dataset.startpageEffect === effect));
@@ -1518,6 +1518,8 @@
     header.style.setProperty('--ppi-startpage-shadow','rgba(0,0,0,.40)');
     header.style.setProperty('--ppi-startpage-stroke',lightHeading ? 'rgba(0,0,0,.50)' : 'rgba(255,255,255,.68)');
     header.style.setProperty('--ppi-startpage-shadow-soft','rgba(0,0,0,.20)');
+    preview.style.setProperty('--ppi-startpage-divider',
+      isLightStartPageColor(values.backgroundColor) ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.60)');
     preview.style.setProperty('--ppi-startpage-bg', values.backgroundColor);
     preview.style.setProperty('--ppi-startpage-heading', values.headingColor);
     preview.style.setProperty('--ppi-startpage-description', values.descriptionColor);
@@ -1704,7 +1706,7 @@
     byId('ppi-start-page-layout').value = page.layout || 'hero';
     byId('ppi-start-page-heading-color').value = /^#[a-f\d]{6}$/i.test(page.headingColor || '') ? page.headingColor : '#ffffff';
     byId('ppi-start-page-description-color').value = /^#[a-f\d]{6}$/i.test(page.descriptionColor || '') ? page.descriptionColor : '#ffffff';
-    const effect = ['subtle','glass'].includes(page.designEffect) ? page.designEffect : 'subtle';
+    const effect = ['subtle','glass','glossy'].includes(page.designEffect) ? page.designEffect : 'subtle';
     byId('ppi-start-page-effect').value = effect;
     for (const button of effectButtons) button.setAttribute('aria-pressed',String(button.dataset.startpageEffect === effect));
     byId('ppi-start-page-background-color').value = /^#[a-f\d]{6}$/i.test(page.backgroundColor || '') ? page.backgroundColor : '#000000';
