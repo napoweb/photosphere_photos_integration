@@ -162,7 +162,7 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
 /* 0.4.62.113: unify hero and tour alignment; add contrast-aware split seam. */
 #ppi-public-startpage[data-layout=split] .ppi-public-start-copy{
  width:calc(100% - 2 * clamp(14px,3vw,46px))!important;
- max-width:none!important;
+ max-width:calc(1360px - 2 * clamp(14px,3vw,46px))!important;
 }
 #ppi-public-startpage[data-layout=split] .ppi-public-start-header{
  border-bottom:1px solid var(--split-divider,rgba(255,255,255,.60))!important;
