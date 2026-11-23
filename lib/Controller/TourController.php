@@ -214,6 +214,7 @@ final class TourController extends Controller {
         $page = ['id' => bin2hex(random_bytes(12)), 'name' => $name,
             'headline' => $name, 'description' => '', 'layout' => 'hero',
             'headingColor' => '#ffffff', 'descriptionColor' => '#ffffff', 'backgroundColor' => '#000000',
+            'designEffect' => 'subtle',
             'backgroundFileId' => 0, 'tileColumns' => 'auto',
             'tourIds' => [], 'created' => gmdate('c'), 'modified' => gmdate('c')];
         $pages[] = $page;
@@ -231,6 +232,7 @@ final class TourController extends Controller {
         $layout = (string)$this->request->getParam('layout', 'hero');
         $headingColor = (string)$this->request->getParam('headingColor', '#ffffff');
         $descriptionColor = (string)$this->request->getParam('descriptionColor', '#ffffff');
+        $designEffect = (string)$this->request->getParam('designEffect', 'subtle');
         $backgroundColor = (string)$this->request->getParam('backgroundColor', '#000000');
         $backgroundFileIdRaw = $this->request->getParam('backgroundFileId', '0');
         $backgroundFileId = filter_var($backgroundFileIdRaw, FILTER_VALIDATE_INT);
@@ -239,6 +241,7 @@ final class TourController extends Controller {
             mb_strlen($description) > 1000 || !in_array($layout, ['hero', 'split', 'gallery'], true) ||
             !preg_match('/^#[0-9a-fA-F]{6}$/D', $headingColor) ||
             !preg_match('/^#[0-9a-fA-F]{6}$/D', $descriptionColor) ||
+            !in_array($designEffect, ['subtle', 'glass'], true) ||
             !preg_match('/^#[0-9a-fA-F]{6}$/D', $backgroundColor) ||
             $backgroundFileId === false || $backgroundFileId < 0 ||
             !in_array($tileColumns, ['auto', '2', '3', '4', '5'], true)) {
@@ -268,6 +271,7 @@ final class TourController extends Controller {
             $page['layout'] = $layout;
             $page['headingColor'] = $headingColor;
             $page['descriptionColor'] = $descriptionColor;
+            $page['designEffect'] = $designEffect;
             $page['backgroundColor'] = $backgroundColor;
             $page['backgroundFileId'] = $backgroundFileId;
             $page['tileColumns'] = $tileColumns;
