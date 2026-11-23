@@ -1452,12 +1452,72 @@
   // Independent private Startseitenverwaltung (phase 1).
   const startPagesApi = root.dataset.startPagesUrl;
   let startPages = [], activeStartPage = null, managementMode = 'tours';
+  let savedStartPageSnapshot = '';
+  const startPageFields = ['ppi-start-page-name','ppi-start-page-headline','ppi-start-page-description',
+    'ppi-start-page-layout','ppi-start-page-heading-color','ppi-start-page-background-color'];
+  function startPageFormValues() {
+    return {
+      name:byId('ppi-start-page-name').value,
+      headline:byId('ppi-start-page-headline').value,
+      description:byId('ppi-start-page-description').value,
+      layout:byId('ppi-start-page-layout').value,
+      headingColor:byId('ppi-start-page-heading-color').value,
+      backgroundColor:byId('ppi-start-page-background-color').value,
+      tourIds:[...byId('ppi-start-page-tours').querySelectorAll('input:checked')].map(input => input.value)
+    };
+  }
+  function updateStartPagePreview() {
+    if (!activeStartPage) return;
+    const values = startPageFormValues();
+    const preview = byId('ppi-startpage-preview');
+    preview.dataset.layout = values.layout;
+    preview.style.setProperty('--ppi-startpage-bg', values.backgroundColor);
+    preview.style.setProperty('--ppi-startpage-heading', values.headingColor);
+    byId('ppi-startpage-preview-title').textContent = values.headline || values.name || 'Meine 360°-Startseite';
+    byId('ppi-startpage-preview-description').textContent = values.description;
+    const grid = byId('ppi-startpage-preview-grid');
+    grid.replaceChildren();
+    for (const id of values.tourIds) {
+      const tour = tours.find(item => item.id === id);
+      if (!tour) continue;
+      const tile = node('div', undefined, 'ppi-startpage-preview-tile');
+      if (tour.images?.length) {
+        const image = imageThumb(tour.images[0].id, 520, 293);
+        image.alt = 'Vorschau: ' + tour.name;
+        image.loading = 'lazy';
+        tile.append(image);
+      } else tile.append(node('div', '🌐', 'ppi-overview-placeholder'));
+      tile.append(node('strong', tour.name));
+      grid.append(tile);
+    }
+    if (!grid.children.length) grid.append(node('p','Wähle unter „Touren wählen“ mindestens eine Tour aus.','ppi-startpage-preview-empty'));
+    byId('ppi-startpage-dirty').textContent =
+      JSON.stringify(values) === savedStartPageSnapshot ? 'Gespeicherter Stand' : '● Ungespeicherte Änderungen';
+  }
+  function showStartPageTab(tab) {
+    const tabs = ['start','layout','tours','share'];
+    if (!tabs.includes(tab)) return;
+    byId('ppi-start-page-editor').querySelectorAll('[data-startpage-tab]').forEach(button => {
+      if (button.dataset.startpageTab === tab) button.setAttribute('aria-current','step');
+      else button.removeAttribute('aria-current');
+    });
+    byId('ppi-start-page-editor').querySelectorAll('[data-startpage-panel]').forEach(section => {
+      section.hidden = section.dataset.startpagePanel !== tab;
+    });
+  }
+  byId('ppi-start-page-editor').querySelectorAll('[data-startpage-tab]').forEach(button => {
+    button.addEventListener('click', () => showStartPageTab(button.dataset.startpageTab));
+  });
+  startPageFields.forEach(id => byId(id).addEventListener('input', updateStartPagePreview));
+  byId('ppi-start-page-tours').addEventListener('change', updateStartPagePreview);
   function showStartPageEditor(page) {
     activeStartPage = clone(page);
     byId('ppi-start-page-name').value = page.name || '';
     byId('ppi-start-page-headline').value = page.headline || '';
     byId('ppi-start-page-description').value = page.description || '';
     byId('ppi-start-page-layout').value = page.layout || 'hero';
+    byId('ppi-start-page-heading-color').value = /^#[a-f\d]{6}$/i.test(page.headingColor || '') ? page.headingColor : '#ffffff';
+    byId('ppi-start-page-background-color').value = /^#[a-f\d]{6}$/i.test(page.backgroundColor || '') ? page.backgroundColor : '#1d3849';
     const choices = byId('ppi-start-page-tours');
     choices.replaceChildren();
     for (const tour of tours) {
@@ -1475,6 +1535,9 @@
     byId('ppi-start-page-editor').style.display = 'block';
     byId('ppi-start-page-create').hidden = true;
     byId('ppi-overview-switch').hidden = true;
+    savedStartPageSnapshot = JSON.stringify(startPageFormValues());
+    showStartPageTab('start');
+    updateStartPagePreview();
   }
   async function refreshStartPages() {
     const result = await request(startPagesApi);
@@ -1541,16 +1604,15 @@
   byId('ppi-start-page-back').addEventListener('click', () => setManagementMode('startpages'));
   byId('ppi-start-page-save').addEventListener('click', async () => {
     if (!activeStartPage) return;
-    const tourIds = [...byId('ppi-start-page-tours').querySelectorAll('input:checked')].map(input => input.value);
+    const values = startPageFormValues();
     try {
       const result = await request(startPagesApi + '/' + encodeURIComponent(activeStartPage.id), 'POST', {
-        name:byId('ppi-start-page-name').value,
-        headline:byId('ppi-start-page-headline').value,
-        description:byId('ppi-start-page-description').value,
-        layout:byId('ppi-start-page-layout').value,
-        tourIds:JSON.stringify(tourIds)
+        ...values,
+        tourIds:JSON.stringify(values.tourIds)
       });
       activeStartPage = clone(result.page);
+      savedStartPageSnapshot = JSON.stringify(startPageFormValues());
+      updateStartPagePreview();
       await refreshStartPages();
       notify('Startseite gespeichert. Sie ist weiterhin privat.');
     } catch (e) { notify(e.message, true); }
