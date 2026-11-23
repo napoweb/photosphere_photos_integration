@@ -2065,4 +2065,32 @@
   }
 }
 
+/* 0.4.62.124: matching four-sided inner shadow in the tour graph.
+   The white card/frame, image dimensions and graph controls stay intact. */
+#ppi-tours-app .ppi-tour-graph-thumb{
+ position:relative!important;
+ isolation:isolate;
+ overflow:hidden!important;
+}
+#ppi-tours-app .ppi-tour-graph-thumb::after{
+ content:"";position:absolute;inset:0;z-index:1;
+ pointer-events:none;border-radius:inherit;
+ box-shadow:inset 0 0 9px 2px rgba(0,0,0,.36),inset 0 0 2px rgba(0,0,0,.28);
+}
+/* Same inset edge on Startseiten live-preview pictures. */
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media{
+ position:relative;isolation:isolate;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::before{
+ content:"";position:absolute;inset:0;z-index:2;
+ pointer-events:none;border-radius:inherit;
+ box-shadow:inset 0 0 9px 2px rgba(0,0,0,.36),inset 0 0 2px rgba(0,0,0,.28);
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::after{z-index:1;}
+/* Explicit 2-column start-page preview: every tile is exactly 1x1. */
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"]:not(#ppi-mosaic-wide-override) > .ppi-startpage-preview-tile:nth-child(n){
+ grid-column:span 1!important;grid-row:span 1!important;
+}
+
+
 </style>
