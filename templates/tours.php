@@ -2450,4 +2450,26 @@
  font-family:inherit!important;
 }
 
+
+/* 0.4.62.131: description grows to the live-preview bottom in two columns.
+   The script measures the actual preview edge, which changes with tour tiles.
+   On stacked layouts use a comfortable independent height instead. */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="start"] #ppi-start-page-description{
+ display:block!important;
+ width:100%!important;
+ box-sizing:border-box!important;
+ min-height:180px!important;
+ height:var(--ppi-description-height,180px)!important;
+ max-height:none!important;
+ resize:none!important;
+ overflow-y:auto!important;
+}
+@media(max-width:900px){
+ #ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="start"] #ppi-start-page-description{
+  height:180px!important;
+  min-height:180px!important;
+  resize:vertical!important;
+ }
+}
+
 </style>
