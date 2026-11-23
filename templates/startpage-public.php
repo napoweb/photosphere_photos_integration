@@ -67,7 +67,7 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage){margin:0!importa
 .ppi-public-start-inner{max-width:1200px;margin:auto}
 .ppi-public-start-header{text-align:center;padding:55px 12px 32px}
 .ppi-public-start-copy{max-width:900px;margin:auto;padding:21px}
-.ppi-public-start-copy h1{margin:0 0 14px;color:var(--title-color)!important;font-size:clamp(25px,4vw,45px);line-height:1.2;font-weight:750;overflow-wrap:anywhere;-webkit-text-stroke:.35px var(--title-stroke);paint-order:stroke fill;text-shadow:0 2px 4px var(--title-shadow)}
+.ppi-public-start-copy h1{margin:0 0 14px;color:var(--title-color)!important;font-size:clamp(25px,4vw,45px);line-height:1.2;font-weight:750;overflow-wrap:anywhere;-webkit-text-stroke:.65px var(--title-stroke);paint-order:stroke fill;text-shadow:0 2px 4px var(--title-shadow)}
 .ppi-public-start-copy p{margin:0;color:var(--desc-color)!important;font-size:clamp(14px,1.7vw,18px);white-space:pre-wrap;line-height:1.65;text-shadow:0 1px 2px var(--desc-shadow)}
 #ppi-public-startpage[data-effect=glass] .ppi-public-start-copy{border:1px solid #ffffff77;border-radius:17px;background:#19273645;backdrop-filter:blur(12px) saturate(125%);-webkit-backdrop-filter:blur(12px) saturate(125%);box-shadow:0 12px 28px #0005,inset 0 1px 0 #ffffff33}
 .ppi-public-start-tour-section{padding:10px 10px 32px}
@@ -135,5 +135,26 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
   #ppi-public-startpage .ppi-public-start-tour-section {padding:10px 0 30px!important}
   #ppi-public-startpage[data-layout=split] .ppi-public-start-header {padding:40px 12px 32px!important}
   #ppi-public-startpage[data-layout=split] .ppi-public-start-tour-section {padding:25px 10px!important}
+}
+
+/* 0.4.62.112: full-width split header plus the selected page color beneath. */
+#ppi-public-startpage[data-layout=split] {
+  background:var(--page-bg,#000000)!important;
+  background-image:none!important;
+}
+#ppi-public-startpage[data-layout=split] .ppi-public-start-inner {
+  background:transparent!important;
+}
+#ppi-public-startpage[data-layout=split] .ppi-public-start-header {
+  box-sizing:border-box;
+  width:100vw!important;max-width:none!important;
+  margin-left:calc(50% - 50vw)!important;margin-right:calc(50% - 50vw)!important;
+  background-color:var(--page-bg,#000000)!important;
+  background-image:linear-gradient(rgba(0,0,0,.32),rgba(0,0,0,.32)),var(--bg-image)!important;
+  background-position:center!important;background-size:cover!important;
+  box-shadow:0 9px 20px rgba(0,0,0,.24)!important;
+}
+#ppi-public-startpage[data-layout=split] .ppi-public-start-tour-section {
+  background:transparent!important;
 }
 </style>
