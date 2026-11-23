@@ -1504,7 +1504,7 @@
       const copy = node('div',undefined,'ppi-startpage-tile-copy');
       copy.append(node('strong', tour.name));
       const description = tourShortDescription(tour);
-      if (description) copy.append(node('small', description));
+      copy.append(node('small', description || 'Keine Beschreibung hinterlegt'));
       tile.append(copy);
       grid.append(tile);
     }
@@ -1695,6 +1695,9 @@
     if (pages) {
       try { await refreshStartPages(); }
       catch (e) { notify('Startseiten konnten nicht geladen werden: ' + e.message, true); }
+    } else {
+      try { await refresh(); }
+      catch (e) { notify('Touren konnten nicht aktualisiert werden: ' + e.message, true); }
     }
   }
   byId('ppi-mode-tours').addEventListener('click', () => setManagementMode('tours'));
@@ -1722,7 +1725,7 @@
       savedStartPageSnapshot = JSON.stringify(startPageFormValues());
       updateStartPagePreview();
       await refreshStartPages();
-      notify('Startseite gespeichert. Sie ist weiterhin privat.');
+      notify('Startseite gespeichert. Übersicht und Vorschau sind aktualisiert.');
     } catch (e) { notify(e.message, true); }
   });
   byId('ppi-start-page-delete').addEventListener('click', async () => {
