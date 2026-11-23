@@ -5,6 +5,11 @@ declare(strict_types=1);
 return [
     'routes' => [
         ['name' => 'tour#index', 'url' => '/tours', 'verb' => 'GET'],
+        ['name' => 'tour#listStartPages', 'url' => '/tours/startpages', 'verb' => 'GET'],
+        ['name' => 'tour#createStartPage', 'url' => '/tours/startpages', 'verb' => 'POST'],
+        ['name' => 'tour#saveStartPage', 'url' => '/tours/startpages/{id}', 'verb' => 'POST'],
+        ['name' => 'tour#deleteStartPage', 'url' => '/tours/startpages/{id}', 'verb' => 'DELETE'],
+        ['name' => 'tour#duplicateStartPage', 'url' => '/tours/startpages/{id}/duplicate', 'verb' => 'POST'],
         ['name' => 'tour#listTours', 'url' => '/tours/api', 'verb' => 'GET'],
         ['name' => 'tour#create', 'url' => '/tours/api', 'verb' => 'POST'],
         ['name' => 'tour#save', 'url' => '/tours/api/{id}', 'verb' => 'POST'],
