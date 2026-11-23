@@ -139,9 +139,11 @@
           <span id="ppi-startpage-dirty" role="status">Gespeicherter Stand</span>
         </div>
         <div id="ppi-startpage-preview" class="ppi-startpage-live-preview" data-layout="hero">
-          <div class="ppi-startpage-preview-header">
-            <h2 id="ppi-startpage-preview-title"></h2>
-            <p id="ppi-startpage-preview-description"></p>
+          <div class="ppi-startpage-preview-hero">
+            <div class="ppi-startpage-preview-header">
+              <h2 id="ppi-startpage-preview-title"></h2>
+              <p id="ppi-startpage-preview-description"></p>
+            </div>
           </div>
           <div id="ppi-startpage-preview-grid" class="ppi-startpage-preview-grid"></div>
         </div>
@@ -1695,4 +1697,54 @@
   -webkit-text-stroke:0!important;
   text-shadow:0 1px 2px rgba(0,0,0,.20)!important;
 }
+
+/* 0.4.62.112: split preview mirrors the real guest page: backdrop on the
+   hero container, frosted glass on a separate child, user's color below. */
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] {
+  background-color:var(--ppi-startpage-bg,#000000)!important;
+  background-image:none!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-hero {
+  display:grid;align-items:center;justify-items:center;
+  min-height:170px;padding:16px 12px;
+  background-color:var(--ppi-startpage-bg,#000000)!important;
+  background-image:linear-gradient(rgba(0,0,0,.32),rgba(0,0,0,.32)),var(--ppi-startpage-image,none)!important;
+  background-size:cover!important;background-position:center!important;
+  box-shadow:0 8px 18px rgba(0,0,0,.30)!important;
+  isolation:isolate;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-header {
+  width:100%;max-width:100%;min-height:0;
+  margin:0!important;padding:20px 14px!important;
+  background:transparent!important;background-image:none!important;
+  box-shadow:none!important;border-color:transparent!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"][data-effect="glass"] .ppi-startpage-preview-header {
+  width:calc(100% - 8px);margin:0!important;padding:22px 16px!important;
+  background:rgba(25,39,54,.27)!important;background-image:none!important;
+  border:1px solid rgba(255,255,255,.42)!important;
+  border-radius:16px!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.22)!important;
+  backdrop-filter:blur(12px) saturate(125%);
+  -webkit-backdrop-filter:blur(12px) saturate(125%);
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-grid {
+  margin:24px 15px 10px!important;
+}
+#ppi-tours-app .ppi-startpage-preview-header h2 {
+  -webkit-text-stroke:.65px var(--ppi-startpage-stroke)!important;
+  paint-order:stroke fill;
+  text-shadow:0 2px 4px rgba(0,0,0,.40)!important;
+}
+#ppi-tours-app .ppi-startpage-preview-header p {
+  -webkit-text-stroke:0!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.20)!important;
+}
+@media(prefers-reduced-transparency:reduce){
+  #ppi-tours-app .ppi-startpage-live-preview[data-layout="split"][data-effect="glass"] .ppi-startpage-preview-header {
+    backdrop-filter:none;-webkit-backdrop-filter:none;
+    background:rgba(17,25,32,.85)!important;
+  }
+}
+
 </style>
