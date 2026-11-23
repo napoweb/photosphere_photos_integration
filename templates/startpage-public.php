@@ -281,7 +281,7 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
 /* 0.4.62.116: one shared content width for split hero/glass and card grid.
    Remove double horizontal inset from the header at narrower viewports. */
 #ppi-public-startpage[data-layout=split] .ppi-public-start-inner {
-  --ppi-split-gutter:0px;
+  --ppi-split-gutter:clamp(12px,2vw,26px);
   width:min(100%,1360px)!important;
   max-width:1360px!important;
   margin-inline:auto!important;
@@ -292,8 +292,8 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
 }
 #ppi-public-startpage[data-layout=split] .ppi-public-start-copy {
   box-sizing:border-box!important;
-  width:calc(100% - 2 * var(--ppi-split-gutter))!important;
-  max-width:1360px!important;
+  width:min(calc(100% - 2 * var(--ppi-split-gutter)),calc(1360px - 2 * var(--ppi-split-gutter)))!important;
+  max-width:none!important;
   margin-left:auto!important;
   margin-right:auto!important;
 }
