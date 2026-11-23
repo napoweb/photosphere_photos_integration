@@ -1462,7 +1462,7 @@
   let startPages = [], activeStartPage = null, managementMode = 'tours';
   let savedStartPageSnapshot = '';
   const startPageFields = ['ppi-start-page-name','ppi-start-page-headline','ppi-start-page-description',
-    'ppi-start-page-layout','ppi-start-page-heading-color','ppi-start-page-description-color','ppi-start-page-background-color','ppi-start-page-tile-columns'];
+    'ppi-start-page-layout','ppi-start-page-heading-color','ppi-start-page-description-color','ppi-start-page-background-color','ppi-start-page-tile-columns','ppi-start-page-effect'];
   let startPageBackgroundFileId = 0, startPageBgFolderParentId = 0;
   let startPageBgFolderId = 0, startPageBgRequestSerial = 0;
   function tourShortDescription(tour) {
@@ -1479,17 +1479,44 @@
       layout:byId('ppi-start-page-layout').value,
       headingColor:byId('ppi-start-page-heading-color').value,
       descriptionColor:byId('ppi-start-page-description-color').value,
+      designEffect:byId('ppi-start-page-effect').value,
       backgroundColor:byId('ppi-start-page-background-color').value,
       backgroundFileId:startPageBackgroundFileId,
       tileColumns:byId('ppi-start-page-tile-columns').value,
       tourIds:[...byId('ppi-start-page-tours').querySelectorAll('input:checked')].map(input => input.value)
     };
   }
+  function isLightStartPageColor(hex) {
+    const m = /^#([0-9a-f]{6})$/i.exec(hex || '');
+    if (!m) return true;
+    const c = [0,2,4].map(index => parseInt(m[1].slice(index,index+2),16)/255)
+      .map(v => v <= .04045 ? v/12.92 : Math.pow((v+.055)/1.055,2.4));
+    return .2126*c[0]+.7152*c[1]+.0722*c[2] >= .45;
+  }
+  const effectButtons = [...root.querySelectorAll('[data-startpage-effect]')];
+  function setStartPageEffect(effect) {
+    if (!['subtle','glass'].includes(effect)) return;
+    byId('ppi-start-page-effect').value = effect;
+    for (const button of effectButtons) {
+      button.setAttribute('aria-pressed',String(button.dataset.startpageEffect === effect));
+    }
+    updateStartPagePreview();
+  }
+  for (const button of effectButtons) {
+    button.addEventListener('click',() => setStartPageEffect(button.dataset.startpageEffect));
+  }
   function updateStartPagePreview() {
     if (!activeStartPage) return;
     const values = startPageFormValues();
     const preview = byId('ppi-startpage-preview');
     preview.dataset.layout = values.layout;
+    preview.dataset.effect = values.designEffect;
+    const header = preview.querySelector('.ppi-startpage-preview-header');
+    const lightHeading = isLightStartPageColor(values.headingColor);
+    const lightDescription = isLightStartPageColor(values.descriptionColor);
+    header.style.setProperty('--ppi-startpage-shadow',lightHeading ? 'rgba(0,0,0,.40)' : 'rgba(255,255,255,.40)');
+    header.style.setProperty('--ppi-startpage-stroke',lightHeading ? 'rgba(0,0,0,.40)' : 'rgba(255,255,255,.40)');
+    header.style.setProperty('--ppi-startpage-shadow-soft',lightDescription ? 'rgba(0,0,0,.20)' : 'rgba(255,255,255,.20)');
     preview.style.setProperty('--ppi-startpage-bg', values.backgroundColor);
     preview.style.setProperty('--ppi-startpage-heading', values.headingColor);
     preview.style.setProperty('--ppi-startpage-description', values.descriptionColor);
@@ -1606,6 +1633,9 @@
     byId('ppi-start-page-layout').value = page.layout || 'hero';
     byId('ppi-start-page-heading-color').value = /^#[a-f\d]{6}$/i.test(page.headingColor || '') ? page.headingColor : '#ffffff';
     byId('ppi-start-page-description-color').value = /^#[a-f\d]{6}$/i.test(page.descriptionColor || '') ? page.descriptionColor : '#ffffff';
+    const effect = ['subtle','glass'].includes(page.designEffect) ? page.designEffect : 'subtle';
+    byId('ppi-start-page-effect').value = effect;
+    for (const button of effectButtons) button.setAttribute('aria-pressed',String(button.dataset.startpageEffect === effect));
     byId('ppi-start-page-background-color').value = /^#[a-f\d]{6}$/i.test(page.backgroundColor || '') ? page.backgroundColor : '#000000';
     const savedColumns = ['auto','2','3','4','5'].includes(page.tileColumns) ? page.tileColumns : 'auto';
     byId('ppi-start-page-tile-columns').value = savedColumns;
