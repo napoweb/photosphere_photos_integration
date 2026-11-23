@@ -495,14 +495,14 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
     grid-column:span 2!important;grid-row:span 2!important;
   }
   /* Three columns: 2x2 square followed by two 1x1 cards at its right. */
-  #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(3n + 1):nth-last-child(n + 2) {
+  #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(3n + 1):nth-last-child(n + 3) {
     grid-column:span 2!important;grid-row:span 2!important;
   }
   /* Four columns: occasional 3x3 hero, then 2x2 accents only when full. */
   #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(10)) > .ppi-public-start-card:first-child {
     grid-column:span 3!important;grid-row:span 3!important;
   }
-  #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(5n + 5):nth-last-child(n + 4) {
+  #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(5n + 5):nth-last-child(n + 5) {
     grid-column:span 2!important;grid-row:span 2!important;
   }
   #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid:not(:has(> .ppi-public-start-card:nth-child(10))) > .ppi-public-start-card:first-child:nth-last-child(n + 5) {
@@ -512,7 +512,7 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
   #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(10)) > .ppi-public-start-card:first-child {
     grid-column:span 3!important;grid-row:span 3!important;
   }
-  #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(7n + 8):nth-last-child(n + 6) {
+  #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(7n + 8):nth-last-child(n + 7) {
     grid-column:span 2!important;grid-row:span 2!important;
   }
   #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid:not(:has(> .ppi-public-start-card:nth-child(10))) > .ppi-public-start-card:first-child:nth-last-child(n + 7) {
