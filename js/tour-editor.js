@@ -1516,8 +1516,11 @@
     // The image replaces the full-page color in hero mode and the header color
     // in split mode; the lower tour area still needs its background color.
     const hasBackgroundImage = Number(values.backgroundFileId) > 0;
-    byId('ppi-start-page-header-color-row').hidden = hasBackgroundImage || values.layout === 'gallery';
-    byId('ppi-start-page-background-color-row').hidden = hasBackgroundImage && values.layout === 'hero';
+    // Only a picture-free split layout has a separate visible header color.
+    // A background picture covers the background color in hero/gallery mode,
+    // while split still uses that color for the tour area.
+    byId('ppi-start-page-header-color-row').hidden = values.layout !== 'split' || hasBackgroundImage;
+    byId('ppi-start-page-background-color-row').hidden = hasBackgroundImage && values.layout !== 'split';
     const header = preview.querySelector('.ppi-startpage-preview-header');
     const lightHeading = isLightStartPageColor(values.headingColor);
     const lightDescription = isLightStartPageColor(values.descriptionColor);
