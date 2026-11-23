@@ -58,7 +58,7 @@
           <label>Beschreibungsfarbe <input id="ppi-start-page-description-color" type="color" value="#ffffff"></label>
           <fieldset class="ppi-startpage-effect-picker">
             <legend>Design-Effekt</legend>
-            <p>Voreingestellte Effekte für Überschrift, Beschreibung und Textfläche. Beide Varianten enthalten die vereinbarten Schrift-Schatten.</p>
+            <p>Wähle zwischen Dezent, Glas und Glanz-Glas. Alle Varianten behalten die Schriftkontur und die dezenten Schatten.</p>
             <div class="ppi-startpage-effect-options" role="group" aria-label="Design-Effekt wählen">
               <button type="button" data-startpage-effect="subtle" aria-pressed="true">
                 <span class="ppi-effect-mini ppi-effect-mini-subtle" aria-hidden="true"><i>360°</i></span>
@@ -67,6 +67,10 @@
               <button type="button" data-startpage-effect="glass" aria-pressed="false">
                 <span class="ppi-effect-mini ppi-effect-mini-glass" aria-hidden="true"><i>360°</i></span>
                 <span>Glas</span>
+              </button>
+              <button type="button" data-startpage-effect="glossy" aria-pressed="false">
+                <span class="ppi-effect-mini ppi-effect-mini-glossy" aria-hidden="true"><i>360°</i></span>
+                <span>Glanz-Glas</span>
               </button>
             </div>
             <input type="hidden" id="ppi-start-page-effect" value="subtle">
@@ -1745,6 +1749,54 @@
     backdrop-filter:none;-webkit-backdrop-filter:none;
     background:rgba(17,25,32,.85)!important;
   }
+}
+
+
+/* 0.4.62.113: glossy glass, responsive matched widths and automatic split seam. */
+#ppi-tours-app .ppi-startpage-effect-options{grid-template-columns:repeat(3,minmax(0,1fr))}
+#ppi-tours-app .ppi-effect-mini-glossy i{
+ background:linear-gradient(145deg,rgba(255,255,255,.48) 0%,rgba(255,255,255,.12) 38%,rgba(255,255,255,.02) 65%);
+ border:1px solid rgba(255,255,255,.65);border-radius:8px;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 13px rgba(0,0,0,.32);
+ backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header{
+ position:relative;isolation:isolate;overflow:hidden;
+ box-sizing:border-box;width:calc(100% - 16px);max-width:100%;
+ margin:10px auto 16px!important;padding:24px 15px!important;
+ border:1px solid rgba(255,255,255,.62)!important;border-radius:16px!important;
+ background:rgba(24,39,54,.23)!important;background-image:none!important;
+ backdrop-filter:blur(15px) saturate(140%);-webkit-backdrop-filter:blur(15px) saturate(140%);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.60),inset 0 -1px 0 rgba(255,255,255,.10),0 13px 30px rgba(0,0,0,.30)!important
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header::before{
+ content:"";pointer-events:none;position:absolute;inset:0;z-index:0;
+ background:linear-gradient(157deg,rgba(255,255,255,.28) 0%,rgba(255,255,255,.11) 25%,transparent 39%,transparent 70%,rgba(255,255,255,.07) 100%);
+ border-radius:inherit
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header::after{
+ content:"";pointer-events:none;position:absolute;inset:0 0 auto;z-index:0;height:40%;
+ background:linear-gradient(to bottom,rgba(255,255,255,.16),rgba(255,255,255,0));
+ border-radius:inherit
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header>h2,
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header>p{
+ position:relative;z-index:1
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-hero{
+ border-bottom:1px solid var(--ppi-startpage-divider,rgba(255,255,255,.58))!important;
+ box-shadow:0 8px 18px rgba(0,0,0,.25),0 1px 2px var(--ppi-startpage-divider,rgba(255,255,255,.58))!important
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"][data-effect="glossy"] .ppi-startpage-preview-header{
+ width:calc(100% - 8px);margin:0!important
+}
+@media(max-width:520px){
+ #ppi-tours-app .ppi-startpage-effect-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(prefers-reduced-transparency:reduce){
+ #ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header{
+ backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(17,25,32,.87)!important
+ }
 }
 
 </style>
