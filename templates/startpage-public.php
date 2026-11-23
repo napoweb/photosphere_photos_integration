@@ -217,4 +217,64 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
 #ppi-public-startpage[data-layout=hero] .ppi-public-start-grid {
  width:100%!important
 }
+
+/* 0.4.62.115: gallery header aligned exactly with tour-card outer edges.
+   The matte background is separated from the reflective glossy glass. */
+#ppi-public-startpage[data-layout=gallery] .ppi-public-start-inner {
+  width:min(100%,1360px)!important;
+  max-width:1360px!important;
+}
+#ppi-public-startpage[data-layout=gallery] .ppi-public-start-header {
+  width:100%!important;
+  box-sizing:border-box!important;
+  padding:16px 0 20px!important;
+}
+#ppi-public-startpage[data-layout=gallery] .ppi-public-start-copy {
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+}
+#ppi-public-startpage[data-layout=gallery] .ppi-public-start-tour-section {
+  width:100%!important;
+  box-sizing:border-box!important;
+  padding-left:0!important;
+  padding-right:0!important;
+}
+#ppi-public-startpage[data-layout=gallery] .ppi-public-start-grid {
+  width:100%!important;
+}
+#ppi-public-startpage[data-effect=glossy] {
+  /* A quieter layer under the bright glass: background itself stays selectable. */
+  background-blend-mode:multiply,normal;
+}
+#ppi-public-startpage[data-effect=glossy] .ppi-public-start-copy {
+  background:rgba(10,24,37,.15)!important;
+  border:1px solid rgba(255,255,255,.80)!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.72),
+    inset 1px 0 0 rgba(255,255,255,.32),
+    inset -1px 0 0 rgba(255,255,255,.18),
+    inset 0 -1px 0 rgba(255,255,255,.25),
+    0 15px 38px rgba(0,0,0,.34)!important;
+  backdrop-filter:blur(17px) saturate(135%);
+  -webkit-backdrop-filter:blur(17px) saturate(135%);
+}
+#ppi-public-startpage[data-effect=glossy] .ppi-public-start-copy::before {
+  background:
+    linear-gradient(117deg,transparent 0%,rgba(255,255,255,.09) 11%,rgba(255,255,255,.33) 22%,rgba(255,255,255,.06) 32%,transparent 43%) top left/100% 100%,
+    linear-gradient(166deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,.08) 19%,transparent 49%,rgba(255,255,255,.07) 100%)!important;
+}
+#ppi-public-startpage[data-effect=glossy] .ppi-public-start-copy::after {
+  height:52%!important;
+  background:radial-gradient(ellipse at 35% -30%,rgba(255,255,255,.46) 0%,rgba(255,255,255,.13) 35%,transparent 76%)!important;
+}
+@media (max-width:650px) {
+  #ppi-public-startpage[data-layout=gallery] .ppi-public-start-header {padding:12px 0 18px!important}
+}
+@media (prefers-reduced-transparency:reduce) {
+  #ppi-public-startpage[data-effect=glossy] .ppi-public-start-copy {
+    backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+    background:rgba(16,31,44,.90)!important;
+  }
+}
 </style>
