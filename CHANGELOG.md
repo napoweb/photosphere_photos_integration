@@ -1,3 +1,10 @@
+## 0.4.62.132 (Integration Beta – Docker test only)
+- Merge permission-scoped Nextcloud tag selection from the productive 0.4.62.110 package into the 0.4.62.131 tour editor, preserving the newer start-page tools.
+- Restore filename-or-tag picker mode and selected tag-ID filtering with user-visible tag validation.
+- Restore cumulative JPEG size filters: under 20 MB and over 20/30/40/50 MB, and panorama counts.
+- Restore secure app-cache statistics: show source name and file ID only when resolvable through the administrator's own readable Nextcloud mounts or own tour references.
+- Leave background-job deletion rules and seven-day safety grace unchanged. Run server PHP lint, JS syntax check, tag-rights tests, and Docker testcloud integration tests before any production use.
+
 ## 0.4.62.92
 - Refresh App Store metadata to describe the 360-degree tour editor, hotspots, public sharing, responsive viewer and app-owned panorama cache.
 - Update documentation and publication checklist; no changes to application runtime behavior, routes, access controls or cache deletion rules.
