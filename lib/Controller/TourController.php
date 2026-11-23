@@ -183,12 +183,122 @@ final class TourController extends Controller {
         return new JSONResponse(['success' => false, 'message' => $message], $status);
     }
 
+
+    /** Private per-user start pages. Public endpoints and access grants are deliberately absent in phase 1. */
+    private function startPageRecords(string $uid): array {
+        $raw = json_decode($this->config->getUserValue($uid, self::APP_ID, 'tour_start_pages', '[]'), true);
+        if (!is_array($raw)) { return []; }
+        return array_values(array_filter($raw, static fn($page) => is_array($page) && isset($page['id']) && is_string($page['id'])));
+    }
+
+    private function persistStartPages(string $uid, array $pages): void {
+        $this->config->setUserValue($uid, self::APP_ID, 'tour_start_pages',
+            json_encode(array_values($pages), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+
+    #[NoAdminRequired]
+    public function listStartPages(): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        return new JSONResponse(['success' => true, 'pages' => $this->startPageRecords($uid)]);
+    }
+
+    #[NoAdminRequired]
+    public function createStartPage(): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $name = trim((string)$this->request->getParam('name', ''));
+        if ($name === '' || mb_strlen($name) > 100) { return $this->error('Name: 1 bis 100 Zeichen'); }
+        $pages = $this->startPageRecords($uid);
+        if (count($pages) >= 30) { return $this->error('Maximal 30 Startseiten pro Benutzer'); }
+        $page = ['id' => bin2hex(random_bytes(12)), 'name' => $name,
+            'headline' => $name, 'description' => '', 'layout' => 'hero',
+            'tourIds' => [], 'created' => gmdate('c'), 'modified' => gmdate('c')];
+        $pages[] = $page;
+        $this->persistStartPages($uid, $pages);
+        return new JSONResponse(['success' => true, 'page' => $page]);
+    }
+
+    #[NoAdminRequired]
+    public function saveStartPage(string $id): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $name = trim((string)$this->request->getParam('name', ''));
+        $headline = trim((string)$this->request->getParam('headline', ''));
+        $description = trim((string)$this->request->getParam('description', ''));
+        $layout = (string)$this->request->getParam('layout', 'hero');
+        if ($name === '' || mb_strlen($name) > 100 || mb_strlen($headline) > 120 ||
+            mb_strlen($description) > 1000 || !in_array($layout, ['hero', 'split', 'gallery'], true)) {
+            return $this->error('Ungültige Startseiten-Einstellungen');
+        }
+        $requested = json_decode((string)$this->request->getParam('tourIds', '[]'), true);
+        if (!is_array($requested) || count($requested) > 30 || !array_is_list($requested)) {
+            return $this->error('Ungültige Tour-Auswahl');
+        }
+        $ownedIds = array_column($this->records($uid), 'id');
+        $tourIds = [];
+        foreach ($requested as $tourId) {
+            if (!is_string($tourId) || !in_array($tourId, $ownedIds, true)) {
+                return $this->error('Mindestens eine Tour ist nicht verfügbar', 403);
+            }
+            if (!in_array($tourId, $tourIds, true)) { $tourIds[] = $tourId; }
+        }
+        $pages = $this->startPageRecords($uid);
+        foreach ($pages as &$page) {
+            if ($page['id'] !== $id) { continue; }
+            $page['name'] = $name;
+            $page['headline'] = $headline;
+            $page['description'] = $description;
+            $page['layout'] = $layout;
+            $page['tourIds'] = $tourIds;
+            $page['modified'] = gmdate('c');
+            $this->persistStartPages($uid, $pages);
+            return new JSONResponse(['success' => true, 'page' => $page]);
+        }
+        unset($page);
+        return $this->error('Startseite nicht gefunden', 404);
+    }
+
+    #[NoAdminRequired]
+    public function duplicateStartPage(string $id): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $pages = $this->startPageRecords($uid);
+        if (count($pages) >= 30) { return $this->error('Maximal 30 Startseiten pro Benutzer'); }
+        foreach ($pages as $page) {
+            if ($page['id'] !== $id) { continue; }
+            $copy = $page;
+            $copy['id'] = bin2hex(random_bytes(12));
+            $copy['name'] = mb_substr($page['name'], 0, 92) . ' (Kopie)';
+            $copy['created'] = gmdate('c');
+            $copy['modified'] = gmdate('c');
+            // Deliberately exclude any future access tokens, passwords and public state.
+            unset($copy['publicToken'], $copy['sharePasswordHash'], $copy['shareLinks'], $copy['shareExpiresOn']);
+            $pages[] = $copy;
+            $this->persistStartPages($uid, $pages);
+            return new JSONResponse(['success' => true, 'page' => $copy]);
+        }
+        return $this->error('Startseite nicht gefunden', 404);
+    }
+
+    #[NoAdminRequired]
+    public function deleteStartPage(string $id): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $pages = $this->startPageRecords($uid);
+        $remaining = array_values(array_filter($pages, static fn($page) => $page['id'] !== $id));
+        if (count($remaining) === count($pages)) { return $this->error('Startseite nicht gefunden', 404); }
+        $this->persistStartPages($uid, $remaining);
+        return new JSONResponse(['success' => true]);
+    }
+
     #[NoAdminRequired]
     #[NoCSRFRequired]
     public function index(): TemplateResponse {
         Util::addScript(self::APP_ID, 'tour-sphere');
         Util::addScript(self::APP_ID, 'tour-editor');
         return new TemplateResponse(self::APP_ID, 'tours', [
+            'startPagesUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.listStartPages'),
             'apiUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.listTours'),
             'pickerPreferencesUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.savePickerPreferences'),
             'pickerPanoramaOnly' => ($this->userId() !== null && $this->config->getUserValue($this->userId(), self::APP_ID, self::PICKER_PANORAMA_ONLY, '0') === '1'),
