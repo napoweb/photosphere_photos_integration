@@ -70,10 +70,6 @@
             </div>
             <input type="hidden" id="ppi-start-page-layout" value="hero">
           </fieldset>
-          <label id="ppi-start-page-header-color-row" hidden>Kopfbereich-Farbe (ohne Hintergrundbild) <input id="ppi-start-page-header-color" type="color" value="#000000"></label>
-          <label id="ppi-start-page-background-color-row">Hintergrundfarbe (Tourenbereich) <input id="ppi-start-page-background-color" type="color" value="#000000"></label>
-          <label>Überschriftenfarbe <input id="ppi-start-page-heading-color" type="color" value="#ffffff"></label>
-          <label>Beschreibungsfarbe <input id="ppi-start-page-description-color" type="color" value="#ffffff"></label>
           <fieldset class="ppi-startpage-effect-picker">
             <legend>Design-Effekt</legend>
             <p>Wähle zwischen Dezent, Glas und Glanz-Glas. Alle Varianten behalten die Schriftkontur und die dezenten Schatten.</p>
@@ -97,7 +93,7 @@
             <legend>Tour-Kacheln anordnen</legend>
             <p>Klicke auf eine Anordnung. Die Vorschau passt sich sofort an.</p>
             <div id="ppi-start-page-tile-presets" class="ppi-startpage-layout-presets-grid" role="group" aria-label="Kachelanordnung auswählen">
-              <button type="button" class="ppi-startpage-layout-preset" data-columns="auto" aria-pressed="true" title="Automatisch: 1 groß, 2 nebeneinander, bei 3 eine große Kachel">
+              <button type="button" class="ppi-startpage-layout-preset" data-columns="auto" aria-pressed="true" title="Automatisch: quadratisches Mosaik mit unterschiedlich großen Kacheln">
                 <span class="ppi-layout-mini ppi-layout-mini-auto" aria-hidden="true"><i></i><i></i><i></i></span><span>Automatisch</span>
               </button>
               <button type="button" class="ppi-startpage-layout-preset" data-columns="2" aria-pressed="false" title="Zwei Kacheln pro Reihe">
@@ -107,14 +103,18 @@
                 <span class="ppi-layout-mini ppi-layout-mini-3" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><span>3 Spalten</span>
               </button>
               <button type="button" class="ppi-startpage-layout-preset" data-columns="4" aria-pressed="false" title="Vier Kacheln pro Reihe">
-                <span class="ppi-layout-mini ppi-layout-mini-4" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>4 Spalten</span>
+                <span class="ppi-layout-mini ppi-layout-mini-4" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span>4 Spalten</span>
               </button>
               <button type="button" class="ppi-startpage-layout-preset" data-columns="5" aria-pressed="false" title="Fünf Kacheln pro Reihe">
-                <span class="ppi-layout-mini ppi-layout-mini-5" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><span>5 Spalten</span>
+                <span class="ppi-layout-mini ppi-layout-mini-5" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span>5 Spalten</span>
               </button>
             </div>
             <input id="ppi-start-page-tile-columns" type="hidden" value="auto">
           </fieldset>
+          <label id="ppi-start-page-header-color-row" hidden>Kopfbereich-Farbe (ohne Hintergrundbild) <input id="ppi-start-page-header-color" type="color" value="#000000"></label>
+          <label id="ppi-start-page-background-color-row">Hintergrundfarbe (Tourenbereich) <input id="ppi-start-page-background-color" type="color" value="#000000"></label>
+          <label>Überschriftenfarbe <input id="ppi-start-page-heading-color" type="color" value="#ffffff"></label>
+          <label>Beschreibungsfarbe <input id="ppi-start-page-description-color" type="color" value="#ffffff"></label>
           <fieldset class="ppi-startpage-background-picker">
             <legend>Hintergrundbild aus Nextcloud-Dateien</legend>
             <p>Wähle ein JPEG aus deinen Dateien. Die Vorschau lädt nur eine optimierte Nextcloud-Vorschau statt des großen Originals. Neue Bilder kannst du vorher in Nextcloud „Dateien“ hochladen.</p>
@@ -2222,6 +2222,114 @@
  box-sizing:border-box!important;
  border-bottom:2px solid #fff!important;
  box-shadow:0 8px 18px rgba(0,0,0,.32),0 2px 3px rgba(0,0,0,.45)!important;
+}
+
+
+/* 0.4.62.129: one visual vocabulary for all three start-page selectors.
+   All groups are stacked, use the design-effect button theme and the
+   exact same three-column grid, height, spacing and selected state. */
+#ppi-tours-app :is(.ppi-startpage-layout-mode-picker,.ppi-startpage-effect-picker,.ppi-startpage-layout-presets){
+ min-width:0!important;
+ margin:0!important;
+ padding:12px!important;
+ box-sizing:border-box!important;
+ border:1px solid var(--color-border)!important;
+ border-radius:11px!important;
+ background:var(--color-main-background)!important;
+}
+#ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options,.ppi-startpage-layout-presets-grid){
+ display:grid!important;
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ gap:10px!important;
+ align-items:stretch!important;
+}
+#ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options,.ppi-startpage-layout-presets-grid) > button{
+ appearance:none!important;
+ display:flex!important;flex-direction:column!important;
+ align-items:center!important;justify-content:flex-start!important;
+ gap:7px!important;
+ width:100%!important;min-width:0!important;
+ min-height:108px!important;
+ padding:10px 5px!important;
+ box-sizing:border-box!important;
+ border:2px solid var(--color-border)!important;
+ border-radius:11px!important;
+ background:var(--color-main-background)!important;
+ color:var(--color-main-text)!important;
+ box-shadow:none!important;
+ font-size:12px!important;font-weight:700!important;line-height:1.25!important;
+ text-align:center!important;overflow-wrap:anywhere!important;cursor:pointer!important;
+}
+#ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options,.ppi-startpage-layout-presets-grid) > button[aria-pressed="true"]{
+ border-color:var(--color-primary-element)!important;
+ background:var(--color-main-background)!important;
+ box-shadow:0 0 0 1px var(--color-primary-element)!important;
+}
+#ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options,.ppi-startpage-layout-presets-grid) > button:focus-visible{
+ outline:3px solid var(--color-primary-element)!important;outline-offset:3px!important;
+}
+#ppi-tours-app :is(.ppi-layout-mode-mini,.ppi-effect-mini,.ppi-layout-mini){
+ box-sizing:border-box!important;
+ position:relative!important;
+ width:96px!important;max-width:100%!important;
+ height:52px!important;min-height:52px!important;
+ flex:0 0 52px!important;
+ border-radius:8px!important;
+ overflow:hidden!important;
+ background:linear-gradient(130deg,#142335,#4c7891)!important;
+}
+/* Tour-tile pictograms represent square arrangements, rather than generic bars. */
+#ppi-tours-app .ppi-layout-mini{
+ display:grid!important;
+ align-content:center!important;
+ justify-content:center!important;
+ justify-items:stretch!important;
+ gap:3px!important;
+ padding:8px!important;
+ grid-auto-rows:minmax(0,1fr)!important;
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+#ppi-tours-app .ppi-layout-mini i{
+ display:block!important;
+ min-width:0!important;min-height:0!important;
+ border-radius:2px!important;
+ background:#a8cde4!important;
+ opacity:1!important;
+ box-shadow:0 1px 2px rgba(0,0,0,.25)!important;
+}
+#ppi-tours-app .ppi-layout-mini-auto{
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ grid-template-rows:repeat(2,minmax(0,1fr))!important;
+}
+#ppi-tours-app .ppi-layout-mini-auto i:first-child{
+ grid-column:span 2!important;grid-row:span 2!important;
+ background:#e4f3fb!important;
+}
+#ppi-tours-app .ppi-layout-mini-2{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important}
+#ppi-tours-app .ppi-layout-mini-3{grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important}
+#ppi-tours-app .ppi-layout-mini-4{grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important}
+#ppi-tours-app .ppi-layout-mini-5{grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important}
+#ppi-tours-app .ppi-startpage-layout-presets p,
+#ppi-tours-app .ppi-startpage-effect-picker p{
+ margin:5px 0 10px!important;
+ color:var(--color-text-maxcontrast)!important;
+ font-size:12px!important;line-height:1.5!important;
+}
+/* Fixed dimensions prevent the left heading icon from changing width when
+   switching the Touren and Startseiten overview. */
+#ppi-tours-app #ppi-section-icon{
+ display:inline-flex!important;
+ align-items:center!important;justify-content:center!important;
+ flex:0 0 44px!important;width:44px!important;height:44px!important;
+ line-height:1!important;font-size:32px!important;
+}
+@media(max-width:520px){
+ #ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options,.ppi-startpage-layout-presets-grid){
+  gap:6px!important;
+ }
+ #ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options,.ppi-startpage-layout-presets-grid) > button{
+  padding:8px 3px!important;min-height:102px!important;font-size:11px!important;
+ }
 }
 
 </style>
