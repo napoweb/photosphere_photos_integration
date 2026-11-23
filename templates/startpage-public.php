@@ -561,4 +561,12 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
 }
 
 
+
+/* 0.4.62.126: matching 6px white frame for public tour tiles.
+   Border belongs inside the square mosaic box, not outside the track. */
+#ppi-public-startpage .ppi-public-start-grid > .ppi-public-start-card{
+ box-sizing:border-box!important;
+ border:6px solid #fff!important;
+}
+
 </style>
