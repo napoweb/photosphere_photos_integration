@@ -53,7 +53,8 @@
         <section class="ppi-startpage-editor-panel" data-startpage-panel="layout" hidden>
           <h3>Layout und Hintergrund</h3>
           <label>Layout <select id="ppi-start-page-layout"><option value="hero">Vollbild – Hintergrund über gesamte Fläche</option><option value="split">Kopfbereich – Hintergrund nur oben</option><option value="gallery">Galerie – kompakt ohne großen Kopfbereich</option></select></label>
-          <label>Hintergrundfarbe <input id="ppi-start-page-background-color" type="color" value="#000000"></label>
+          <label>Hintergrundfarbe (Tourenbereich) <input id="ppi-start-page-background-color" type="color" value="#000000"></label>
+          <label id="ppi-start-page-header-color-row" hidden>Kopfbereich-Farbe (ohne Hintergrundbild) <input id="ppi-start-page-header-color" type="color" value="#000000"></label>
           <label>Überschriftenfarbe <input id="ppi-start-page-heading-color" type="color" value="#ffffff"></label>
           <label>Beschreibungsfarbe <input id="ppi-start-page-description-color" type="color" value="#ffffff"></label>
           <fieldset class="ppi-startpage-effect-picker">
@@ -1968,6 +1969,44 @@
 }
 @media(prefers-reduced-motion:reduce){
  #ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::after{transition:none}
+}
+
+
+/* 0.4.62.119: match the public start page heading, split background
+   and readable descriptions in the layout editor. */
+#ppi-tours-app .ppi-startpage-preview-header h2{
+ -webkit-text-stroke:1.15px var(--ppi-startpage-stroke)!important;
+ paint-order:stroke fill;
+ text-shadow:0 2px 4px var(--ppi-startpage-shadow),0 5px 12px rgba(0,0,0,.55)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-hero{
+ background-color:var(--ppi-startpage-header-bg,var(--ppi-startpage-bg,#000000))!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-grid{
+ background-color:transparent!important;
+}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] .ppi-startpage-preview-tile:last-child:nth-child(odd),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] .ppi-startpage-preview-tile:last-child:nth-child(4n + 3){
+ grid-column:span 2!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy {
+ height:88px!important;min-height:88px!important;max-height:88px!important;
+ flex:0 0 88px!important;padding:8px 9px!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy strong {
+ font-size:clamp(14px,1.5vw,18px)!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy small {
+ font-size:clamp(13px,1.05vw,15px)!important;
+ line-height:1.35!important;
+}
+@media(max-width:800px){
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] .ppi-startpage-preview-tile:last-child:nth-child(4n + 3){
+  grid-column:auto!important;
+ }
+}
+@media(max-width:420px){
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols] .ppi-startpage-preview-tile{grid-column:auto!important}
 }
 
 </style>
