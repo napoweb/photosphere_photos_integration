@@ -1697,6 +1697,82 @@
     const url = byId('ppi-start-page-share-url').value;
     if (url) window.open(url,'_blank','noopener,noreferrer');
   });
+
+  const orderedTourChoices = byId('ppi-start-page-tours');
+  let draggingStartPageTour = null;
+  function updateStartPageTourMoveButtons() {
+    const rows = [...orderedTourChoices.querySelectorAll('.ppi-startpage-tour-option')];
+    rows.forEach((row,index) => {
+      const buttons = row.querySelectorAll('.ppi-startpage-tour-move button');
+      if (buttons.length === 2) {
+        buttons[0].disabled = index === 0;
+        buttons[1].disabled = index === rows.length-1;
+      }
+    });
+  }
+  function tourOrderChanged() {
+    updateStartPageTourMoveButtons();
+    updateStartPagePreview();
+  }
+  orderedTourChoices.addEventListener('click',event => {
+    const button = event.target.closest('.ppi-startpage-tour-move button');
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const row = button.closest('.ppi-startpage-tour-option');
+    if (!row) return;
+    const buttons = row.querySelectorAll('.ppi-startpage-tour-move button');
+    const isUp = button === buttons[0];
+    const target = isUp ? row.previousElementSibling : row.nextElementSibling;
+    if (!target) return;
+    if (isUp) orderedTourChoices.insertBefore(row,target);
+    else orderedTourChoices.insertBefore(target,row);
+    tourOrderChanged();
+    button.focus();
+  });
+  orderedTourChoices.addEventListener('dragstart',event => {
+    const row = event.target.closest('.ppi-startpage-tour-option');
+    if (!row || event.target.closest('input,button')) {
+      event.preventDefault();return;
+    }
+    draggingStartPageTour = row;
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain',row.dataset.tourId);
+    row.classList.add('ppi-tour-dragging');
+  });
+  orderedTourChoices.addEventListener('dragover',event => {
+    if (!draggingStartPageTour) return;
+    const row = event.target.closest('.ppi-startpage-tour-option');
+    if (!row || row === draggingStartPageTour) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect='move';
+    orderedTourChoices.querySelectorAll('.ppi-startpage-tour-option').forEach(el => {
+      el.classList.remove('ppi-tour-drop-before','ppi-tour-drop-after');
+    });
+    const before = event.clientY < row.getBoundingClientRect().top + row.getBoundingClientRect().height/2;
+    row.classList.add(before ? 'ppi-tour-drop-before' : 'ppi-tour-drop-after');
+  });
+  orderedTourChoices.addEventListener('drop',event => {
+    const row = event.target.closest('.ppi-startpage-tour-option');
+    if (!draggingStartPageTour || !row) return;
+    event.preventDefault();
+    if (row !== draggingStartPageTour) {
+      const before = event.clientY < row.getBoundingClientRect().top + row.getBoundingClientRect().height/2;
+      orderedTourChoices.insertBefore(draggingStartPageTour,before ? row : row.nextSibling);
+      tourOrderChanged();
+    }
+    orderedTourChoices.querySelectorAll('.ppi-startpage-tour-option').forEach(el => {
+      el.classList.remove('ppi-tour-dragging','ppi-tour-drop-before','ppi-tour-drop-after');
+    });
+    draggingStartPageTour=null;
+  });
+  orderedTourChoices.addEventListener('dragend',() => {
+    orderedTourChoices.querySelectorAll('.ppi-startpage-tour-option').forEach(el => {
+      el.classList.remove('ppi-tour-dragging','ppi-tour-drop-before','ppi-tour-drop-after');
+    });
+    draggingStartPageTour=null;
+  });
+
   function showStartPageEditor(page) {
     activeStartPage = clone(page);
     refreshStartPageShareControls(page);
@@ -1719,8 +1795,18 @@
     startPageBgFolderId = 0;
     const choices = byId('ppi-start-page-tours');
     choices.replaceChildren();
-    for (const tour of tours) {
+    // The saved order is authoritative. Unselected choices follow it in their normal order.
+    const orderedTours = [...tours].sort((a,b) => {
+      const ai = (page.tourIds || []).indexOf(a.id), bi = (page.tourIds || []).indexOf(b.id);
+      if (ai < 0 && bi < 0) return 0;
+      if (ai < 0) return 1;
+      if (bi < 0) return -1;
+      return ai-bi;
+    });
+    for (const tour of orderedTours) {
       const row = node('label', undefined, 'ppi-startpage-tour-option');
+      row.dataset.tourId = tour.id;
+      row.draggable = true;
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.value = tour.id;
@@ -1734,9 +1820,24 @@
       const info = node('span',undefined,'ppi-startpage-tour-info');
       info.append(node('strong',tour.name));
       info.append(node('small',tourShortDescription(tour) || 'Keine Beschreibung hinterlegt'));
+      const mover = node('span',undefined,'ppi-startpage-tour-move');
+      const grip = node('span','☰','ppi-startpage-tour-grip');
+      grip.title = 'Tour an diesem Griff ziehen und verschieben';
+      grip.setAttribute('aria-hidden','true');
+      const up = node('button','↑','');
+      up.type = 'button';
+      up.title = 'Tour nach oben';
+      up.setAttribute('aria-label',tour.name+' nach oben verschieben');
+      const down = node('button','↓','');
+      down.type = 'button';
+      down.title = 'Tour nach unten';
+      down.setAttribute('aria-label',tour.name+' nach unten verschieben');
+      mover.append(grip,up,down);
+      row.prepend(mover);
       row.append(info,checkbox);
       choices.append(row);
     }
+    updateStartPageTourMoveButtons();
     byId('ppi-start-pages-overview').hidden = true;
     byId('ppi-start-pages-overview').style.display = 'none';
     byId('ppi-start-page-editor').hidden = false;
