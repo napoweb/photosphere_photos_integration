@@ -120,15 +120,11 @@ final class UnusedPanoramaCleanup {
     }
 
     /**
-     * Resolve the current administrator's readable source files through their
-     * own Nextcloud mount tree. IDs outside the user's mounts (including other
-     * users' private files and removed originals) must remain anonymous.
-     *
-     * This is statistics-only: no global node lookup, owner identification,
-     * cache mutation or source image access. Individual mount errors are safe.
-     *
-     * @param int[] $ids File IDs extracted from the application's cache names
-     * @return array<int, string> Readable source filenames keyed by file ID
+     * Resolve readable original source filenames only in the requesting
+     * administrator's current Nextcloud mount tree. No global owner lookup.
+     * Statistics-only; fails closed for inaccessible or removed originals.
+     * @param int[] $ids
+     * @return array<int,string>
      */
     private function readableSourceNames(string $viewerUid, array $ids): array {
         $names = [];
@@ -143,8 +139,6 @@ final class UnusedPanoramaCleanup {
                     if (!$node instanceof File || !$node->isReadable()) {
                         continue;
                     }
-                    // A file ID alone is not proof of access. It also needs
-                    // to resolve within this user's current mount tree.
                     if (!is_string($home->getRelativePath($node->getPath()))) {
                         continue;
                     }
@@ -155,7 +149,6 @@ final class UnusedPanoramaCleanup {
                     }
                 }
             } catch (\Throwable $e) {
-                // Unreadable or unavailable originals remain anonymous.
                 continue;
             }
         }
@@ -228,8 +221,7 @@ final class UnusedPanoramaCleanup {
         }
         ksort($entriesById, SORT_NUMERIC);
         $summary['cachedPanoramas'] = count($entriesById);
-        // Resolve only rows actually exposed in the bounded admin table.
-        // All totals and cleanup decisions remain based on the complete scan.
+        // Resolve only the bounded rows that may be displayed to this admin.
         $readableNames = $this->readableSourceNames(
             $viewerUid,
             array_slice(array_keys($entriesById), 0, $summary['shownLimit'])
@@ -258,10 +250,8 @@ final class UnusedPanoramaCleanup {
                 }
             }
             if (count($summary['entries']) < $summary['shownLimit']) {
-                // Own tour references remain visible as before. In addition,
-                // show source IDs/names when the administrator can CURRENTLY
-                // read the original through their own Nextcloud mount tree.
-                // Other users' tour names are never disclosed.
+                // Unknown ownership stays anonymous. Referenced exclusively by
+                // someone else's tour also stays anonymous (including file ID).
                 $hasOwnTour = isset($ownReferences[$id]);
                 $sourceAvailable = isset($readableNames[$id]);
                 $visibility = $hasOwnTour ? 'own' : ($sourceAvailable ? 'accessible' : ($used ? 'other' : 'unknown'));

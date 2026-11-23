@@ -81,3 +81,17 @@ Wichtig: Die Sicherheitsfrist startet erst nach Installation dieser Version und 
 ### Cache-Statistik (Admin)
 
 Der Administrationsbereich zeigt die Anzahl und Größe der im App-Cache gespeicherten Panorama-Vorschaudateien, ihre Verwendung in gespeicherten 360°-Touren sowie vorgemerkte Löschkandidaten (7-Tage-Schutzfrist). Die Ansicht ist rein lesend und für Administratoren reserviert; bei unvollständig lesbaren Tourreferenzen wird die Auswertung verweigert. Sie nutzt Nextclouds QueryBuilder und Appdata-API.
+
+
+### Mitgelieferte Startseiten-Designvorlagen anpassen (Release-Vorbereitung)
+
+Die Standardvorlagen werden in `js/tour-editor.js` im Array `presetDefaults`
+mit stabilen IDs `builtin:*` definiert. Vor einer offiziellen Veröffentlichung:
+1. In der App unter **Vorlagen** eine Standardvorlage mit **Als eigene Vorlage kopieren** duplizieren.
+2. In einer eigenen Startseite über **In Startseite laden** öffnen, unter **3 · Layout** gestalten und die Startseite speichern.
+3. Das gestaltete Design unter **Vorlage speichern** als neue persönliche Vorlage speichern (alternativ eine vorhandene eigene Vorlage per **Design der Startseite übernehmen** aktualisieren).
+4. In **Vorlagen** die fertige persönliche Vorlage als JSON exportieren und prüfen.
+5. Für den Release ausschließlich die geprüften Designwerte in `presetDefaults` übernehmen; IDs stabil halten. Keine benutzergebundenen `backgroundFileId`-Werte in mitgelieferte Presets übernehmen (stattdessen `0`).
+
+Die persönlichen Presets sind benutzerspezifisch gespeichert und werden nicht automatisch
+Teil des App-Pakets. Diese Trennung verhindert, dass private Dateireferenzen veröffentlicht werden.
