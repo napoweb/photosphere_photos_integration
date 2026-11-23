@@ -322,4 +322,39 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
  background-position:center!important;
  background-size:cover!important;
 }
+
+/* 0.4.62.117: one wide tour is never wider than two grid tracks.
+   Odd auto galleries feature the first tour; mobile is always one column. */
+#ppi-public-startpage .ppi-public-start-card {
+  grid-column:span 1;
+  min-width:0;
+}
+#ppi-public-startpage[data-cols="auto"] .ppi-public-start-card:first-child:nth-last-child(odd) {
+  grid-column:span 2!important;
+}
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-card:only-child,
+#ppi-public-startpage[data-cols="3"] .ppi-public-start-card:only-child,
+#ppi-public-startpage[data-cols="4"] .ppi-public-start-card:only-child,
+#ppi-public-startpage[data-cols="5"] .ppi-public-start-card:only-child {
+  grid-column:span 2!important;
+}
+/* Manual column counts use two tracks for the featured tile only
+   when the number of tours is exactly one. Other tiles retain the
+   explicitly selected column configuration. */
+@media(max-width:900px) {
+ #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid,
+ #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid,
+ #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid {
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+}
+@media(max-width:650px) {
+ #ppi-public-startpage[data-cols] .ppi-public-start-grid {
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+ #ppi-public-startpage[data-cols] .ppi-public-start-card {
+  grid-column:auto!important;
+ }
+}
+
 </style>
