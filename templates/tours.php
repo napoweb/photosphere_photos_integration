@@ -5,6 +5,7 @@
      data-start-pages-url="<?php p($_['startPagesUrl']); ?>"
      data-api-url="<?php p($_['apiUrl']); ?>"
      data-files-url="<?php p($_['filesUrl']); ?>"
+     data-picker-tags-url="<?php p($_['pickerTagsUrl']); ?>"
      data-picker-preferences-url="<?php p($_['pickerPreferencesUrl']); ?>"
      data-picker-panorama-only="<?php p($_['pickerPanoramaOnly'] ? '1' : '0'); ?>"
      data-image-url="<?php p($_['imageUrl']); ?>"
@@ -367,11 +368,11 @@
     <div id="ppi-picker-folders" class="ppi-picker-folder-grid"></div>
     <div class="ppi-picker-section-title"><h3 class="ppi-picker-heading">Panorama-Vorschaubilder</h3><span id="ppi-picker-results" aria-live="polite"></span></div>
     <div class="ppi-picker-filters" role="search" aria-label="Panorama-Suche und Filter">
-      <div class="ppi-picker-filter-search ppi-picker-search-combined"><div class="ppi-picker-search-labels"><label for="ppi-picker-search">Suche</label><label for="ppi-picker-search-mode" id="ppi-picker-search-mode-label">Dateiname + Tags</label></div><div class="ppi-picker-search-control"><input id="ppi-picker-search" type="search" autocomplete="off" placeholder="Suchbegriff eingeben …" aria-label="Suchbegriff"><div class="ppi-picker-search-mode-wrap"><select id="ppi-picker-search-mode" aria-label="Suchbereich wählen" title="Suchbereich wählen"><option value="both">Dateiname + Tags</option><option value="name">Dateiname</option><option value="tags">Tags</option></select><span class="ppi-picker-search-chevron" aria-hidden="true">⌄</span></div></div></div>
+      <div class="ppi-picker-filter-search ppi-picker-search-combined"><div class="ppi-picker-search-labels"><label for="ppi-picker-search">Suche</label><label for="ppi-picker-search-mode" id="ppi-picker-search-mode-label">Dateiname</label></div><div class="ppi-picker-search-control"><input id="ppi-picker-search" type="search" autocomplete="off" placeholder="Suchbegriff eingeben …" aria-label="Suchbegriff"><div id="ppi-picker-tag-wrap" class="ppi-picker-tag-wrap" hidden><select id="ppi-picker-tag" aria-label="Nextcloud-Tag auswählen" title="Vorhandenen Nextcloud-Tag auswählen"><option value="">Alle Tags</option></select></div><div class="ppi-picker-search-mode-wrap"><select id="ppi-picker-search-mode" aria-label="Suchbereich wählen" title="Suchbereich wählen"><option value="name">Dateiname</option><option value="tags">Tags</option></select><span class="ppi-picker-search-chevron" aria-hidden="true">⌄</span></div></div></div>
       <label>Sortieren<select id="ppi-picker-sort"><option value="name_asc">Name A–Z</option><option value="name_desc">Name Z–A</option><option value="newest">Neueste zuerst</option><option value="oldest">Älteste zuerst</option><option value="size_desc">Größte zuerst</option></select></label>
       <label>Tourstatus<select id="ppi-picker-status"><option value="unused" selected>Noch nicht in dieser Tour</option><option value="all">Alle Panoramen</option><option value="used">Bereits in dieser Tour</option></select></label>
       <label>Geändert<select id="ppi-picker-date"><option value="any">Beliebiges Datum</option><option value="30d">Letzte 30 Tage</option><option value="year">Dieses Jahr</option></select></label>
-      <label>Dateigröße<select id="ppi-picker-size"><option value="any">Beliebige Größe</option><option value="lt10">Unter 10 MB</option><option value="10to50">10–50 MB</option><option value="gt50">Über 50 MB</option></select></label>
+      <label>Dateigröße<select id="ppi-picker-size"><option value="any">Beliebige Größe</option><option value="lt20">&lt; 20 MB</option><option value="gt20">Über 20 MB</option><option value="gt30">Über 30 MB</option><option value="gt40">Über 40 MB</option><option value="gt50">Über 50 MB</option></select></label>
       <div class="ppi-picker-filter-actions">
         <div class="ppi-picker-switches" role="group" aria-label="Ordner- und Panorama-Anzeige">
           <label class="ppi-picker-inline"><input type="checkbox" id="ppi-picker-recursive"> Unterordner einbeziehen</label>
@@ -2471,5 +2472,21 @@
   resize:vertical!important;
  }
 }
+
+
+/* 0.4.62.132: production search field and Nextcloud tag chooser
+   (keep existing startpage editor styles intact). */
+#ppi-tours-app #ppi-picker-search-mode-label{color:#7D7D7D!important}
+#ppi-tours-app .ppi-picker-search-control{border:2px solid #7D7D7D!important;border-radius:10px!important;outline:none!important;box-shadow:none!important;overflow:hidden!important;align-items:stretch!important}
+#ppi-tours-app .ppi-picker-filters #ppi-picker-search{height:100%!important;min-height:0!important;max-height:none!important;box-sizing:border-box!important;border:0!important;border-radius:0!important;background:transparent!important;outline:none!important;box-shadow:none!important}
+#ppi-tours-app .ppi-picker-search-control #ppi-picker-search:focus,#ppi-tours-app .ppi-picker-search-control #ppi-picker-search:focus-visible{outline:none!important;box-shadow:none!important;border:0!important}
+#ppi-tours-app .ppi-picker-search-control:hover,#ppi-tours-app .ppi-picker-search-control:focus-within,#ppi-tours-app .ppi-picker-search-control.ppi-has-selected-tag{border-color:#222222!important;outline:none!important;box-shadow:none!important}
+#ppi-tours-app .ppi-picker-search-combined:hover #ppi-picker-search-mode-label,#ppi-tours-app .ppi-picker-search-combined:focus-within #ppi-picker-search-mode-label,#ppi-tours-app .ppi-picker-search-combined.ppi-has-selected-tag #ppi-picker-search-mode-label{color:#222222!important}
+#ppi-tours-app .ppi-picker-tag-wrap{display:flex;align-items:stretch;flex:0 1 43%;min-width:105px;max-width:43%;border-left:1px solid #7D7D7D}
+#ppi-tours-app .ppi-picker-tag-wrap[hidden]{display:none!important}
+#ppi-tours-app .ppi-picker-filters #ppi-picker-tag{display:block;height:100%!important;min-height:0!important;max-height:100%!important;width:100%;margin:0!important;border:0!important;border-radius:0!important;background:var(--color-main-background);outline:none!important;box-shadow:none!important;font-size:12px;line-height:normal;padding:0 6px!important;color:#7D7D7D;cursor:pointer}
+#ppi-tours-app .ppi-picker-tag-wrap:hover #ppi-picker-tag,#ppi-tours-app .ppi-picker-tag-wrap:focus-within #ppi-picker-tag,#ppi-tours-app .ppi-picker-tag-wrap.ppi-tag-active #ppi-picker-tag{color:#222222!important}
+#ppi-tours-app .ppi-picker-filters #ppi-picker-tag:focus,#ppi-tours-app .ppi-picker-filters #ppi-picker-tag:focus-visible{outline:none!important;box-shadow:none!important}
+@media(max-width:620px){#ppi-tours-app .ppi-picker-tag-wrap{flex-basis:42%;max-width:42%;min-width:100px}}
 
 </style>
