@@ -1801,6 +1801,15 @@
 
 
 /* 0.4.62.114: sortable selected tours, visible drop target and keyboard controls. */
+/* In Vollbild the text/glass block spans the same usable width as the tile grid. */
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="hero"] .ppi-startpage-preview-header {
+ width:100%!important;max-width:none!important;box-sizing:border-box!important;
+ margin:0 auto 16px!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="hero"] .ppi-startpage-preview-hero {
+ width:100%!important;
+}
+
 #ppi-tours-app .ppi-startpage-tour-option{position:relative}
 #ppi-tours-app .ppi-startpage-tour-option[draggable=true]{cursor:grab}
 #ppi-tours-app .ppi-startpage-tour-option.ppi-tour-dragging{opacity:.48;cursor:grabbing}
