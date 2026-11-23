@@ -36,14 +36,52 @@
       <div><button type="button" id="ppi-start-page-delete">Startseite löschen</button> <button type="button" class="primary" id="ppi-start-page-save">Änderungen speichern</button></div>
     </div>
     <h2>Startseite gestalten</h2>
-    <div class="ppi-start-page-fields">
-      <label>Name der Startseite <input id="ppi-start-page-name" maxlength="100"></label>
-      <label>Überschrift für Besucher <input id="ppi-start-page-headline" maxlength="120"></label>
-      <label>Beschreibung <textarea id="ppi-start-page-description" maxlength="1000" rows="4"></textarea></label>
-      <label>Layout <select id="ppi-start-page-layout"><option value="hero">Vollbild</option><option value="split">Kopfbereich</option><option value="gallery">Galerie</option></select></label>
-      <fieldset><legend>Touren auswählen</legend><p>Nur eigene Touren werden angezeigt. Die Reihenfolge entspricht vorerst der Tourenübersicht.</p><div id="ppi-start-page-tours"></div></fieldset>
+    <nav class="ppi-startpage-editor-tabs" aria-label="Startseite einrichten">
+      <button type="button" data-startpage-tab="start" aria-current="step">1 · Startseite</button>
+      <button type="button" data-startpage-tab="layout">2 · Layout</button>
+      <button type="button" data-startpage-tab="tours">3 · Touren wählen</button>
+      <button type="button" data-startpage-tab="share">4 · Freigabe</button>
+    </nav>
+    <div class="ppi-startpage-workspace">
+      <div class="ppi-start-page-fields">
+        <section class="ppi-startpage-editor-panel" data-startpage-panel="start">
+          <h3>Überschrift und Texte</h3>
+          <label>Name der Startseite (intern) <input id="ppi-start-page-name" maxlength="100"></label>
+          <label>Überschrift für Besucher <input id="ppi-start-page-headline" maxlength="120"></label>
+          <label>Beschreibung <textarea id="ppi-start-page-description" maxlength="1000" rows="4"></textarea></label>
+          <label>Überschriftenfarbe <input id="ppi-start-page-heading-color" type="color" value="#ffffff"></label>
+        </section>
+        <section class="ppi-startpage-editor-panel" data-startpage-panel="layout" hidden>
+          <h3>Layout und Hintergrund</h3>
+          <label>Layout <select id="ppi-start-page-layout"><option value="hero">Vollbild</option><option value="split">Kopfbereich</option><option value="gallery">Galerie</option></select></label>
+          <label>Hintergrundfarbe <input id="ppi-start-page-background-color" type="color" value="#1d3849"></label>
+          <p>Eigene Hintergrundbilder und zusätzliche Gestaltungsoptionen folgen in einer weiteren Docker-Testversion.</p>
+        </section>
+        <section class="ppi-startpage-editor-panel" data-startpage-panel="tours" hidden>
+          <h3>Touren auswählen</h3>
+          <p>Wähle vorhandene Touren. Die Kacheln erscheinen sofort in der Vorschau; ihre Reihenfolge entspricht momentan der Tourenübersicht.</p>
+          <fieldset><legend>Eigene Touren</legend><div id="ppi-start-page-tours"></div></fieldset>
+        </section>
+        <section class="ppi-startpage-editor-panel" data-startpage-panel="share" hidden>
+          <h3>Freigabe</h3>
+          <p class="ppi-startpage-private-note">🔒 Privater Entwurf. Öffentliche Links und die individuellen Passwortmodelle sind absichtlich noch nicht verfügbar. So können wir die Gestaltung zuerst sicher testen.</p>
+        </section>
+      </div>
+      <aside class="ppi-startpage-preview-column" aria-label="Live-Vorschau der Startseite">
+        <div class="ppi-startpage-preview-heading">
+          <h3>Live-Vorschau</h3>
+          <span id="ppi-startpage-dirty" role="status">Gespeicherter Stand</span>
+        </div>
+        <div id="ppi-startpage-preview" class="ppi-startpage-live-preview" data-layout="hero">
+          <div class="ppi-startpage-preview-header">
+            <h2 id="ppi-startpage-preview-title"></h2>
+            <p id="ppi-startpage-preview-description"></p>
+          </div>
+          <div id="ppi-startpage-preview-grid" class="ppi-startpage-preview-grid"></div>
+        </div>
+        <p class="ppi-startpage-preview-note">Die Vorschau reagiert sofort. Erst „Änderungen speichern“ übernimmt deine Einstellungen dauerhaft. Tour-Kacheln sind hier noch nicht öffentlich anklickbar.</p>
+      </aside>
     </div>
-    <p class="ppi-startpage-private-note">🔒 Entwurf: Noch keine öffentliche Freigabe. Passwortschutz und Rücknavigation werden in einer späteren Docker-Teststufe ergänzt.</p>
   </section>
   <section class="ppi-tour-card" id="ppi-tour-overview">
     <h2>Meine Touren</h2>
@@ -319,6 +357,42 @@
 #ppi-tours-app .ppi-startpage-tour-option{display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid var(--color-border)}
 #ppi-tours-app .ppi-startpage-tour-option input{width:auto}
 #ppi-tours-app .ppi-startpage-private-note{padding:12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-background-hover);margin-top:15px}
+/* 0.4.62.103: Accessible four-step editor with immediate private tour tile preview. */
+#ppi-tours-app .ppi-startpage-editor-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:15px 0;padding:0}
+#ppi-tours-app .ppi-startpage-editor-tabs button{white-space:normal;min-height:46px;border:1px solid var(--color-border);border-radius:9px;background:var(--color-main-background);color:var(--color-main-text);font-weight:600;padding:8px!important}
+#ppi-tours-app .ppi-startpage-editor-tabs button[aria-current="step"]{border:2px solid var(--color-primary-element);background:var(--color-primary-element-light);font-weight:750}
+#ppi-tours-app .ppi-startpage-editor-tabs button:focus-visible{outline:3px solid var(--color-primary-element);outline-offset:2px}
+#ppi-tours-app .ppi-startpage-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:18px;align-items:start}
+#ppi-tours-app .ppi-start-page-fields{display:block;min-width:0;margin-top:0}
+#ppi-tours-app .ppi-startpage-editor-panel{display:grid;gap:14px;min-width:0}
+#ppi-tours-app .ppi-startpage-editor-panel[hidden]{display:none!important}
+#ppi-tours-app .ppi-startpage-editor-panel h3{margin:0}
+#ppi-tours-app .ppi-startpage-editor-panel label{display:grid;gap:7px}
+#ppi-tours-app .ppi-startpage-editor-panel input[type="color"]{height:44px;width:85px;padding:3px;cursor:pointer}
+#ppi-tours-app .ppi-startpage-preview-column{min-width:0;position:sticky;top:12px}
+#ppi-tours-app .ppi-startpage-preview-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#ppi-tours-app .ppi-startpage-preview-heading h3{margin:0 0 10px}
+#ppi-tours-app #ppi-startpage-dirty{font-size:12px;color:var(--color-text-maxcontrast)}
+#ppi-tours-app .ppi-startpage-live-preview{--ppi-startpage-bg:#1d3849;--ppi-startpage-heading:#ffffff;box-sizing:border-box;min-height:330px;overflow:hidden;border-radius:13px;padding:20px 14px 25px;background:var(--ppi-startpage-bg);color:#f4f7fb;border:1px solid rgba(255,255,255,.22);box-shadow:0 6px 21px #0003}
+#ppi-tours-app .ppi-startpage-preview-header{text-align:center;padding:22px 6px}
+#ppi-tours-app .ppi-startpage-preview-header h2{color:var(--ppi-startpage-heading)!important;font-size:clamp(18px,2vw,29px);overflow-wrap:anywhere;margin:0 0 10px}
+#ppi-tours-app .ppi-startpage-preview-header p{color:#f4f7fb!important;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+#ppi-tours-app .ppi-startpage-preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#ppi-tours-app .ppi-startpage-preview-tile{min-width:0;overflow:hidden;border-radius:9px;background:#ffffff;color:#1d2732;box-shadow:0 5px 14px #0004}
+#ppi-tours-app .ppi-startpage-preview-tile img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#213848}
+#ppi-tours-app .ppi-startpage-preview-tile strong{display:block;font-size:12px;padding:9px;overflow-wrap:anywhere}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"]{padding:0 0 18px}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-header{padding:35px 12px;background:#0003}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-grid{margin:15px 14px 0}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"]{background:var(--color-main-background);color:var(--color-main-text)}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-header h2{color:var(--color-main-text)!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-header p{color:var(--color-main-text)!important}
+#ppi-tours-app .ppi-startpage-preview-empty{grid-column:1/-1;color:#ffffff!important;text-align:center;font-size:13px}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-empty{color:var(--color-main-text)!important}
+#ppi-tours-app .ppi-startpage-preview-note{font-size:12px;color:var(--color-text-maxcontrast);line-height:1.5;margin:10px 0}
+@media(max-width:900px){#ppi-tours-app .ppi-startpage-workspace{grid-template-columns:1fr}#ppi-tours-app .ppi-startpage-preview-column{position:static}}
+@media(max-width:600px){#ppi-tours-app .ppi-startpage-editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}#ppi-tours-app .ppi-startpage-live-preview{min-height:270px}}
+
 /* Contrast remains correct over custom Nextcloud background images, in light and dark themes. */
 #ppi-tours-app .ppi-tour-intro{padding:18px 20px 14px;border:1px solid var(--color-border);border-radius:14px;background:var(--color-main-background);color:var(--color-main-text);margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.10)}
 #ppi-tours-app .ppi-tour-intro h1{color:var(--color-main-text);line-height:1.25}
