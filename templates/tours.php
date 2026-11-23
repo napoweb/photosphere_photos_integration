@@ -1889,4 +1889,35 @@
   background-image:linear-gradient(rgba(0,0,0,.20),rgba(0,0,0,.20)),var(--ppi-startpage-image,none)!important;
   background-size:cover!important;background-position:center!important;
 }
+
+/* 0.4.62.117: editor matches the public auto-layout; 1 or any odd
+   tour count uses a featured tile that spans exactly two columns. */
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"] .ppi-startpage-preview-tile {
+  grid-column:span 1;
+}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"] .ppi-startpage-preview-tile:first-child:nth-last-child(odd) {
+  grid-column:span 2!important;
+}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] .ppi-startpage-preview-tile:only-child,
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] .ppi-startpage-preview-tile:only-child,
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] .ppi-startpage-preview-tile:only-child,
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] .ppi-startpage-preview-tile:only-child {
+  grid-column:span 2!important;
+}
+@media(max-width:800px) {
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"],
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"],
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] {
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+}
+@media(max-width:420px) {
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols] {
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols] .ppi-startpage-preview-tile {
+  grid-column:auto!important;
+ }
+}
+
 </style>
