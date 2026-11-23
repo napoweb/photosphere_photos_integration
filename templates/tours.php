@@ -1985,10 +1985,6 @@
 #ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-grid{
  background-color:transparent!important;
 }
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] .ppi-startpage-preview-tile:last-child:nth-child(odd),
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] .ppi-startpage-preview-tile:last-child:nth-child(4n + 3){
- grid-column:span 2!important;
-}
 #ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy {
  height:88px!important;min-height:88px!important;max-height:88px!important;
  flex:0 0 88px!important;padding:8px 9px!important;
@@ -2007,6 +2003,52 @@
 }
 @media(max-width:420px){
  #ppi-tours-app .ppi-startpage-preview-grid[data-cols] .ppi-startpage-preview-tile{grid-column:auto!important}
+}
+
+
+/* 0.4.62.120: preview uses exactly the same four-row featured-card cycle
+   as the public page; every feature covers no more than two tracks. */
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile,
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile,
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile,
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile {
+ grid-column:span 1!important;
+}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:nth-child(6n + 1),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:nth-child(6n + 4),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(10n + 1),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(10n + 7),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(14n + 1),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(14n + 10),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile:nth-child(18n + 1),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile:nth-child(18n + 13){
+ grid-column:span 2!important;
+}
+@media(max-width:800px){
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile,
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile,
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile,
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile{
+  grid-column:span 1!important;
+ }
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:nth-child(6n + 1),
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:nth-child(6n + 4),
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(6n + 1),
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(6n + 4),
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(6n + 1),
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(6n + 4),
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile:nth-child(6n + 1),
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile:nth-child(6n + 4){
+  grid-column:span 2!important;
+ }
+}
+@media(max-width:420px){
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile,
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile,
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile,
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile{
+  grid-column:span 1!important;
+ }
 }
 
 </style>
