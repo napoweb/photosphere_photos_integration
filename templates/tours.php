@@ -2030,13 +2030,13 @@
   #ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(7n + 1){
     grid-column:span 2!important;grid-row:span 2!important;
   }
-  #ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(3n + 1):nth-last-child(n + 2){
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(3n + 1):nth-last-child(n + 3){
     grid-column:span 2!important;grid-row:span 2!important;
   }
   #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"]:has(> .ppi-startpage-preview-tile:nth-child(10)) > .ppi-startpage-preview-tile:first-child{
     grid-column:span 3!important;grid-row:span 3!important;
   }
-  #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(5n + 5):nth-last-child(n + 4){
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(5n + 5):nth-last-child(n + 5){
     grid-column:span 2!important;grid-row:span 2!important;
   }
   #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"]:not(:has(> .ppi-startpage-preview-tile:nth-child(10))) > .ppi-startpage-preview-tile:first-child:nth-last-child(n + 5){
@@ -2045,7 +2045,7 @@
   #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"]:has(> .ppi-startpage-preview-tile:nth-child(10)) > .ppi-startpage-preview-tile:first-child{
     grid-column:span 3!important;grid-row:span 3!important;
   }
-  #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile:nth-child(7n + 8):nth-last-child(n + 6){
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile:nth-child(7n + 8):nth-last-child(n + 7){
     grid-column:span 2!important;grid-row:span 2!important;
   }
   #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"]:not(:has(> .ppi-startpage-preview-tile:nth-child(10))) > .ppi-startpage-preview-tile:first-child:nth-last-child(n + 7){
