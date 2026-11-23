@@ -2101,4 +2101,33 @@
  border:6px solid #fff!important;
 }
 
+
+/* 0.4.62.127: identical action-button geometry in Touren / Startseiten.
+   Both buttons share the same slot; hidden buttons never occupy space. */
+#ppi-tours-app .ppi-tour-intro-header :is(#ppi-tour-create,#ppi-start-page-create){
+ box-sizing:border-box!important;
+ flex:0 0 auto;
+ min-height:42px!important;
+ min-width:194px!important;
+ padding:8px 16px!important;
+ margin:0 0 0 auto!important;
+ white-space:normal!important;
+ text-align:center!important;
+ line-height:1.35!important;
+ display:inline-flex!important;
+ align-items:center!important;
+ justify-content:center!important;
+}
+#ppi-tours-app .ppi-tour-intro-header :is(#ppi-tour-create,#ppi-start-page-create)[hidden]{
+ display:none!important;
+}
+@media(max-width:700px){
+ #ppi-tours-app .ppi-tour-intro-header :is(#ppi-tour-create,#ppi-start-page-create){
+  flex:1 1 100%;
+  min-width:0!important;
+  width:100%!important;
+  margin:0!important;
+ }
+}
+
 </style>
