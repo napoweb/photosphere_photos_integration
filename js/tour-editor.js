@@ -1462,7 +1462,7 @@
   let startPages = [], activeStartPage = null, managementMode = 'tours';
   let savedStartPageSnapshot = '';
   const startPageFields = ['ppi-start-page-name','ppi-start-page-headline','ppi-start-page-description',
-    'ppi-start-page-layout','ppi-start-page-heading-color','ppi-start-page-description-color','ppi-start-page-background-color','ppi-start-page-tile-columns','ppi-start-page-effect'];
+    'ppi-start-page-layout','ppi-start-page-heading-color','ppi-start-page-description-color','ppi-start-page-background-color','ppi-start-page-header-color','ppi-start-page-tile-columns','ppi-start-page-effect'];
   let startPageBackgroundFileId = 0, startPageBgFolderParentId = 0;
   let startPageBgFolderId = 0, startPageBgRequestSerial = 0;
   function tourShortDescription(tour) {
@@ -1481,6 +1481,7 @@
       descriptionColor:byId('ppi-start-page-description-color').value,
       designEffect:byId('ppi-start-page-effect').value,
       backgroundColor:byId('ppi-start-page-background-color').value,
+      headerBackgroundColor:byId('ppi-start-page-header-color').value,
       backgroundFileId:startPageBackgroundFileId,
       tileColumns:byId('ppi-start-page-tile-columns').value,
       tourIds:[...byId('ppi-start-page-tours').querySelectorAll('input:checked')].map(input => input.value)
@@ -1511,6 +1512,7 @@
     const preview = byId('ppi-startpage-preview');
     preview.dataset.layout = values.layout;
     preview.dataset.effect = values.designEffect;
+    byId('ppi-start-page-header-color-row').hidden = values.layout !== 'split';
     const header = preview.querySelector('.ppi-startpage-preview-header');
     const lightHeading = isLightStartPageColor(values.headingColor);
     const lightDescription = isLightStartPageColor(values.descriptionColor);
@@ -1521,6 +1523,7 @@
     preview.style.setProperty('--ppi-startpage-divider',
       isLightStartPageColor(values.backgroundColor) ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.60)');
     preview.style.setProperty('--ppi-startpage-bg', values.backgroundColor);
+    preview.style.setProperty('--ppi-startpage-header-bg', values.headerBackgroundColor);
     preview.style.setProperty('--ppi-startpage-heading', values.headingColor);
     preview.style.setProperty('--ppi-startpage-description', values.descriptionColor);
     preview.style.setProperty('--ppi-startpage-image', values.backgroundFileId ? 'url("' + previewUrl(values.backgroundFileId, 1920, 1080) + '")' : 'none');
@@ -1792,6 +1795,7 @@
     byId('ppi-start-page-effect').value = effect;
     for (const button of effectButtons) button.setAttribute('aria-pressed',String(button.dataset.startpageEffect === effect));
     byId('ppi-start-page-background-color').value = /^#[a-f\d]{6}$/i.test(page.backgroundColor || '') ? page.backgroundColor : '#000000';
+    byId('ppi-start-page-header-color').value = /^#[a-f\d]{6}$/i.test(page.headerBackgroundColor || '') ? page.headerBackgroundColor : byId('ppi-start-page-background-color').value;
     const savedColumns = ['auto','2','3','4','5'].includes(page.tileColumns) ? page.tileColumns : 'auto';
     byId('ppi-start-page-tile-columns').value = savedColumns;
     for (const button of layoutPresetButtons) button.setAttribute('aria-pressed', String(button.dataset.columns === savedColumns));
