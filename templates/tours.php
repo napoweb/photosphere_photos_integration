@@ -2053,13 +2053,13 @@
   }
 }
 @media(min-width:421px) and (max-width:800px){
-  #ppi-tours-app .ppi-startpage-preview-grid{--ppi-mosaic-columns:2}
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols]{--ppi-mosaic-columns:2}
   #ppi-tours-app .ppi-startpage-preview-grid[data-cols]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(7n + 1){
     grid-column:span 2!important;grid-row:span 2!important;
   }
 }
 @media(max-width:420px){
-  #ppi-tours-app .ppi-startpage-preview-grid{--ppi-mosaic-columns:1}
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols]{--ppi-mosaic-columns:1}
   #ppi-tours-app .ppi-startpage-preview-grid[data-cols] > .ppi-startpage-preview-tile{
     grid-column:span 1!important;grid-row:span 1!important;
   }
