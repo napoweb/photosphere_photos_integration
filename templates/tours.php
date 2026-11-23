@@ -1662,4 +1662,19 @@
   background-position:center!important;
 }
 #ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] input{width:100%;max-width:680px}
+
+/* 0.4.62.110: preserve chosen overview gradient under decorative icon. */
+#ppi-tours-app #ppi-start-pages-list .ppi-startpage-overview-cover{
+  background-position:center!important;
+  background-size:cover!important;
+  isolation:isolate;
+}
+#ppi-tours-app #ppi-start-pages-list .ppi-startpage-overview-cover .ppi-overview-placeholder{
+  position:relative;
+  background:none!important;
+  background-color:transparent!important;
+  color:rgba(255,255,255,.82)!important;
+  text-shadow:0 2px 8px rgba(0,0,0,.45);
+  height:150px;
+}
 </style>
