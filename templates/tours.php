@@ -53,8 +53,8 @@
         <section class="ppi-startpage-editor-panel" data-startpage-panel="layout" hidden>
           <h3>Layout und Hintergrund</h3>
           <label>Layout <select id="ppi-start-page-layout"><option value="hero">Vollbild – Hintergrund über gesamte Fläche</option><option value="split">Kopfbereich – Hintergrund nur oben</option><option value="gallery">Galerie – kompakt ohne großen Kopfbereich</option></select></label>
-          <label>Hintergrundfarbe (Tourenbereich) <input id="ppi-start-page-background-color" type="color" value="#000000"></label>
           <label id="ppi-start-page-header-color-row" hidden>Kopfbereich-Farbe (ohne Hintergrundbild) <input id="ppi-start-page-header-color" type="color" value="#000000"></label>
+          <label id="ppi-start-page-background-color-row">Hintergrundfarbe (Tourenbereich) <input id="ppi-start-page-background-color" type="color" value="#000000"></label>
           <label>Überschriftenfarbe <input id="ppi-start-page-heading-color" type="color" value="#ffffff"></label>
           <label>Beschreibungsfarbe <input id="ppi-start-page-description-color" type="color" value="#ffffff"></label>
           <fieldset class="ppi-startpage-effect-picker">
