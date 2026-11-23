@@ -1448,6 +1448,123 @@
     ++browseSerial;
     reapplyPicker();
   });
+
+  // Independent private Startseitenverwaltung (phase 1).
+  const startPagesApi = root.dataset.startPagesUrl;
+  let startPages = [], activeStartPage = null, managementMode = 'tours';
+  function showStartPageEditor(page) {
+    activeStartPage = clone(page);
+    byId('ppi-start-page-name').value = page.name || '';
+    byId('ppi-start-page-headline').value = page.headline || '';
+    byId('ppi-start-page-description').value = page.description || '';
+    byId('ppi-start-page-layout').value = page.layout || 'hero';
+    const choices = byId('ppi-start-page-tours');
+    choices.replaceChildren();
+    for (const tour of tours) {
+      const row = node('label', undefined, 'ppi-startpage-tour-option');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = tour.id;
+      checkbox.checked = (page.tourIds || []).includes(tour.id);
+      row.append(checkbox, node('span', tour.name));
+      choices.append(row);
+    }
+    byId('ppi-start-pages-overview').hidden = true;
+    byId('ppi-start-pages-overview').style.display = 'none';
+    byId('ppi-start-page-editor').hidden = false;
+    byId('ppi-start-page-editor').style.display = 'block';
+    byId('ppi-start-page-create').hidden = true;
+    byId('ppi-overview-switch').hidden = true;
+  }
+  async function refreshStartPages() {
+    const result = await request(startPagesApi);
+    startPages = Array.isArray(result.pages) ? result.pages : [];
+    const container = byId('ppi-start-pages-list');
+    container.replaceChildren();
+    if (!startPages.length) container.append(node('p', 'Noch keine Startseiten erstellt.'));
+    for (const page of startPages) {
+      const tile = node('article', undefined, 'ppi-overview-tile');
+      tile.append(node('div', '▦', 'ppi-overview-placeholder'));
+      const body = node('div', undefined, 'ppi-overview-body');
+      body.append(node('h3', page.name, 'ppi-overview-name'));
+      body.append(node('div', '🔒 Privater Entwurf · ' + (page.tourIds || []).length + ' Touren', 'ppi-overview-status'));
+      const actions = node('div', undefined, 'ppi-overview-actions');
+      actions.append(tourAction('Bearbeiten', () => showStartPageEditor(page), true));
+      actions.append(tourAction('Startseite duplizieren', async () => {
+        try {
+          await request(startPagesApi + '/' + encodeURIComponent(page.id) + '/duplicate', 'POST', {});
+          await refreshStartPages();
+          notify('Startseite als privater Entwurf dupliziert.');
+        } catch (e) { notify(e.message, true); }
+      }));
+      body.append(actions);
+      tile.append(body);
+      container.append(tile);
+    }
+  }
+  async function setManagementMode(mode) {
+    if (mode !== 'tours' && mode !== 'startpages') return;
+    managementMode = mode;
+    const pages = mode === 'startpages';
+    byId('ppi-section-icon').textContent = pages ? '▦' : '🌐';
+    byId('ppi-section-heading').textContent = pages ? 'Meine 360°-Startseiten' : 'Meine 360°-Touren';
+    byId('ppi-section-subtitle').textContent = pages ?
+      'Startseiten mit mehreren Panorama-Touren gestalten' : 'Touren aus deinen Nextcloud-Panoramen zusammenstellen';
+    byId('ppi-mode-tours').setAttribute('aria-pressed', String(!pages));
+    byId('ppi-mode-startpages').setAttribute('aria-pressed', String(pages));
+    byId('ppi-tour-overview').hidden = pages;
+    byId('ppi-tour-overview').style.display = pages ? 'none' : 'block';
+    byId('ppi-start-pages-overview').hidden = !pages;
+    byId('ppi-start-pages-overview').style.display = pages ? 'block' : 'none';
+    byId('ppi-start-page-editor').hidden = true;
+    byId('ppi-start-page-editor').style.display = 'none';
+    byId('ppi-tour-create').hidden = pages;
+    byId('ppi-start-page-create').hidden = !pages;
+    byId('ppi-overview-switch').hidden = false;
+    if (pages) {
+      try { await refreshStartPages(); }
+      catch (e) { notify('Startseiten konnten nicht geladen werden: ' + e.message, true); }
+    }
+  }
+  byId('ppi-mode-tours').addEventListener('click', () => setManagementMode('tours'));
+  byId('ppi-mode-startpages').addEventListener('click', () => setManagementMode('startpages'));
+  byId('ppi-start-page-create').addEventListener('click', async () => {
+    const name = prompt('Wie soll die neue Startseite heißen?');
+    if (name === null) return;
+    try {
+      const result = await request(startPagesApi, 'POST', {name});
+      await refreshStartPages();
+      showStartPageEditor(result.page);
+      notify('Private Startseite erstellt.');
+    } catch (e) { notify(e.message, true); }
+  });
+  byId('ppi-start-page-back').addEventListener('click', () => setManagementMode('startpages'));
+  byId('ppi-start-page-save').addEventListener('click', async () => {
+    if (!activeStartPage) return;
+    const tourIds = [...byId('ppi-start-page-tours').querySelectorAll('input:checked')].map(input => input.value);
+    try {
+      const result = await request(startPagesApi + '/' + encodeURIComponent(activeStartPage.id), 'POST', {
+        name:byId('ppi-start-page-name').value,
+        headline:byId('ppi-start-page-headline').value,
+        description:byId('ppi-start-page-description').value,
+        layout:byId('ppi-start-page-layout').value,
+        tourIds:JSON.stringify(tourIds)
+      });
+      activeStartPage = clone(result.page);
+      await refreshStartPages();
+      notify('Startseite gespeichert. Sie ist weiterhin privat.');
+    } catch (e) { notify(e.message, true); }
+  });
+  byId('ppi-start-page-delete').addEventListener('click', async () => {
+    if (!activeStartPage || !confirm('Diese Startseite endgültig löschen? Touren bleiben erhalten.')) return;
+    try {
+      await request(startPagesApi + '/' + encodeURIComponent(activeStartPage.id), 'DELETE');
+      activeStartPage = null;
+      await setManagementMode('startpages');
+      notify('Startseite gelöscht. Touren bleiben erhalten.');
+    } catch (e) { notify(e.message, true); }
+  });
+
   byId('ppi-tour-create').addEventListener('click',async()=>{
     const name=prompt('Wie soll die neue Tour heißen?');if(name===null)return;
     try{const data=await request(api,'POST',{name});await refresh();openTour(data.tour);notify('Tour erstellt. Jetzt Panoramen hinzufügen.');}catch(e){notify(e.message,true);}
@@ -1486,4 +1603,5 @@
   });
   show('overview');
   refresh().catch(e=>notify('Touren konnten nicht geladen werden: '+e.message,true));
+  setManagementMode('tours');
 })();
