@@ -1833,4 +1833,41 @@
 #ppi-tours-app .ppi-startpage-tour-move button:disabled{opacity:.35;cursor:default}
 #ppi-tours-app .ppi-startpage-tour-move button:focus-visible{outline:2px solid var(--color-primary-element)}
 @media(max-width:480px){#ppi-tours-app .ppi-startpage-tour-option img{max-width:27%!important}}
+
+/* 0.4.62.115: gallery-preview alignment and high-gloss reflections. */
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-hero {
+  width:100%!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-header {
+  width:100%!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+  margin:0 auto 15px!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header {
+  background:rgba(10,24,37,.15)!important;
+  background-image:none!important;
+  border:1px solid rgba(255,255,255,.80)!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.72),
+    inset 1px 0 0 rgba(255,255,255,.32),
+    inset -1px 0 0 rgba(255,255,255,.18),
+    inset 0 -1px 0 rgba(255,255,255,.25),
+    0 15px 38px rgba(0,0,0,.34)!important;
+  backdrop-filter:blur(17px) saturate(135%);
+  -webkit-backdrop-filter:blur(17px) saturate(135%);
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header::before {
+  background:linear-gradient(117deg,transparent 0%,rgba(255,255,255,.09) 11%,rgba(255,255,255,.33) 22%,rgba(255,255,255,.06) 32%,transparent 43%),
+    linear-gradient(166deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,.08) 19%,transparent 49%,rgba(255,255,255,.07) 100%)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header::after {
+  height:52%!important;
+  background:radial-gradient(ellipse at 35% -30%,rgba(255,255,255,.46) 0%,rgba(255,255,255,.13) 35%,transparent 76%)!important;
+}
+@media(prefers-reduced-transparency:reduce){
+ #ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header{
+   backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+   background:rgba(16,31,44,.90)!important;
+ }
+}
 </style>
