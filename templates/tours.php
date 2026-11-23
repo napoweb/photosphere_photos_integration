@@ -2093,4 +2093,12 @@
 }
 
 
+
+/* 0.4.62.126: strong but even white frame on every startpage tile;
+   border-box keeps 1x1, 2x2 and 3x3 mosaic sizing unchanged. */
+#ppi-tours-app .ppi-startpage-preview-grid > .ppi-startpage-preview-tile{
+ box-sizing:border-box!important;
+ border:6px solid #fff!important;
+}
+
 </style>
