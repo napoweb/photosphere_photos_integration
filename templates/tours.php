@@ -2394,6 +2394,7 @@
  display:flex!important;align-items:center!important;justify-content:center!important;
  box-sizing:border-box!important;
  padding:20px!important;
+ max-height:none!important;overflow:visible!important;
  background:rgba(8,18,30,.67)!important;
  backdrop-filter:blur(3px);
 }
