@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace OCA\PhotospherePhotosIntegration\Service;
 
+use OCP\Files\File;
 use OCP\Files\IAppData;
+use OCP\Files\IRootFolder;
 use OCP\IDBConnection;
 use OCP\IConfig;
 use Psr\Log\LoggerInterface;
@@ -24,6 +26,7 @@ final class UnusedPanoramaCleanup {
 
     public function __construct(
         private IAppData $appData,
+        private IRootFolder $rootFolder,
         private IDBConnection $db,
         private IConfig $config,
         private LoggerInterface $logger,
@@ -117,6 +120,42 @@ final class UnusedPanoramaCleanup {
     }
 
     /**
+     * Resolve readable original source filenames only in the requesting
+     * administrator's current Nextcloud mount tree. No global owner lookup.
+     * Statistics-only; fails closed for inaccessible or removed originals.
+     * @param int[] $ids
+     * @return array<int,string>
+     */
+    private function readableSourceNames(string $viewerUid, array $ids): array {
+        $names = [];
+        try {
+            $home = $this->rootFolder->getUserFolder($viewerUid);
+        } catch (\Throwable $e) {
+            return $names;
+        }
+        foreach ($ids as $id) {
+            try {
+                foreach ($home->getById($id) as $node) {
+                    if (!$node instanceof File || !$node->isReadable()) {
+                        continue;
+                    }
+                    if (!is_string($home->getRelativePath($node->getPath()))) {
+                        continue;
+                    }
+                    $name = trim($node->getName());
+                    if ($name !== '') {
+                        $names[$id] = mb_substr($name, 0, 180);
+                        break;
+                    }
+                }
+            } catch (\Throwable $e) {
+                continue;
+            }
+        }
+        return $names;
+    }
+
+    /**
      * Admin-only, read-only cache statistics. A complete cross-user tour scan
      * is mandatory before distinguishing used from unreferenced files.
      * The list is capped for admin page performance; totals include all entries.
@@ -182,6 +221,11 @@ final class UnusedPanoramaCleanup {
         }
         ksort($entriesById, SORT_NUMERIC);
         $summary['cachedPanoramas'] = count($entriesById);
+        // Resolve only the bounded rows that may be displayed to this admin.
+        $readableNames = $this->readableSourceNames(
+            $viewerUid,
+            array_slice(array_keys($entriesById), 0, $summary['shownLimit'])
+        );
         foreach ($entriesById as $id => $row) {
             $used = isset($references[$id]);
             $summary[$used ? 'usedPanoramas' : 'unusedPanoramas']++;
@@ -208,11 +252,14 @@ final class UnusedPanoramaCleanup {
             if (count($summary['entries']) < $summary['shownLimit']) {
                 // Unknown ownership stays anonymous. Referenced exclusively by
                 // someone else's tour also stays anonymous (including file ID).
-                $visibility = isset($ownReferences[$id]) ? 'own' : ($used ? 'other' : 'unknown');
+                $hasOwnTour = isset($ownReferences[$id]);
+                $sourceAvailable = isset($readableNames[$id]);
+                $visibility = $hasOwnTour ? 'own' : ($sourceAvailable ? 'accessible' : ($used ? 'other' : 'unknown'));
                 $summary['entries'][] = [
-                    'id' => $visibility === 'own' ? $id : null,
-                    'name' => $visibility === 'own' ? ($names[$id] ?? null) : null,
-                    'tourNames' => $visibility === 'own' ? ($tourNames[$id] ?? []) : [],
+                    'id' => ($hasOwnTour || $sourceAvailable) ? $id : null,
+                    'name' => $sourceAvailable ? $readableNames[$id] : ($hasOwnTour ? ($names[$id] ?? null) : null),
+                    'sourceAvailable' => $sourceAvailable,
+                    'tourNames' => $hasOwnTour ? ($tourNames[$id] ?? []) : [],
                     'visibility' => $visibility,
                     'used' => $used,
                     'markedSince' => $since,
