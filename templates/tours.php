@@ -1920,4 +1920,54 @@
  }
 }
 
+
+/* 0.4.62.118: the editor mirrors the public tile composition. */
+#ppi-tours-app .ppi-startpage-preview-tile {
+ height:clamp(155px,21vw,245px)!important;min-height:155px!important;
+ display:flex!important;flex-direction:column!important;overflow:hidden!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media {
+ position:relative;flex:1 1 auto;min-height:0;overflow:hidden;
+ display:grid;place-items:center;background:#213848;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media img {
+ width:100%!important;height:100%!important;min-height:0!important;
+ max-width:100%!important;aspect-ratio:auto!important;object-fit:cover!important;
+ border-radius:0!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::after {
+ content:"";position:absolute;inset:0;pointer-events:none;
+ background:linear-gradient(155deg,rgba(255,255,255,.23) 0%,rgba(255,255,255,.10) 23%,transparent 48%,rgba(255,255,255,.07) 100%);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.34);
+ opacity:1;transition:opacity .18s ease
+}
+@media(hover:hover) and (pointer:fine) {
+ #ppi-tours-app .ppi-startpage-preview-tile:hover .ppi-startpage-tile-media::after{opacity:0}
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy {
+ height:70px!important;min-height:70px!important;max-height:70px!important;
+ flex:0 0 70px!important;
+ box-sizing:border-box!important;padding:8px 9px!important;
+ display:flex!important;flex-direction:column!important;
+ align-items:center!important;justify-content:flex-start!important;
+ gap:3px!important;overflow:hidden!important;text-align:center!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy strong {
+ display:-webkit-box!important;-webkit-box-orient:vertical!important;
+ -webkit-line-clamp:2!important;overflow:hidden!important;
+ font-size:clamp(12px,1.45vw,16px)!important;font-weight:750!important;
+ line-height:1.2!important;padding:0!important;margin:0!important;
+ max-width:100%!important;overflow-wrap:anywhere!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy small {
+ display:-webkit-box!important;-webkit-box-orient:vertical!important;
+ -webkit-line-clamp:2!important;overflow:hidden!important;
+ max-width:100%!important;color:#5c6571!important;
+ font-size:10px!important;line-height:1.3!important;
+ margin:0!important;padding:0!important;overflow-wrap:anywhere!important;
+}
+@media(prefers-reduced-motion:reduce){
+ #ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::after{transition:none}
+}
+
 </style>
