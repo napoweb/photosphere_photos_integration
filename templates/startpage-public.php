@@ -520,13 +520,13 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
   }
 }
 @media(min-width:651px) and (max-width:900px) {
-  #ppi-public-startpage .ppi-public-start-grid {--ppi-mosaic-columns:2}
+  #ppi-public-startpage[data-cols] .ppi-public-start-grid {--ppi-mosaic-columns:2}
   #ppi-public-startpage[data-cols] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(7n + 1) {
     grid-column:span 2!important;grid-row:span 2!important;
   }
 }
 @media(max-width:650px) {
-  #ppi-public-startpage .ppi-public-start-grid {--ppi-mosaic-columns:1}
+  #ppi-public-startpage[data-cols] .ppi-public-start-grid {--ppi-mosaic-columns:1}
   #ppi-public-startpage[data-cols] .ppi-public-start-grid > .ppi-public-start-card {
     grid-column:span 1!important;grid-row:span 1!important;
   }
