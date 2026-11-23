@@ -2072,7 +2072,9 @@
 #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile:nth-child(n){grid-column:span 1!important;grid-row:span 1!important;}
 }
 #ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"] > .ppi-startpage-preview-tile:nth-child(n):nth-child(n):nth-child(n){grid-column:span 1!important;grid-row:span 1!important;}
+@media(min-width:421px){
 #ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(7n + 1):nth-child(n):nth-child(n){grid-column:span 2!important;grid-row:span 2!important;}
+}
 @media(max-width:420px){#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"] > .ppi-startpage-preview-tile:nth-child(n):nth-child(n):nth-child(n){grid-column:span 1!important;grid-row:span 1!important;}}
 
 </style>
