@@ -532,4 +532,33 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
   }
 }
 
+
+/* 0.4.62.124: unobtrusive inner shadow around each tour thumbnail.
+   It is independent of the dark-at-rest overlay and remains on hover. */
+#ppi-public-startpage .ppi-public-start-card-image{
+ position:relative!important;
+ isolation:isolate;
+}
+#ppi-public-startpage .ppi-public-start-card-image::before{
+ content:"";
+ position:absolute;
+ inset:0;
+ z-index:2;
+ border-radius:inherit;
+ pointer-events:none;
+ box-shadow:inset 0 0 9px 2px rgba(0,0,0,.36),inset 0 0 2px rgba(0,0,0,.28);
+}
+#ppi-public-startpage .ppi-public-start-card-image::after{z-index:1;}
+/* Explicit two-column preset: no wide or tall tiles, even with one tour.
+   Auto mode and the mosaics with 3-5 columns are unaffected. */
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n){
+ grid-column:span 1!important;
+ grid-row:span 1!important;
+}
+@media(min-width:651px) and (max-width:900px){
+ #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n){
+  grid-column:span 1!important;grid-row:span 1!important;
+ }
+}
+
 </style>
