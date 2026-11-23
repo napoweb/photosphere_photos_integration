@@ -52,7 +52,24 @@
         </section>
         <section class="ppi-startpage-editor-panel" data-startpage-panel="layout" hidden>
           <h3>Layout und Hintergrund</h3>
-          <label>Layout <select id="ppi-start-page-layout"><option value="hero">Vollbild – Hintergrund über gesamte Fläche</option><option value="split">Kopfbereich – Hintergrund nur oben</option><option value="gallery">Galerie – kompakt ohne großen Kopfbereich</option></select></label>
+          <fieldset class="ppi-startpage-layout-mode-picker">
+            <legend>Layout</legend>
+            <div class="ppi-startpage-layout-mode-options" role="group" aria-label="Startseiten-Layout wählen">
+              <button type="button" data-startpage-layout="hero" aria-pressed="true" title="Vollbild – Hintergrund über gesamte Fläche">
+                <span class="ppi-layout-mode-mini ppi-layout-mode-mini-hero" aria-hidden="true"><i class="ppi-layout-mode-heading"></i><i class="ppi-layout-mode-subheading"></i><i class="ppi-layout-mode-tiles"><b></b><b></b><b></b></i></span>
+                <span>Vollbild</span>
+              </button>
+              <button type="button" data-startpage-layout="split" aria-pressed="false" title="Kopfbereich – Hintergrund nur oben">
+                <span class="ppi-layout-mode-mini ppi-layout-mode-mini-split" aria-hidden="true"><i class="ppi-layout-mode-heading"></i><i class="ppi-layout-mode-subheading"></i><i class="ppi-layout-mode-tiles"><b></b><b></b><b></b></i></span>
+                <span>Kopfbereich</span>
+              </button>
+              <button type="button" data-startpage-layout="gallery" aria-pressed="false" title="Galerie – kompakt ohne großen Kopfbereich">
+                <span class="ppi-layout-mode-mini ppi-layout-mode-mini-gallery" aria-hidden="true"><i class="ppi-layout-mode-heading"></i><i class="ppi-layout-mode-tiles"><b></b><b></b><b></b><b></b><b></b><b></b></i></span>
+                <span>Galerie</span>
+              </button>
+            </div>
+            <input type="hidden" id="ppi-start-page-layout" value="hero">
+          </fieldset>
           <label id="ppi-start-page-header-color-row" hidden>Kopfbereich-Farbe (ohne Hintergrundbild) <input id="ppi-start-page-header-color" type="color" value="#000000"></label>
           <label id="ppi-start-page-background-color-row">Hintergrundfarbe (Tourenbereich) <input id="ppi-start-page-background-color" type="color" value="#000000"></label>
           <label>Überschriftenfarbe <input id="ppi-start-page-heading-color" type="color" value="#ffffff"></label>
@@ -2128,6 +2145,83 @@
   width:100%!important;
   margin:0!important;
  }
+}
+
+
+/* 0.4.62.128: layout thumbnails share the design-effect row geometry. */
+#ppi-tours-app .ppi-startpage-layout-mode-picker{
+ min-width:0;padding:12px;border:1px solid var(--color-border);border-radius:11px;
+}
+#ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options){
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;
+}
+#ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options) > button{
+ display:flex!important;flex-direction:column!important;align-items:center!important;
+ justify-content:flex-start!important;gap:7px!important;
+ min-width:0!important;min-height:100px!important;
+ padding:10px 5px!important;
+ border:2px solid var(--color-border)!important;border-radius:11px!important;
+ background:var(--color-main-background)!important;color:var(--color-main-text)!important;
+ font-weight:700!important;cursor:pointer;
+ text-align:center!important;overflow-wrap:anywhere!important;
+}
+#ppi-tours-app .ppi-startpage-layout-mode-options > button[aria-pressed="true"]{
+ border-color:var(--color-primary-element)!important;
+ box-shadow:0 0 0 1px var(--color-primary-element)!important;
+}
+#ppi-tours-app .ppi-startpage-layout-mode-options > button:focus-visible{
+ outline:3px solid var(--color-primary-element);outline-offset:3px;
+}
+#ppi-tours-app .ppi-layout-mode-mini{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ position:relative;box-sizing:border-box;
+ width:96px;height:52px;max-width:100%;flex:0 0 52px;
+ padding:6px 8px;gap:4px;overflow:hidden;border-radius:8px;
+ background:linear-gradient(130deg,#142335,#4c7891);
+}
+#ppi-tours-app .ppi-layout-mode-mini i{display:block;box-sizing:border-box;font-style:normal}
+#ppi-tours-app .ppi-layout-mode-heading{
+ width:56%;height:5px;flex:0 0 5px;border-radius:5px;background:rgba(255,255,255,.94);
+}
+#ppi-tours-app .ppi-layout-mode-subheading{
+ width:72%;height:3px;flex:0 0 3px;border-radius:4px;background:rgba(255,255,255,.70);
+}
+#ppi-tours-app .ppi-layout-mode-tiles{
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:3px;width:83%;min-height:0;flex:1 1 auto;
+}
+#ppi-tours-app .ppi-layout-mode-tiles b{
+ display:block;min-width:0;min-height:0;border-radius:2px;
+ background:rgba(190,225,247,.90);box-shadow:0 1px 2px #0004;
+}
+#ppi-tours-app .ppi-layout-mode-mini-split{
+ justify-content:flex-start;gap:3px;padding:5px 8px;
+ background:linear-gradient(to bottom,#244561 0 55%,#d3e1e8 55% 100%);
+}
+#ppi-tours-app .ppi-layout-mode-mini-split .ppi-layout-mode-tiles{
+ flex:1 1 auto;width:83%;
+}
+#ppi-tours-app .ppi-layout-mode-mini-split .ppi-layout-mode-tiles b{background:#729db8}
+#ppi-tours-app .ppi-layout-mode-mini-gallery{
+ gap:5px;background:linear-gradient(130deg,#d7e5ed,#b9d1df);
+}
+#ppi-tours-app .ppi-layout-mode-mini-gallery .ppi-layout-mode-heading{background:#294c63}
+#ppi-tours-app .ppi-layout-mode-mini-gallery .ppi-layout-mode-tiles{grid-template-rows:repeat(2,minmax(0,1fr));width:88%}
+#ppi-tours-app .ppi-layout-mode-mini-gallery .ppi-layout-mode-tiles b{background:#638ca5}
+@media(max-width:520px){
+ #ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options){
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:6px!important;
+ }
+ #ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options) > button{
+  padding:8px 3px!important;min-height:98px!important;font-size:11px!important;
+ }
+}
+/* Consistent bright 2px seam across the split-layout hero in the editor. */
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-hero{
+ box-sizing:border-box!important;
+ border-bottom:2px solid #fff!important;
+ box-shadow:0 8px 18px rgba(0,0,0,.32),0 2px 3px rgba(0,0,0,.45)!important;
 }
 
 </style>
