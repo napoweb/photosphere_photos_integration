@@ -1537,8 +1537,14 @@
         const image = imageThumb(tourCoverImage(tour).id, 520, 293);
         image.alt = 'Vorschau: ' + tour.name;
         image.loading = 'lazy';
-        tile.append(image);
-      } else tile.append(node('div', '🌐', 'ppi-overview-placeholder'));
+        const media = node('div',undefined,'ppi-startpage-tile-media');
+        media.append(image);
+        tile.append(media);
+      } else {
+        const media = node('div',undefined,'ppi-startpage-tile-media');
+        media.append(node('div', '🌐', 'ppi-overview-placeholder'));
+        tile.append(media);
+      }
       const copy = node('div',undefined,'ppi-startpage-tile-copy');
       copy.append(node('strong', tour.name));
       const description = tourShortDescription(tour);
