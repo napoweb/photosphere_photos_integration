@@ -2089,7 +2089,7 @@
 }
 #ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::after{z-index:1;}
 /* Explicit 2-column start-page preview: every tile is exactly 1x1. */
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:nth-child(n){
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"]:not(#ppi-mosaic-wide-override) > .ppi-startpage-preview-tile:nth-child(n){
  grid-column:span 1!important;grid-row:span 1!important;
 }
 
