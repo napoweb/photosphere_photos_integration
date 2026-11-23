@@ -213,7 +213,8 @@ final class TourController extends Controller {
         if (count($pages) >= 30) { return $this->error('Maximal 30 Startseiten pro Benutzer'); }
         $page = ['id' => bin2hex(random_bytes(12)), 'name' => $name,
             'headline' => $name, 'description' => '', 'layout' => 'hero',
-            'headingColor' => '#ffffff', 'backgroundColor' => '#1d3849',
+            'headingColor' => '#ffffff', 'backgroundColor' => '#000000',
+            'backgroundFileId' => 0, 'tileColumns' => 'auto',
             'tourIds' => [], 'created' => gmdate('c'), 'modified' => gmdate('c')];
         $pages[] = $page;
         $this->persistStartPages($uid, $pages);
@@ -229,11 +230,16 @@ final class TourController extends Controller {
         $description = trim((string)$this->request->getParam('description', ''));
         $layout = (string)$this->request->getParam('layout', 'hero');
         $headingColor = (string)$this->request->getParam('headingColor', '#ffffff');
-        $backgroundColor = (string)$this->request->getParam('backgroundColor', '#1d3849');
+        $backgroundColor = (string)$this->request->getParam('backgroundColor', '#000000');
+        $backgroundFileIdRaw = $this->request->getParam('backgroundFileId', '0');
+        $backgroundFileId = filter_var($backgroundFileIdRaw, FILTER_VALIDATE_INT);
+        $tileColumns = (string)$this->request->getParam('tileColumns', 'auto');
         if ($name === '' || mb_strlen($name) > 100 || mb_strlen($headline) > 120 ||
             mb_strlen($description) > 1000 || !in_array($layout, ['hero', 'split', 'gallery'], true) ||
             !preg_match('/^#[0-9a-fA-F]{6}$/D', $headingColor) ||
-            !preg_match('/^#[0-9a-fA-F]{6}$/D', $backgroundColor)) {
+            !preg_match('/^#[0-9a-fA-F]{6}$/D', $backgroundColor) ||
+            $backgroundFileId === false || $backgroundFileId < 0 ||
+            !in_array($tileColumns, ['auto', '2', '3', '4', '5'], true)) {
             return $this->error('Ungültige Startseiten-Einstellungen');
         }
         $requested = json_decode((string)$this->request->getParam('tourIds', '[]'), true);
@@ -248,6 +254,9 @@ final class TourController extends Controller {
             }
             if (!in_array($tourId, $tourIds, true)) { $tourIds[] = $tourId; }
         }
+        if ($backgroundFileId > 0 && $this->image($uid, $backgroundFileId) === null) {
+            return $this->error('Hintergrundbild nicht verfügbar oder keine Leseberechtigung', 403);
+        }
         $pages = $this->startPageRecords($uid);
         foreach ($pages as &$page) {
             if ($page['id'] !== $id) { continue; }
@@ -257,6 +266,8 @@ final class TourController extends Controller {
             $page['layout'] = $layout;
             $page['headingColor'] = $headingColor;
             $page['backgroundColor'] = $backgroundColor;
+            $page['backgroundFileId'] = $backgroundFileId;
+            $page['tileColumns'] = $tileColumns;
             $page['tourIds'] = $tourIds;
             $page['modified'] = gmdate('c');
             $this->persistStartPages($uid, $pages);
