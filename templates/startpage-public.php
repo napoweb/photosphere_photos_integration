@@ -277,4 +277,49 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
     background:rgba(16,31,44,.90)!important;
   }
 }
+
+/* 0.4.62.116: one shared content width for split hero/glass and card grid.
+   Remove double horizontal inset from the header at narrower viewports. */
+#ppi-public-startpage[data-layout=split] .ppi-public-start-inner {
+  --ppi-split-gutter:0px;
+  width:min(100%,1360px)!important;
+  max-width:1360px!important;
+  margin-inline:auto!important;
+}
+#ppi-public-startpage[data-layout=split] .ppi-public-start-header {
+  padding-left:0!important;
+  padding-right:0!important;
+}
+#ppi-public-startpage[data-layout=split] .ppi-public-start-copy {
+  box-sizing:border-box!important;
+  width:calc(100% - 2 * var(--ppi-split-gutter))!important;
+  max-width:1360px!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+#ppi-public-startpage[data-layout=split] .ppi-public-start-tour-section {
+  box-sizing:border-box!important;
+  width:100%!important;
+  padding-left:var(--ppi-split-gutter)!important;
+  padding-right:var(--ppi-split-gutter)!important;
+}
+#ppi-public-startpage[data-layout=split] .ppi-public-start-grid {
+  width:100%!important;
+}
+@media(max-width:650px) {
+ #ppi-public-startpage[data-layout=split] .ppi-public-start-inner {
+   --ppi-split-gutter:10px;
+ }
+ #ppi-public-startpage[data-layout=split] .ppi-public-start-copy {
+   width:calc(100% - 2 * var(--ppi-split-gutter))!important;
+ }
+}
+/* The gallery's chosen background JPEG works with all three effect modes,
+   including the shiny glass preset; the selected solid color is fallback. */
+#ppi-public-startpage[data-layout=gallery] {
+ background-color:var(--page-bg,#000000)!important;
+ background-image:linear-gradient(rgba(0,0,0,.20),rgba(0,0,0,.20)),var(--bg-image,none)!important;
+ background-position:center!important;
+ background-size:cover!important;
+}
 </style>
