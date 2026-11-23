@@ -4,7 +4,7 @@ $page = $_['page'] ?? [];
 $invalid = !empty($_['invalid']);
 $locked = !empty($_['passwordRequired']);
 $layout = in_array($page['layout'] ?? 'hero', ['hero','split','gallery'], true) ? $page['layout'] : 'hero';
-$effect = ($page['designEffect'] ?? 'subtle') === 'glass' ? 'glass' : 'subtle';
+$effect = in_array(($page['designEffect'] ?? 'subtle'), ['subtle', 'glass', 'glossy'], true) ? $page['designEffect'] : 'subtle';
 $columns = in_array((string)($page['tileColumns'] ?? 'auto'), ['auto','2','3','4','5'], true) ? (string)$page['tileColumns'] : 'auto';
 $color = static fn($v,$fallback) => is_string($v) && preg_match('/^#[0-9a-fA-F]{6}$/D',$v) ? $v : $fallback;
 $bg = $color($page['backgroundColor'] ?? null, '#000000');
@@ -14,9 +14,10 @@ $light = static fn($hex) => (299*hexdec(substr($hex,1,2)) + 587*hexdec(substr($h
 $headingStroke = $light($heading) ? 'rgba(0,0,0,.50)' : 'rgba(255,255,255,.68)';
 $headingShadow = 'rgba(0,0,0,.40)';
 $descriptionShadow = 'rgba(0,0,0,.20)';
+$dividerColor = $light($bg) ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.60)';
 ?>
 <main id="ppi-public-startpage" data-layout="<?php p($layout); ?>" data-effect="<?php p($effect); ?>" data-cols="<?php p($columns); ?>"
- style="--page-bg:<?php p($bg); ?>;--title-color:<?php p($heading); ?>;--desc-color:<?php p($description); ?>;--title-shadow:<?php p($headingShadow); ?>;--title-stroke:<?php p($headingStroke); ?>;--desc-shadow:<?php p($descriptionShadow); ?>;<?php if (!empty($_['backgroundUrl'])): ?>--bg-image:url('<?php p($_['backgroundUrl']); ?>');<?php endif; ?>">
+ style="--page-bg:<?php p($bg); ?>;--title-color:<?php p($heading); ?>;--desc-color:<?php p($description); ?>;--title-shadow:<?php p($headingShadow); ?>;--title-stroke:<?php p($headingStroke); ?>;--desc-shadow:<?php p($descriptionShadow); ?>;--split-divider:<?php p($dividerColor); ?>;<?php if (!empty($_['backgroundUrl'])): ?>--bg-image:url('<?php p($_['backgroundUrl']); ?>');<?php endif; ?>">
 <?php if ($invalid): ?>
  <section class="ppi-public-start-message"><h1>Startseite nicht verfügbar</h1><p>Der Link ist ungültig, abgelaufen oder deaktiviert.</p></section>
 <?php elseif ($locked): ?>
@@ -157,4 +158,44 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
 #ppi-public-startpage[data-layout=split] .ppi-public-start-tour-section {
   background:transparent!important;
 }
+
+/* 0.4.62.113: unify hero and tour alignment; add contrast-aware split seam. */
+#ppi-public-startpage[data-layout=split] .ppi-public-start-copy{
+ width:calc(100% - 2 * clamp(14px,3vw,46px))!important;
+ max-width:none!important;
+}
+#ppi-public-startpage[data-layout=split] .ppi-public-start-header{
+ border-bottom:1px solid var(--split-divider,rgba(255,255,255,.60))!important;
+ box-shadow:0 8px 18px rgba(0,0,0,.24),0 1px 2px var(--split-divider,rgba(255,255,255,.60))!important
+}
+#ppi-public-startpage[data-effect=glossy] .ppi-public-start-copy{
+ position:relative;isolation:isolate;overflow:hidden;
+ border:1px solid rgba(255,255,255,.62)!important;border-radius:18px!important;
+ background:rgba(24,39,54,.23)!important;
+ backdrop-filter:blur(15px) saturate(140%);-webkit-backdrop-filter:blur(15px) saturate(140%);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.60),inset 0 -1px 0 rgba(255,255,255,.10),0 13px 30px rgba(0,0,0,.30)!important
+}
+#ppi-public-startpage[data-effect=glossy] .ppi-public-start-copy::before{
+ content:"";pointer-events:none;position:absolute;inset:0;z-index:0;
+ background:linear-gradient(157deg,rgba(255,255,255,.28) 0%,rgba(255,255,255,.11) 25%,transparent 39%,transparent 70%,rgba(255,255,255,.07) 100%);
+ border-radius:inherit
+}
+#ppi-public-startpage[data-effect=glossy] .ppi-public-start-copy::after{
+ content:"";pointer-events:none;position:absolute;inset:0 0 auto;z-index:0;height:40%;
+ background:linear-gradient(to bottom,rgba(255,255,255,.16),rgba(255,255,255,0));
+ border-radius:inherit
+}
+#ppi-public-startpage[data-effect=glossy] .ppi-public-start-copy>h1,
+#ppi-public-startpage[data-effect=glossy] .ppi-public-start-copy>p{
+ position:relative;z-index:1
+}
+@media(max-width:650px){
+ #ppi-public-startpage[data-layout=split] .ppi-public-start-copy{width:100%!important}
+}
+@media(prefers-reduced-transparency:reduce){
+ #ppi-public-startpage[data-effect=glossy] .ppi-public-start-copy{
+ backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(17,25,32,.87)!important
+ }
+}
+
 </style>
