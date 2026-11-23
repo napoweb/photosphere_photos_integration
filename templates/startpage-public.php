@@ -357,4 +357,73 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
  }
 }
 
+
+/* 0.4.62.118: equal-size cards, more prominent names, compact description
+   and a lightweight glass highlight over the image which clears on hover. */
+#ppi-public-startpage .ppi-public-start-card {
+  height:clamp(235px,24vw,310px)!important;
+  min-height:235px!important;
+  display:flex!important;flex-direction:column!important;
+  overflow:hidden!important;
+  transition:transform .18s ease,box-shadow .18s ease!important;
+}
+#ppi-public-startpage .ppi-public-start-card-image {
+  position:relative!important;
+  flex:1 1 auto!important;
+  min-height:0!important;
+  aspect-ratio:auto!important;
+  overflow:hidden!important;
+}
+#ppi-public-startpage .ppi-public-start-card-image img {
+  display:block!important;width:100%!important;height:100%!important;
+  object-fit:cover!important;
+}
+#ppi-public-startpage .ppi-public-start-card-image::after {
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(155deg,rgba(255,255,255,.23) 0%,rgba(255,255,255,.10) 23%,transparent 48%,rgba(255,255,255,.07) 100%);
+  border-top:1px solid rgba(255,255,255,.53);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.30);
+  opacity:1;transition:opacity .18s ease;
+}
+@media(hover:hover) and (pointer:fine) {
+  #ppi-public-startpage .ppi-public-start-card:hover .ppi-public-start-card-image::after {
+    opacity:0;
+  }
+}
+#ppi-public-startpage .ppi-public-start-card:focus-visible .ppi-public-start-card-image::after {
+  opacity:0;
+}
+#ppi-public-startpage .ppi-public-start-card-content {
+  height:78px!important;min-height:78px!important;max-height:78px!important;
+  flex:0 0 78px!important;
+  padding:9px 12px 8px!important;
+  display:flex!important;flex-direction:column!important;
+  align-items:center!important;justify-content:flex-start!important;
+  gap:3px!important;overflow:hidden!important;text-align:center!important;
+}
+#ppi-public-startpage .ppi-public-start-card-content strong {
+  display:-webkit-box!important;-webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+  overflow:hidden!important;max-width:100%!important;
+  font-size:clamp(15px,1.25vw,19px)!important;
+  line-height:1.2!important;font-weight:750!important;
+  margin:0!important;white-space:normal!important;overflow-wrap:anywhere!important;
+}
+#ppi-public-startpage .ppi-public-start-card-content small {
+  display:-webkit-box!important;-webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;overflow:hidden!important;
+  max-width:100%!important;margin:0!important;
+  color:#5c6571!important;font-size:clamp(10px,.79vw,12px)!important;
+  line-height:1.3!important;overflow-wrap:anywhere!important;
+}
+@media(max-width:650px) {
+ #ppi-public-startpage .ppi-public-start-card {height:270px!important}
+ #ppi-public-startpage .ppi-public-start-card-content strong {font-size:17px!important}
+ #ppi-public-startpage .ppi-public-start-card-content small {font-size:11px!important}
+}
+@media(prefers-reduced-motion:reduce) {
+ #ppi-public-startpage .ppi-public-start-card-image::after,
+ #ppi-public-startpage .ppi-public-start-card {transition:none!important}
+}
+
 </style>
