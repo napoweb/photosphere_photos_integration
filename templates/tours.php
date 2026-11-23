@@ -116,7 +116,7 @@
         </section>
         <section class="ppi-startpage-editor-panel" data-startpage-panel="tours" hidden>
           <h3>Touren auswählen</h3>
-          <p>Wähle vorhandene Touren. Bild, Titel und Kurzbeschreibung helfen bei der Auswahl. Die angezeigte Kachelanordnung stellst du unter „Layout“ ein.</p>
+          <p>Wähle Touren aus und ziehe sie am Griff ☰ per Drag-and-drop in deine gewünschte Reihenfolge. Mit ↑ und ↓ kannst du die Reihenfolge auch ohne Maus ändern. Die Anordnung der Kacheln legst du unter „Layout“ fest.</p>
           <fieldset><legend>Eigene Touren</legend><div id="ppi-start-page-tours"></div></fieldset>
         </section>
         <section class="ppi-startpage-editor-panel" data-startpage-panel="share" hidden>
@@ -1799,4 +1799,29 @@
  }
 }
 
+
+/* 0.4.62.114: sortable selected tours, visible drop target and keyboard controls. */
+#ppi-tours-app .ppi-startpage-tour-option{position:relative}
+#ppi-tours-app .ppi-startpage-tour-option[draggable=true]{cursor:grab}
+#ppi-tours-app .ppi-startpage-tour-option.ppi-tour-dragging{opacity:.48;cursor:grabbing}
+#ppi-tours-app .ppi-startpage-tour-option.ppi-tour-drop-before{
+  box-shadow:inset 0 3px 0 var(--color-primary-element,#1768a1),0 3px 12px rgba(0,0,0,.13)!important
+}
+#ppi-tours-app .ppi-startpage-tour-option.ppi-tour-drop-after{
+  box-shadow:inset 0 -3px 0 var(--color-primary-element,#1768a1),0 3px 12px rgba(0,0,0,.13)!important
+}
+#ppi-tours-app .ppi-startpage-tour-move{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  flex:0 0 34px;min-width:34px;align-self:stretch
+}
+#ppi-tours-app .ppi-startpage-tour-grip{font-size:22px;color:var(--color-text-maxcontrast);cursor:grab;user-select:none;line-height:1}
+#ppi-tours-app .ppi-startpage-tour-move button{
+  display:grid;place-items:center;min-height:25px!important;height:25px!important;min-width:30px!important;
+  padding:0!important;border:1px solid var(--color-border)!important;border-radius:6px!important;
+  background:var(--color-main-background)!important;color:var(--color-main-text)!important;
+  font-size:14px;cursor:pointer
+}
+#ppi-tours-app .ppi-startpage-tour-move button:disabled{opacity:.35;cursor:default}
+#ppi-tours-app .ppi-startpage-tour-move button:focus-visible{outline:2px solid var(--color-primary-element)}
+@media(max-width:480px){#ppi-tours-app .ppi-startpage-tour-option img{max-width:27%!important}}
 </style>
