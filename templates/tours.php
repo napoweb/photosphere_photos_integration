@@ -117,7 +117,20 @@
         </section>
         <section class="ppi-startpage-editor-panel" data-startpage-panel="share" hidden>
           <h3>Freigabe</h3>
-          <p class="ppi-startpage-private-note">🔒 Privater Entwurf. Öffentliche Links und die individuellen Passwortmodelle sind absichtlich noch nicht verfügbar. So können wir die Gestaltung zuerst sicher testen.</p>
+          <p class="ppi-startpage-private-note">Ein eigener Startseiten-Link kann optional mit Passwort und Ablaufdatum geschützt werden. Touren behalten ihre bisherigen Freigaberegeln. Nur bereits freigegebene Touren erscheinen für Besucher.</p>
+          <label>Ablaufdatum (optional) <input type="date" id="ppi-start-page-share-expiry"></label>
+          <label>Startseiten-Passwort (optional, leer lassen zum Beibehalten) <input type="password" id="ppi-start-page-share-password" maxlength="128" autocomplete="new-password"></label>
+          <p id="ppi-start-page-share-status">Noch kein Freigabelink erstellt</p>
+          <div class="ppi-startpage-bg-toolbar">
+            <button type="button" id="ppi-start-page-share-enable">Freigabelink erstellen / Einstellungen speichern</button>
+            <button type="button" id="ppi-start-page-share-remove-password">Passwort entfernen</button>
+            <button type="button" id="ppi-start-page-share-disable">Freigabelink deaktivieren</button>
+          </div>
+          <label>Startseiten-Link <input type="text" id="ppi-start-page-share-url" readonly></label>
+          <div class="ppi-startpage-bg-toolbar">
+            <button type="button" id="ppi-start-page-share-copy">Link kopieren</button>
+            <button type="button" id="ppi-start-page-share-open">Startseite im neuen Tab öffnen</button>
+          </div>
         </section>
       </div>
       <aside class="ppi-startpage-preview-column" aria-label="Live-Vorschau der Startseite">
@@ -1640,4 +1653,13 @@
   }
 }
 
+
+/* Glass keeps the chosen Nextcloud background image in gallery mode too. */
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"][data-effect="glass"] {
+  background-color:var(--ppi-startpage-bg,#000)!important;
+  background-image:linear-gradient(#0005,#0005),var(--ppi-startpage-image,none)!important;
+  background-size:cover!important;
+  background-position:center!important;
+}
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] input{width:100%;max-width:680px}
 </style>
