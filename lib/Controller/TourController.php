@@ -213,6 +213,7 @@ final class TourController extends Controller {
         if (count($pages) >= 30) { return $this->error('Maximal 30 Startseiten pro Benutzer'); }
         $page = ['id' => bin2hex(random_bytes(12)), 'name' => $name,
             'headline' => $name, 'description' => '', 'layout' => 'hero',
+            'headingColor' => '#ffffff', 'backgroundColor' => '#1d3849',
             'tourIds' => [], 'created' => gmdate('c'), 'modified' => gmdate('c')];
         $pages[] = $page;
         $this->persistStartPages($uid, $pages);
@@ -227,8 +228,12 @@ final class TourController extends Controller {
         $headline = trim((string)$this->request->getParam('headline', ''));
         $description = trim((string)$this->request->getParam('description', ''));
         $layout = (string)$this->request->getParam('layout', 'hero');
+        $headingColor = (string)$this->request->getParam('headingColor', '#ffffff');
+        $backgroundColor = (string)$this->request->getParam('backgroundColor', '#1d3849');
         if ($name === '' || mb_strlen($name) > 100 || mb_strlen($headline) > 120 ||
-            mb_strlen($description) > 1000 || !in_array($layout, ['hero', 'split', 'gallery'], true)) {
+            mb_strlen($description) > 1000 || !in_array($layout, ['hero', 'split', 'gallery'], true) ||
+            !preg_match('/^#[0-9a-fA-F]{6}$/D', $headingColor) ||
+            !preg_match('/^#[0-9a-fA-F]{6}$/D', $backgroundColor)) {
             return $this->error('Ungültige Startseiten-Einstellungen');
         }
         $requested = json_decode((string)$this->request->getParam('tourIds', '[]'), true);
@@ -250,6 +255,8 @@ final class TourController extends Controller {
             $page['headline'] = $headline;
             $page['description'] = $description;
             $page['layout'] = $layout;
+            $page['headingColor'] = $headingColor;
+            $page['backgroundColor'] = $backgroundColor;
             $page['tourIds'] = $tourIds;
             $page['modified'] = gmdate('c');
             $this->persistStartPages($uid, $pages);
