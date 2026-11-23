@@ -2024,19 +2024,19 @@
 #ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(7n + 1){
  grid-column:span 2!important;grid-row:span 2!important;
 }
-#ppi-tours-app[data-cols="3"] .ppi-startpage-preview-grid:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(8n + 1){
+#ppi-tours-app[data-cols="3"] .ppi-startpage-preview-grid:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(8n + 1):nth-last-child(n + 3){
  grid-column:span 2!important;grid-row:span 2!important;
 }
 #ppi-tours-app[data-cols="3"] .ppi-startpage-preview-grid:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(8n + 4){
  grid-column:span 2!important;grid-row:span 1!important;
 }
-#ppi-tours-app[data-cols="4"] .ppi-startpage-preview-grid:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(12n + 1){
+#ppi-tours-app[data-cols="4"] .ppi-startpage-preview-grid:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(12n + 1):nth-last-child(n + 5){
  grid-column:span 2!important;grid-row:span 2!important;
 }
 #ppi-tours-app[data-cols="4"] .ppi-startpage-preview-grid:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(12n + 6){
  grid-column:span 2!important;grid-row:span 1!important;
 }
-#ppi-tours-app[data-cols="5"] .ppi-startpage-preview-grid:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(16n + 1){
+#ppi-tours-app[data-cols="5"] .ppi-startpage-preview-grid:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(16n + 1):nth-last-child(n + 7){
  grid-column:span 2!important;grid-row:span 2!important;
 }
 #ppi-tours-app[data-cols="5"] .ppi-startpage-preview-grid:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(16n + 8){
