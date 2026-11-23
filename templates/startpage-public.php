@@ -472,6 +472,7 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
  grid-column:span 1!important;grid-row:span 1!important;
  height:100%!important;min-height:0!important;max-height:none!important;
 }
+@media(min-width:901px){
 #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(7n + 1),
 #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(7n + 1){
  grid-column:span 1!important;grid-row:span 1!important;
@@ -498,7 +499,8 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
 #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(16n + 8){
  grid-column:span 2!important;grid-row:span 1!important;
 }
-@media(max-width:900px){
+}
+@media(min-width:651px) and (max-width:900px){
 #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid,
 #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid,
 #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid,
