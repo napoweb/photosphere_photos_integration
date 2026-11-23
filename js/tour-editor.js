@@ -1459,7 +1459,9 @@
   let startPageBgFolderId = 0, startPageBgRequestSerial = 0;
   function tourShortDescription(tour) {
     const raw = String(tour.display?.introText || '');
-    return raw.replace(/\\[([^\\]]+)\\]\\(https?:\\/\\/[^\\s)]+\\)/g, '$1').replace(/(?:^|\\n)\\s*(?:[-*]|\\d+[.)])\\s+/gm,' ').replace(/\\s+/g,' ').trim().slice(0,140);
+    return raw.replace(/\[([^\]]+)\]\(https?:\/\/[^\s)]+\)/g, '$1')
+      .replace(/(?:^|\n)\s*(?:[-*]|\d+[.)])\s+/gm, ' ')
+      .replace(/\s+/g, ' ').trim().slice(0, 140);
   }
   function startPageFormValues() {
     return {
