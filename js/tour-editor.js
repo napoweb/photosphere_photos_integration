@@ -1756,7 +1756,14 @@
         const background = previewUrl(Number(page.backgroundFileId), 920, 520);
         cover.style.backgroundImage = 'linear-gradient(#0005,#0005),url("' + background + '")';
       } else {
-        cover.style.backgroundImage = 'linear-gradient(140deg,#101820,#30465b)';
+        // The overview must reflect this start page's selected background color,
+        // not a fixed blue gradient. Distinct stops also work for pure black.
+        const base = /^#[0-9a-f]{6}$/i.test(page.backgroundColor || '')
+          ? page.backgroundColor : '#000000';
+        const rgb = [1,3,5].map(i => parseInt(base.slice(i,i+2),16));
+        const tint = (toward, proportion) => '#'+rgb.map(channel => Math.round(channel*(1-proportion)+toward*proportion).toString(16).padStart(2,'0')).join('');
+        cover.style.backgroundColor = base;
+        cover.style.backgroundImage = 'linear-gradient(135deg,' + tint(255,.24) + ' 0%,' + base + ' 55%,' + tint(0,.42) + ' 100%)';
       }
       cover.append(node('div', '▦', 'ppi-overview-placeholder'));
       tile.append(cover);
