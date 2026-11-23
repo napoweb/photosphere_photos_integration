@@ -2051,4 +2051,38 @@
  }
 }
 
+
+/* 0.4.62.121: identical dark-at-rest, clear-on-hover effect in editor. */
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::after{
+ background:linear-gradient(135deg,rgba(8,18,26,.32),rgba(8,18,26,.40))!important;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.15)!important;
+ opacity:1!important;transition:opacity .22s ease!important;
+}
+@media(hover:hover) and (pointer:fine){
+ #ppi-tours-app .ppi-startpage-preview-tile:hover .ppi-startpage-tile-media::after{
+  opacity:0!important;
+ }
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy {
+ padding-left:5px!important;padding-right:5px!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy small{
+ font-size:clamp(12px,1vw,14px)!important;
+}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile {
+ grid-column:span 1!important;
+}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:only-child{
+ grid-column:span 2!important;
+}
+@media(max-width:420px){
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile,
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:only-child{
+  grid-column:span 1!important;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::after {transition:none!important}
+}
+
 </style>
