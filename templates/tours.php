@@ -49,17 +49,41 @@
           <label>Name der Startseite (intern) <input id="ppi-start-page-name" maxlength="100"></label>
           <label>Überschrift für Besucher <input id="ppi-start-page-headline" maxlength="120"></label>
           <label>Beschreibung <textarea id="ppi-start-page-description" maxlength="1000" rows="4"></textarea></label>
-          <label>Überschriftenfarbe <input id="ppi-start-page-heading-color" type="color" value="#ffffff"></label>
         </section>
         <section class="ppi-startpage-editor-panel" data-startpage-panel="layout" hidden>
           <h3>Layout und Hintergrund</h3>
           <label>Layout <select id="ppi-start-page-layout"><option value="hero">Vollbild</option><option value="split">Kopfbereich</option><option value="gallery">Galerie</option></select></label>
-          <label>Hintergrundfarbe <input id="ppi-start-page-background-color" type="color" value="#1d3849"></label>
-          <p>Eigene Hintergrundbilder und zusätzliche Gestaltungsoptionen folgen in einer weiteren Docker-Testversion.</p>
+          <label>Hintergrundfarbe <input id="ppi-start-page-background-color" type="color" value="#000000"></label>
+          <label>Überschriftenfarbe <input id="ppi-start-page-heading-color" type="color" value="#ffffff"></label>
+          <label>Tour-Kacheln pro Reihe
+            <select id="ppi-start-page-tile-columns">
+              <option value="auto">Automatisch: 1 breit, 2 nebeneinander, 3 mit großer erster Kachel</option>
+              <option value="2">2 pro Reihe</option>
+              <option value="3">3 pro Reihe</option>
+              <option value="4">4 pro Reihe</option>
+              <option value="5">5 pro Reihe</option>
+            </select>
+          </label>
+          <fieldset class="ppi-startpage-background-picker">
+            <legend>Hintergrundbild aus Nextcloud-Dateien</legend>
+            <p>Wähle ein JPEG aus deinen Dateien. Die Vorschau lädt nur eine optimierte Nextcloud-Vorschau statt des großen Originals. Neue Bilder kannst du vorher in Nextcloud „Dateien“ hochladen.</p>
+            <div class="ppi-startpage-bg-toolbar">
+              <button type="button" id="ppi-start-page-bg-browse">Bilder auswählen</button>
+              <button type="button" id="ppi-start-page-bg-remove">Hintergrundbild entfernen</button>
+            </div>
+            <p id="ppi-start-page-bg-selected">Kein Bild ausgewählt</p>
+            <div id="ppi-start-page-bg-browser" hidden>
+              <div class="ppi-startpage-bg-toolbar">
+                <button type="button" id="ppi-start-page-bg-up">← Übergeordneter Ordner</button>
+                <span id="ppi-start-page-bg-path">/</span>
+              </div>
+              <div id="ppi-start-page-bg-files" class="ppi-startpage-bg-files"></div>
+            </div>
+          </fieldset>
         </section>
         <section class="ppi-startpage-editor-panel" data-startpage-panel="tours" hidden>
           <h3>Touren auswählen</h3>
-          <p>Wähle vorhandene Touren. Die Kacheln erscheinen sofort in der Vorschau; ihre Reihenfolge entspricht momentan der Tourenübersicht.</p>
+          <p>Wähle vorhandene Touren. Bild, Titel und Kurzbeschreibung helfen bei der Auswahl. Die angezeigte Kachelanordnung stellst du unter „Layout“ ein.</p>
           <fieldset><legend>Eigene Touren</legend><div id="ppi-start-page-tours"></div></fieldset>
         </section>
         <section class="ppi-startpage-editor-panel" data-startpage-panel="share" hidden>
@@ -392,6 +416,32 @@
 #ppi-tours-app .ppi-startpage-preview-note{font-size:12px;color:var(--color-text-maxcontrast);line-height:1.5;margin:10px 0}
 @media(max-width:900px){#ppi-tours-app .ppi-startpage-workspace{grid-template-columns:1fr}#ppi-tours-app .ppi-startpage-preview-column{position:static}}
 @media(max-width:600px){#ppi-tours-app .ppi-startpage-editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}#ppi-tours-app .ppi-startpage-live-preview{min-height:270px}}
+
+/* Start page 0.4.62.104: background selection and responsive card grids. */
+#ppi-tours-app .ppi-startpage-tour-option{display:flex!important;flex-direction:row!important;align-items:center!important;gap:12px!important;cursor:pointer;border:1px solid var(--color-border);border-radius:10px;padding:9px!important;margin:0 0 9px;min-width:0}
+#ppi-tours-app .ppi-startpage-tour-option img{width:125px;height:72px;max-width:32%;object-fit:cover;border-radius:7px;flex:0 0 auto;background:var(--color-background-dark)}
+#ppi-tours-app .ppi-startpage-tour-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+#ppi-tours-app .ppi-startpage-tour-info strong{font-size:14px;overflow-wrap:anywhere}
+#ppi-tours-app .ppi-startpage-tour-info small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;color:var(--color-text-maxcontrast);font-size:12px;font-weight:400}
+#ppi-tours-app .ppi-startpage-tour-option input[type=checkbox]{width:20px!important;height:20px!important;flex:0 0 20px}
+#ppi-tours-app .ppi-startpage-bg-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#ppi-tours-app .ppi-startpage-bg-toolbar button{min-height:36px}
+#ppi-tours-app #ppi-start-page-bg-browser{max-height:300px;overflow:auto;border:1px solid var(--color-border);padding:8px;border-radius:9px}
+#ppi-tours-app #ppi-start-page-bg-browser[hidden]{display:none!important}
+#ppi-tours-app .ppi-startpage-bg-files{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#ppi-tours-app .ppi-startpage-bg-files button{display:flex;flex-direction:column;gap:5px;min-width:0;padding:7px;border:1px solid var(--color-border);border-radius:8px;overflow-wrap:anywhere;background:var(--color-main-background);font-size:12px}
+#ppi-tours-app .ppi-startpage-bg-files img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:5px}
+#ppi-tours-app .ppi-startpage-live-preview{background-image:linear-gradient(#0006,#0006),var(--ppi-startpage-image,none);background-size:cover;background-position:center}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"] .ppi-startpage-preview-tile:only-child{grid-column:1/-1}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(3):last-child) .ppi-startpage-preview-tile:first-child{grid-column:1/-1}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"]{grid-template-columns:repeat(5,minmax(0,1fr))}
+#ppi-tours-app .ppi-startpage-preview-tile small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding:0 9px 9px;font-size:11px;line-height:1.4;color:#52606e}
+@media(max-width:600px){#ppi-tours-app .ppi-startpage-preview-grid[data-cols]{grid-template-columns:repeat(2,minmax(0,1fr))}#ppi-tours-app .ppi-startpage-tour-option img{width:90px;height:60px}}
+@media(max-width:420px){#ppi-tours-app .ppi-startpage-preview-grid[data-cols]{grid-template-columns:1fr}#ppi-tours-app .ppi-startpage-preview-grid .ppi-startpage-preview-tile{grid-column:auto!important}}
 
 /* Contrast remains correct over custom Nextcloud background images, in light and dark themes. */
 #ppi-tours-app .ppi-tour-intro{padding:18px 20px 14px;border:1px solid var(--color-border);border-radius:14px;background:var(--color-main-background);color:var(--color-main-text);margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.10)}
