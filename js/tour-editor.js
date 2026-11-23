@@ -24,6 +24,14 @@
     const route = window.OC?.generateUrl ? window.OC.generateUrl('/core/preview') : '/index.php/core/preview';
     return `${route}?fileId=${encodeURIComponent(id)}&x=${x}&y=${y}&a=true&forceIcon=false`;
   };
+  // All cover thumbnails follow the panorama selected under Tour > Darstellung.
+  // Fall back only when the saved start image is absent from the tour.
+  function tourCoverImage(tour) {
+    const images = Array.isArray(tour?.images) ? tour.images : [];
+    const startId = Number(tour?.display?.startImageId);
+    return images.find(item => Number(item.id) === startId && startId > 0)
+      || images[0] || null;
+  }
   function imageThumb(id, width=320, height=180) {
     const img = node('img'); img.loading = 'eager'; img.decoding = 'async';
     img.src = previewUrl(id,width,height);
@@ -387,7 +395,7 @@
     for (const tour of tours) {
       const tile=node('article',undefined,'ppi-overview-tile');
       if (tour.images?.length) {
-        const preview=imageThumb(tour.images[0].id,640,300);
+        const preview=imageThumb(tourCoverImage(tour).id,640,300);
         preview.className='ppi-overview-thumb';preview.alt='Tour-Vorschaubild: '+tour.name;
         tile.append(preview);
       } else tile.append(node('div','🌐','ppi-overview-placeholder'));
@@ -1496,7 +1504,7 @@
       if (!tour) continue;
       const tile = node('div', undefined, 'ppi-startpage-preview-tile');
       if (tour.images?.length) {
-        const image = imageThumb(tour.images[0].id, 520, 293);
+        const image = imageThumb(tourCoverImage(tour).id, 520, 293);
         image.alt = 'Vorschau: ' + tour.name;
         image.loading = 'lazy';
         tile.append(image);
@@ -1615,7 +1623,7 @@
       checkbox.value = tour.id;
       checkbox.checked = (page.tourIds || []).includes(tour.id);
       if (tour.images?.length) {
-        const picture = imageThumb(tour.images[0].id,320,180);
+        const picture = imageThumb(tourCoverImage(tour).id,320,180);
         picture.loading = 'lazy';
         picture.alt = 'Vorschau: '+tour.name;
         row.append(picture);
