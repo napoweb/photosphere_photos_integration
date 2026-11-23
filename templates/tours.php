@@ -2,6 +2,7 @@
 /** @var array $_ */
 ?>
 <div id="ppi-tours-app"
+     data-start-pages-url="<?php p($_['startPagesUrl']); ?>"
      data-api-url="<?php p($_['apiUrl']); ?>"
      data-files-url="<?php p($_['filesUrl']); ?>"
      data-picker-preferences-url="<?php p($_['pickerPreferencesUrl']); ?>"
@@ -12,13 +13,38 @@
      style="width:100%;max-width:1040px;min-width:0;box-sizing:border-box;margin:22px auto;padding:0 20px 50px;font-family:system-ui,sans-serif;">
   <div class="ppi-tour-intro">
   <header class="ppi-tour-intro-header">
-    <span style="font-size:36px" aria-hidden="true">🌐</span>
-    <div class="ppi-tour-intro-heading"><h1 style="font-size:26px;font-weight:700;margin:0">Meine 360°-Touren</h1>
-      <p style="margin:4px 0 0;color:var(--color-text-maxcontrast)">Touren aus deinen Nextcloud-Panoramen zusammenstellen</p></div>
+    <span id="ppi-section-icon" style="font-size:36px" aria-hidden="true">🌐</span>
+    <div class="ppi-tour-intro-heading"><h1 id="ppi-section-heading" style="font-size:26px;font-weight:700;margin:0">Meine 360°-Touren</h1>
+      <p id="ppi-section-subtitle" style="margin:4px 0 0;color:var(--color-text-maxcontrast)">Touren aus deinen Nextcloud-Panoramen zusammenstellen</p></div>
     <button class="primary" id="ppi-tour-create" type="button">+ Neue Tour erstellen</button>
+    <button class="primary" id="ppi-start-page-create" type="button" hidden>+ Neue Startseite</button>
   </header>
   <p id="ppi-tour-message" role="status" aria-live="polite" hidden></p>
   </div>
+  <nav class="ppi-startpage-switch" id="ppi-overview-switch" aria-label="Verwaltungsbereich auswählen">
+    <button type="button" id="ppi-mode-tours" aria-pressed="true">🌐 360°-Touren</button>
+    <button type="button" id="ppi-mode-startpages" aria-pressed="false">▦ Startseiten</button>
+  </nav>
+  <section class="ppi-tour-card" id="ppi-start-pages-overview" hidden>
+    <h2>Meine Startseiten</h2>
+    <p>Eigene 360°-Startseiten mit einer Auswahl deiner Touren. Öffentliche Freigaben folgen nach dem Sicherheitstest.</p>
+    <div id="ppi-start-pages-list" class="ppi-tour-list"></div>
+  </section>
+  <section class="ppi-tour-card" id="ppi-start-page-editor" hidden>
+    <div class="ppi-start-page-toolbar">
+      <button type="button" id="ppi-start-page-back">← Alle Startseiten</button>
+      <div><button type="button" id="ppi-start-page-delete">Startseite löschen</button> <button type="button" class="primary" id="ppi-start-page-save">Änderungen speichern</button></div>
+    </div>
+    <h2>Startseite gestalten</h2>
+    <div class="ppi-start-page-fields">
+      <label>Name der Startseite <input id="ppi-start-page-name" maxlength="100"></label>
+      <label>Überschrift für Besucher <input id="ppi-start-page-headline" maxlength="120"></label>
+      <label>Beschreibung <textarea id="ppi-start-page-description" maxlength="1000" rows="4"></textarea></label>
+      <label>Layout <select id="ppi-start-page-layout"><option value="hero">Vollbild</option><option value="split">Kopfbereich</option><option value="gallery">Galerie</option></select></label>
+      <fieldset><legend>Touren auswählen</legend><p>Nur eigene Touren werden angezeigt. Die Reihenfolge entspricht vorerst der Tourenübersicht.</p><div id="ppi-start-page-tours"></div></fieldset>
+    </div>
+    <p class="ppi-startpage-private-note">🔒 Entwurf: Noch keine öffentliche Freigabe. Passwortschutz und Rücknavigation werden in einer späteren Docker-Teststufe ergänzt.</p>
+  </section>
   <section class="ppi-tour-card" id="ppi-tour-overview">
     <h2>Meine Touren</h2>
     <div id="ppi-tour-list" class="ppi-tour-list"></div>
@@ -282,6 +308,17 @@
 #ppi-tours-app .ppi-tour-edge-delete{position:absolute;transform:translate(-50%,-50%);z-index:10;border-radius:50%!important;padding:0!important;width:25px;height:25px;min-height:25px;background:var(--color-main-background)!important;color:#bd3434!important;border:1px solid #bd3434!important;line-height:20px;font-size:18px!important;box-shadow:0 2px 6px #0005}
 #ppi-tours-app .ppi-tour-edge-delete:hover{background:#bd3434!important;color:#fff!important}
 
+/* Private start page management: same visual language as the existing tour cards. */
+#ppi-tours-app .ppi-startpage-switch{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
+#ppi-tours-app .ppi-startpage-switch button{flex:1;min-width:150px;border:1px solid var(--color-border);border-radius:10px;padding:12px!important;background:var(--color-main-background);color:var(--color-main-text)}
+#ppi-tours-app .ppi-startpage-switch button[aria-pressed="true"]{border:2px solid var(--color-primary-element);background:var(--color-primary-element-light);font-weight:700}
+#ppi-tours-app .ppi-start-page-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#ppi-tours-app .ppi-start-page-fields{display:grid;gap:15px;max-width:760px;margin-top:15px}
+#ppi-tours-app .ppi-start-page-fields label{display:grid;gap:6px;font-weight:600}
+#ppi-tours-app .ppi-start-page-fields input,#ppi-tours-app .ppi-start-page-fields select,#ppi-tours-app .ppi-start-page-fields textarea{width:100%;box-sizing:border-box}
+#ppi-tours-app .ppi-startpage-tour-option{display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid var(--color-border)}
+#ppi-tours-app .ppi-startpage-tour-option input{width:auto}
+#ppi-tours-app .ppi-startpage-private-note{padding:12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-background-hover);margin-top:15px}
 /* Contrast remains correct over custom Nextcloud background images, in light and dark themes. */
 #ppi-tours-app .ppi-tour-intro{padding:18px 20px 14px;border:1px solid var(--color-border);border-radius:14px;background:var(--color-main-background);color:var(--color-main-text);margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.10)}
 #ppi-tours-app .ppi-tour-intro h1{color:var(--color-main-text);line-height:1.25}
