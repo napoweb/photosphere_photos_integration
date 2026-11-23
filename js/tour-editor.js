@@ -1454,7 +1454,7 @@
   let startPages = [], activeStartPage = null, managementMode = 'tours';
   let savedStartPageSnapshot = '';
   const startPageFields = ['ppi-start-page-name','ppi-start-page-headline','ppi-start-page-description',
-    'ppi-start-page-layout','ppi-start-page-heading-color','ppi-start-page-background-color','ppi-start-page-tile-columns'];
+    'ppi-start-page-layout','ppi-start-page-heading-color','ppi-start-page-description-color','ppi-start-page-background-color','ppi-start-page-tile-columns'];
   let startPageBackgroundFileId = 0, startPageBgFolderParentId = 0;
   let startPageBgFolderId = 0, startPageBgRequestSerial = 0;
   function tourShortDescription(tour) {
@@ -1470,6 +1470,7 @@
       description:byId('ppi-start-page-description').value,
       layout:byId('ppi-start-page-layout').value,
       headingColor:byId('ppi-start-page-heading-color').value,
+      descriptionColor:byId('ppi-start-page-description-color').value,
       backgroundColor:byId('ppi-start-page-background-color').value,
       backgroundFileId:startPageBackgroundFileId,
       tileColumns:byId('ppi-start-page-tile-columns').value,
@@ -1483,6 +1484,7 @@
     preview.dataset.layout = values.layout;
     preview.style.setProperty('--ppi-startpage-bg', values.backgroundColor);
     preview.style.setProperty('--ppi-startpage-heading', values.headingColor);
+    preview.style.setProperty('--ppi-startpage-description', values.descriptionColor);
     preview.style.setProperty('--ppi-startpage-image', values.backgroundFileId ? 'url("' + previewUrl(values.backgroundFileId, 1920, 1080) + '")' : 'none');
     byId('ppi-startpage-preview-title').textContent = values.headline || values.name || 'Meine 360°-Startseite';
     byId('ppi-startpage-preview-description').textContent = values.description;
@@ -1499,14 +1501,28 @@
         image.loading = 'lazy';
         tile.append(image);
       } else tile.append(node('div', '🌐', 'ppi-overview-placeholder'));
-      tile.append(node('strong', tour.name));
+      const copy = node('div',undefined,'ppi-startpage-tile-copy');
+      copy.append(node('strong', tour.name));
       const description = tourShortDescription(tour);
-      if (description) tile.append(node('small', description));
+      if (description) copy.append(node('small', description));
+      tile.append(copy);
       grid.append(tile);
     }
     if (!grid.children.length) grid.append(node('p','Wähle unter „Touren wählen“ mindestens eine Tour aus.','ppi-startpage-preview-empty'));
     byId('ppi-startpage-dirty').textContent =
       JSON.stringify(values) === savedStartPageSnapshot ? 'Gespeicherter Stand' : '● Ungespeicherte Änderungen';
+  }
+  const layoutPresetButtons = [...byId('ppi-start-page-tile-presets').querySelectorAll('[data-columns]')];
+  function chooseTileLayout(value) {
+    if (!['auto','2','3','4','5'].includes(value)) return;
+    byId('ppi-start-page-tile-columns').value = value;
+    for (const button of layoutPresetButtons) {
+      button.setAttribute('aria-pressed', String(button.dataset.columns === value));
+    }
+    updateStartPagePreview();
+  }
+  for (const button of layoutPresetButtons) {
+    button.addEventListener('click', () => chooseTileLayout(button.dataset.columns));
   }
   function showStartPageTab(tab) {
     const tabs = ['start','layout','tours','share'];
@@ -1581,8 +1597,11 @@
     byId('ppi-start-page-description').value = page.description || '';
     byId('ppi-start-page-layout').value = page.layout || 'hero';
     byId('ppi-start-page-heading-color').value = /^#[a-f\d]{6}$/i.test(page.headingColor || '') ? page.headingColor : '#ffffff';
+    byId('ppi-start-page-description-color').value = /^#[a-f\d]{6}$/i.test(page.descriptionColor || '') ? page.descriptionColor : '#ffffff';
     byId('ppi-start-page-background-color').value = /^#[a-f\d]{6}$/i.test(page.backgroundColor || '') ? page.backgroundColor : '#000000';
-    byId('ppi-start-page-tile-columns').value = ['auto','2','3','4','5'].includes(page.tileColumns) ? page.tileColumns : 'auto';
+    const savedColumns = ['auto','2','3','4','5'].includes(page.tileColumns) ? page.tileColumns : 'auto';
+    byId('ppi-start-page-tile-columns').value = savedColumns;
+    for (const button of layoutPresetButtons) button.setAttribute('aria-pressed', String(button.dataset.columns === savedColumns));
     startPageBackgroundFileId = Number(page.backgroundFileId) || 0;
     byId('ppi-start-page-bg-selected').textContent = startPageBackgroundFileId ? 'Bild aus Nextcloud ausgewählt (Datei-ID ' + startPageBackgroundFileId + ')' : 'Kein Bild ausgewählt';
     byId('ppi-start-page-bg-browser').hidden = true;
@@ -1622,10 +1641,21 @@
     startPages = Array.isArray(result.pages) ? result.pages : [];
     const container = byId('ppi-start-pages-list');
     container.replaceChildren();
+    container.classList.toggle('ppi-startpages-single', startPages.length === 1);
+    container.classList.toggle('ppi-startpages-double', startPages.length === 2);
+    container.classList.toggle('ppi-startpages-multi', startPages.length >= 3);
     if (!startPages.length) container.append(node('p', 'Noch keine Startseiten erstellt.'));
     for (const page of startPages) {
       const tile = node('article', undefined, 'ppi-overview-tile');
-      tile.append(node('div', '▦', 'ppi-overview-placeholder'));
+      const cover = node('div',undefined,'ppi-startpage-overview-cover');
+      if (Number(page.backgroundFileId) > 0) {
+        const background = previewUrl(Number(page.backgroundFileId), 920, 520);
+        cover.style.backgroundImage = 'linear-gradient(#0005,#0005),url("' + background + '")';
+      } else {
+        cover.style.backgroundImage = 'linear-gradient(140deg,#101820,#30465b)';
+      }
+      cover.append(node('div', '▦', 'ppi-overview-placeholder'));
+      tile.append(cover);
       const body = node('div', undefined, 'ppi-overview-body');
       body.append(node('h3', page.name, 'ppi-overview-name'));
       body.append(node('div', '🔒 Privater Entwurf · ' + (page.tourIds || []).length + ' Touren', 'ppi-overview-status'));
