@@ -1677,4 +1677,22 @@
   text-shadow:0 2px 8px rgba(0,0,0,.45);
   height:150px;
 }
+
+/* 0.4.62.111: full-width share settings and subtler typographic hierarchy. */
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-share-only {
+  grid-template-columns:minmax(0,1fr)!important;
+}
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-share-only .ppi-startpage-preview-column,
+#ppi-tours-app .ppi-startpage-preview-column[hidden] {display:none!important}
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-share-only .ppi-start-page-fields {
+  max-width:920px;width:100%;
+}
+#ppi-tours-app .ppi-startpage-preview-header h2 {
+  -webkit-text-stroke:.35px var(--ppi-startpage-stroke)!important;
+  text-shadow:0 2px 4px rgba(0,0,0,.40)!important;
+}
+#ppi-tours-app .ppi-startpage-preview-header p {
+  -webkit-text-stroke:0!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.20)!important;
+}
 </style>
