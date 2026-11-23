@@ -529,7 +529,9 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
 #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n){grid-column:span 1!important;grid-row:span 1!important;}
 }
 #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n):nth-child(n){grid-column:span 1!important;grid-row:span 1!important;}
+@media(min-width:651px){
 #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(7n + 1):nth-child(n){grid-column:span 2!important;grid-row:span 2!important;}
+}
 @media(max-width:650px){#ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n):nth-child(n){grid-column:span 1!important;grid-row:span 1!important;}}
 
 </style>
