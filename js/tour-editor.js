@@ -1494,6 +1494,18 @@
       .map(v => v <= .04045 ? v/12.92 : Math.pow((v+.055)/1.055,2.4));
     return .2126*c[0]+.7152*c[1]+.0722*c[2] >= .45;
   }
+  const layoutModeButtons = [...root.querySelectorAll('[data-startpage-layout]')];
+  function setStartPageLayout(layout) {
+    if (!['hero','split','gallery'].includes(layout)) return;
+    byId('ppi-start-page-layout').value = layout;
+    for (const button of layoutModeButtons) {
+      button.setAttribute('aria-pressed',String(button.dataset.startpageLayout === layout));
+    }
+    updateStartPagePreview();
+  }
+  for (const button of layoutModeButtons) {
+    button.addEventListener('click',() => setStartPageLayout(button.dataset.startpageLayout));
+  }
   const effectButtons = [...root.querySelectorAll('[data-startpage-effect]')];
   function setStartPageEffect(effect) {
     if (!['subtle','glass','glossy'].includes(effect)) return;
@@ -1796,7 +1808,11 @@
     byId('ppi-start-page-name').value = page.name || '';
     byId('ppi-start-page-headline').value = page.headline || '';
     byId('ppi-start-page-description').value = page.description || '';
-    byId('ppi-start-page-layout').value = page.layout || 'hero';
+    const savedLayout = ['hero','split','gallery'].includes(page.layout) ? page.layout : 'hero';
+    byId('ppi-start-page-layout').value = savedLayout;
+    for (const button of layoutModeButtons) {
+      button.setAttribute('aria-pressed',String(button.dataset.startpageLayout === savedLayout));
+    }
     byId('ppi-start-page-heading-color').value = /^#[a-f\d]{6}$/i.test(page.headingColor || '') ? page.headingColor : '#ffffff';
     byId('ppi-start-page-description-color').value = /^#[a-f\d]{6}$/i.test(page.descriptionColor || '') ? page.descriptionColor : '#ffffff';
     const effect = ['subtle','glass','glossy'].includes(page.designEffect) ? page.designEffect : 'subtle';
