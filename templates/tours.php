@@ -52,7 +52,7 @@
         </section>
         <section class="ppi-startpage-editor-panel" data-startpage-panel="layout" hidden>
           <h3>Layout und Hintergrund</h3>
-          <label>Layout <select id="ppi-start-page-layout"><option value="hero">Vollbild</option><option value="split">Kopfbereich</option><option value="gallery">Galerie</option></select></label>
+          <label>Layout <select id="ppi-start-page-layout"><option value="hero">Vollbild – Hintergrund über gesamte Fläche</option><option value="split">Kopfbereich – Hintergrund nur oben</option><option value="gallery">Galerie – kompakt ohne großen Kopfbereich</option></select></label>
           <label>Hintergrundfarbe <input id="ppi-start-page-background-color" type="color" value="#000000"></label>
           <label>Überschriftenfarbe <input id="ppi-start-page-heading-color" type="color" value="#ffffff"></label>
           <label>Beschreibungsfarbe <input id="ppi-start-page-description-color" type="color" value="#ffffff"></label>
@@ -1491,4 +1491,87 @@
 #ppi-tours-app #ppi-step-design .ppi-intro-icon-grid button:hover,#ppi-tours-app #ppi-step-design .ppi-intro-icon-grid button:focus-visible{border-color:var(--color-primary-element);outline:1px solid var(--color-primary-element)}
 #ppi-tours-app #ppi-step-design .ppi-intro-icon-grid svg{width:31px;height:24px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 #ppi-tours-app #ppi-step-design .ppi-intro-360-badge{display:inline-flex;align-items:center;justify-content:center;border:2px solid currentColor;border-radius:50%;font-weight:800;font-size:13px;letter-spacing:-.04em;width:33px;height:30px}
+
+/* 0.4.62.106: gallery background, readable preview cards, distinct header and selection depth */
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"]{
+  background-color:var(--ppi-startpage-bg,#000000)!important;
+  background-image:none!important;
+  color:#fff!important;
+  padding:12px 14px 24px!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-header{
+  padding:10px 6px 16px!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-header h2{
+  color:var(--ppi-startpage-heading,#ffffff)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-header p{
+  color:var(--ppi-startpage-description,#ffffff)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-empty{
+  color:var(--ppi-startpage-description,#ffffff)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-header{
+  position:relative;z-index:1;
+  box-shadow:0 8px 14px rgba(0,0,0,.28)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-grid{
+  position:relative;z-index:0;
+}
+#ppi-tours-app .ppi-startpage-tour-option{
+  background:linear-gradient(125deg,var(--color-background-hover,#f4f5f7),var(--color-main-background,#fff))!important;
+  box-shadow:0 3px 10px rgba(0,0,0,.12)!important;
+  transition:box-shadow .15s ease,transform .15s ease;
+}
+#ppi-tours-app .ppi-startpage-tour-option:hover,
+#ppi-tours-app .ppi-startpage-tour-option:focus-within{
+  box-shadow:0 5px 16px rgba(0,0,0,.19)!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile{
+  display:flex!important;flex-direction:column!important;
+  min-width:0;min-height:0;overflow:hidden!important;
+  border:3px solid #fff!important;
+  border-radius:10px!important;
+  box-shadow:0 5px 16px rgba(0,0,0,.42)!important;
+  background:#fff!important;
+  color:#192b37!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile > img{
+  display:block!important;flex:none!important;
+  width:100%!important;max-width:100%!important;height:auto!important;
+  aspect-ratio:16/9!important;object-fit:cover!important;
+  border-radius:6px 6px 0 0!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy{
+  display:block!important;flex:1 0 auto!important;
+  position:static!important;visibility:visible!important;
+  background:#fff!important;color:#192b37!important;
+  min-height:52px!important;padding:9px!important;
+  text-align:left!important;box-sizing:border-box!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy strong{
+  display:block!important;color:#192b37!important;
+  font-weight:700!important;font-size:13px!important;line-height:1.35!important;
+  padding:0 0 4px!important;white-space:normal!important;overflow-wrap:anywhere!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy small{
+  display:-webkit-box!important;-webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2;overflow:hidden!important;
+  color:#4e5b68!important;font-size:11px!important;line-height:1.4!important;
+  padding:0!important;white-space:normal!important;
+}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"]{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media(max-width:800px){
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"],
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"],
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"]{
+   grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+}
+@media(max-width:420px){
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols]{grid-template-columns:1fr!important}
+}
+
 </style>
