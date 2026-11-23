@@ -439,12 +439,6 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
 #ppi-public-startpage[data-layout=split] .ppi-public-start-header {
  background-color:var(--header-bg,var(--page-bg,#000000))!important;
 }
-/* On manual column counts, allow a lone card to span at most two tracks.
-   An orphan at the end of an even-column grid may use the final two slots. */
-#ppi-public-startpage[data-cols="2"] .ppi-public-start-card:last-child:nth-child(odd),
-#ppi-public-startpage[data-cols="4"] .ppi-public-start-card:last-child:nth-child(4n + 3) {
- grid-column:span 2!important;
-}
 #ppi-public-startpage .ppi-public-start-card-content{
  height:105px!important;min-height:105px!important;max-height:105px!important;
  flex:0 0 105px!important;padding:9px 12px 10px!important;
@@ -464,6 +458,56 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
  #ppi-public-startpage[data-cols] .ppi-public-start-card {grid-column:auto!important}
  #ppi-public-startpage .ppi-public-start-card-content strong{font-size:20px!important}
  #ppi-public-startpage .ppi-public-start-card-content small{font-size:15px!important}
+}
+
+
+/* 0.4.62.120: distributed two-track features for the explicit 2–5 column
+   layouts. Each 4-row cycle starts with a two-track card and alternates
+   the next featured card towards the opposite edge; no empty grid holes.
+   Card order remains DOM order (no grid-auto-flow:dense reordering). */
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card,
+#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card,
+#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card,
+#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card {
+ grid-column:span 1!important;
+}
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 1),
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 4),
+#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(10n + 1),
+#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(10n + 7),
+#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(14n + 1),
+#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(14n + 10),
+#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(18n + 1),
+#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(18n + 13) {
+ grid-column:span 2!important;
+}
+/* All explicit layouts become two-track at tablet widths, using the
+   same alternating 2-column layout; narrow phones get one full column. */
+@media(max-width:900px){
+ #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card,
+ #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card,
+ #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card,
+ #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card {
+  grid-column:span 1!important;
+ }
+ #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 1),
+ #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 4),
+ #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 1),
+ #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 4),
+ #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 1),
+ #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 4),
+ #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 1),
+ #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 4) {
+  grid-column:span 2!important;
+ }
+}
+@media(max-width:650px){
+ #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card,
+ #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card,
+ #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card,
+ #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card {
+  grid-column:span 1!important;
+ }
 }
 
 </style>
