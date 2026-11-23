@@ -1512,7 +1512,12 @@
     const preview = byId('ppi-startpage-preview');
     preview.dataset.layout = values.layout;
     preview.dataset.effect = values.designEffect;
-    byId('ppi-start-page-header-color-row').hidden = values.layout !== 'split';
+    // The controls are presentation-only: never reset values when a picture hides a row.
+    // The image replaces the full-page color in hero mode and the header color
+    // in split mode; the lower tour area still needs its background color.
+    const hasBackgroundImage = Number(values.backgroundFileId) > 0;
+    byId('ppi-start-page-header-color-row').hidden = hasBackgroundImage || values.layout === 'gallery';
+    byId('ppi-start-page-background-color-row').hidden = hasBackgroundImage && values.layout === 'hero';
     const header = preview.querySelector('.ppi-startpage-preview-header');
     const lightHeading = isLightStartPageColor(values.headingColor);
     const lightDescription = isLightStartPageColor(values.descriptionColor);
