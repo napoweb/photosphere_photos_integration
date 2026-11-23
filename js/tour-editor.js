@@ -1592,6 +1592,7 @@
     button.addEventListener('click', () => chooseTileLayout(button.dataset.columns));
   }
   function showStartPageTab(tab) {
+    closeStartPageBackground();
     const tabs = ['start','layout','tours','share'];
     if (!tabs.includes(tab)) return;
     byId('ppi-start-page-editor').querySelectorAll('[data-startpage-tab]').forEach(button => {
@@ -1611,6 +1612,44 @@
   });
   startPageFields.forEach(id => byId(id).addEventListener('input', updateStartPagePreview));
   byId('ppi-start-page-tours').addEventListener('change', updateStartPagePreview);
+  const startPageBgOverlay = byId('ppi-start-page-bg-browser');
+  const startPageBgDialog = startPageBgOverlay.querySelector('.ppi-startpage-bg-dialog');
+  let startPageBgReturnFocus = null;
+  function closeStartPageBackground() {
+    if (startPageBgOverlay.hidden) return;
+    ++startPageBgRequestSerial;
+    startPageBgOverlay.hidden = true;
+    if (startPageBgReturnFocus?.isConnected) startPageBgReturnFocus.focus();
+    startPageBgReturnFocus = null;
+  }
+  function openStartPageBackground() {
+    if (!activeStartPage) return;
+    startPageBgReturnFocus = document.activeElement;
+    startPageBgOverlay.hidden = false;
+    startPageBgDialog.focus();
+    browseStartPageBackground(startPageBgFolderId);
+  }
+  byId('ppi-start-page-bg-close').addEventListener('click',closeStartPageBackground);
+  startPageBgOverlay.addEventListener('click',event=>{
+    if (event.target === startPageBgOverlay) closeStartPageBackground();
+  });
+  startPageBgOverlay.addEventListener('keydown',event=>{
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeStartPageBackground();
+    } else if (event.key === 'Tab') {
+      const focusable = [...startPageBgOverlay.querySelectorAll('button:not([disabled])')];
+      if (!focusable.length) return;
+      const first = focusable[0],last = focusable[focusable.length-1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();first.focus();
+      } else if (document.activeElement === startPageBgDialog) {
+        event.preventDefault();(event.shiftKey ? last : first).focus();
+      }
+    }
+  });
   async function browseStartPageBackground(folderId = 0) {
     const serial = ++startPageBgRequestSerial;
     const results = byId('ppi-start-page-bg-files');
@@ -1638,7 +1677,7 @@
           button.addEventListener('click',()=>{
             startPageBackgroundFileId = Number(item.id);
             byId('ppi-start-page-bg-selected').textContent = 'Ausgewählt: ' + item.name;
-            byId('ppi-start-page-bg-browser').hidden = true;
+            closeStartPageBackground();
             updateStartPagePreview();
           });
         }
@@ -1650,15 +1689,12 @@
       if (serial === startPageBgRequestSerial) results.replaceChildren(node('p','Bilder nicht verfügbar: '+error.message));
     }
   }
-  byId('ppi-start-page-bg-browse').addEventListener('click',()=>{
-    byId('ppi-start-page-bg-browser').hidden = false;
-    browseStartPageBackground(startPageBgFolderId);
-  });
+  byId('ppi-start-page-bg-browse').addEventListener('click',openStartPageBackground);
   byId('ppi-start-page-bg-up').addEventListener('click',()=>browseStartPageBackground(startPageBgFolderParentId));
   byId('ppi-start-page-bg-remove').addEventListener('click',()=>{
     startPageBackgroundFileId = 0;
     byId('ppi-start-page-bg-selected').textContent = 'Kein Bild ausgewählt';
-    byId('ppi-start-page-bg-browser').hidden = true;
+    closeStartPageBackground();
     updateStartPagePreview();
   });
   function startPagePublicUrl(page) {
@@ -1825,7 +1861,7 @@
     for (const button of layoutPresetButtons) button.setAttribute('aria-pressed', String(button.dataset.columns === savedColumns));
     startPageBackgroundFileId = Number(page.backgroundFileId) || 0;
     byId('ppi-start-page-bg-selected').textContent = startPageBackgroundFileId ? 'Bild aus Nextcloud ausgewählt (Datei-ID ' + startPageBackgroundFileId + ')' : 'Kein Bild ausgewählt';
-    byId('ppi-start-page-bg-browser').hidden = true;
+    closeStartPageBackground();
     startPageBgFolderId = 0;
     const choices = byId('ppi-start-page-tours');
     choices.replaceChildren();
