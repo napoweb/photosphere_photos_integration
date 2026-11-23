@@ -1891,37 +1891,6 @@
   background-size:cover!important;background-position:center!important;
 }
 
-/* 0.4.62.117: editor matches the public auto-layout; 1 or any odd
-   tour count uses a featured tile that spans exactly two columns. */
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"] .ppi-startpage-preview-tile {
-  grid-column:span 1;
-}
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"] .ppi-startpage-preview-tile:first-child:nth-last-child(odd) {
-  grid-column:span 2!important;
-}
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] .ppi-startpage-preview-tile:only-child,
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] .ppi-startpage-preview-tile:only-child,
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] .ppi-startpage-preview-tile:only-child,
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] .ppi-startpage-preview-tile:only-child {
-  grid-column:span 2!important;
-}
-@media(max-width:800px) {
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"],
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"],
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] {
-  grid-template-columns:repeat(2,minmax(0,1fr))!important;
- }
-}
-@media(max-width:420px) {
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols] {
-  grid-template-columns:minmax(0,1fr)!important;
- }
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols] .ppi-startpage-preview-tile {
-  grid-column:auto!important;
- }
-}
-
-
 /* 0.4.62.118: the editor mirrors the public tile composition. */
 #ppi-tours-app .ppi-startpage-preview-tile {
  height:clamp(155px,21vw,245px)!important;min-height:155px!important;
@@ -2006,52 +1975,6 @@
 }
 
 
-/* 0.4.62.120: preview uses exactly the same four-row featured-card cycle
-   as the public page; every feature covers no more than two tracks. */
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile,
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile,
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile,
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile {
- grid-column:span 1!important;
-}
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:nth-child(6n + 1),
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:nth-child(6n + 4),
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(10n + 1),
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(10n + 7),
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(14n + 1),
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(14n + 10),
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile:nth-child(18n + 1),
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile:nth-child(18n + 13){
- grid-column:span 2!important;
-}
-@media(max-width:800px){
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile,
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile,
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile,
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile{
-  grid-column:span 1!important;
- }
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:nth-child(6n + 1),
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:nth-child(6n + 4),
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(6n + 1),
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(6n + 4),
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(6n + 1),
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(6n + 4),
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile:nth-child(6n + 1),
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile:nth-child(6n + 4){
-  grid-column:span 2!important;
- }
-}
-@media(max-width:420px){
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile,
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile,
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile,
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile{
-  grid-column:span 1!important;
- }
-}
-
-
 /* 0.4.62.121: identical dark-at-rest, clear-on-hover effect in editor. */
 #ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::after{
  background:linear-gradient(135deg,rgba(8,18,26,.32),rgba(8,18,26,.40))!important;
@@ -2069,20 +1992,85 @@
 #ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy small{
  font-size:clamp(12px,1vw,14px)!important;
 }
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile {
- grid-column:span 1!important;
-}
-#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:only-child{
- grid-column:span 2!important;
-}
-@media(max-width:420px){
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile,
- #ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:only-child{
-  grid-column:span 1!important;
- }
-}
 @media(prefers-reduced-motion:reduce){
  #ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::after {transition:none!important}
 }
+
+/* 0.4.62.122: deterministic automatic 1x1/2x1/2x2 mosaic.
+    Full cycles leave no grid gaps; the DOM reading order is preserved. */
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"],
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"],
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"],
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"],
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] {
+ grid-auto-rows:clamp(155px,21vw,245px)!important;
+ grid-auto-flow:row!important;
+ align-items:stretch!important;
+}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"] > .ppi-startpage-preview-tile:nth-child(n),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:nth-child(n),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(n),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(n),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile:nth-child(n){
+ grid-column:span 1!important;grid-row:span 1!important;
+ height:100%!important;min-height:0!important;max-height:none!important;
+}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"] > .ppi-startpage-preview-tile:nth-child(7n + 1),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:nth-child(7n + 1){
+ grid-column:span 1!important;grid-row:span 1!important;
+}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(7n + 1),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(7n + 1){
+ grid-column:span 2!important;grid-row:span 2!important;
+}
+#ppi-tours-app[data-cols="3"] .ppi-startpage-preview-grid:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(8n + 1){
+ grid-column:span 2!important;grid-row:span 2!important;
+}
+#ppi-tours-app[data-cols="3"] .ppi-startpage-preview-grid:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(8n + 4){
+ grid-column:span 2!important;grid-row:span 1!important;
+}
+#ppi-tours-app[data-cols="4"] .ppi-startpage-preview-grid:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(12n + 1){
+ grid-column:span 2!important;grid-row:span 2!important;
+}
+#ppi-tours-app[data-cols="4"] .ppi-startpage-preview-grid:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(12n + 6){
+ grid-column:span 2!important;grid-row:span 1!important;
+}
+#ppi-tours-app[data-cols="5"] .ppi-startpage-preview-grid:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(16n + 1){
+ grid-column:span 2!important;grid-row:span 2!important;
+}
+#ppi-tours-app[data-cols="5"] .ppi-startpage-preview-grid:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(16n + 8){
+ grid-column:span 2!important;grid-row:span 1!important;
+}
+@media(max-width:800px){
+#ppi-tours-app[data-cols="2"] .ppi-startpage-preview-grid,
+#ppi-tours-app[data-cols="3"] .ppi-startpage-preview-grid,
+#ppi-tours-app[data-cols="4"] .ppi-startpage-preview-grid,
+#ppi-tours-app[data-cols="5"] .ppi-startpage-preview-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"] > .ppi-startpage-preview-tile:nth-child(n),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:nth-child(n),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(n),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(n),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile:nth-child(n){grid-column:span 1!important;grid-row:span 1!important;}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(7n + 1),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(7n + 1),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(7n + 1),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(7n + 1),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(7n + 1){grid-column:span 2!important;grid-row:span 2!important;}
+}
+@media(max-width:420px){
+#ppi-tours-app[data-cols="auto"] .ppi-startpage-preview-grid,
+#ppi-tours-app[data-cols="2"] .ppi-startpage-preview-grid,
+#ppi-tours-app[data-cols="3"] .ppi-startpage-preview-grid,
+#ppi-tours-app[data-cols="4"] .ppi-startpage-preview-grid,
+#ppi-tours-app[data-cols="5"] .ppi-startpage-preview-grid{grid-template-columns:minmax(0,1fr)!important;grid-auto-rows:245px!important;}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"] > .ppi-startpage-preview-tile:nth-child(n),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"] > .ppi-startpage-preview-tile:nth-child(n),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(n),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(n),
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile:nth-child(n){grid-column:span 1!important;grid-row:span 1!important;}
+}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"] > .ppi-startpage-preview-tile:nth-child(n):nth-child(n):nth-child(n){grid-column:span 1!important;grid-row:span 1!important;}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(7n + 1):nth-child(n):nth-child(n){grid-column:span 2!important;grid-row:span 2!important;}
+@media(max-width:420px){#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"] > .ppi-startpage-preview-tile:nth-child(n):nth-child(n):nth-child(n){grid-column:span 1!important;grid-row:span 1!important;}}
 
 </style>
