@@ -510,4 +510,46 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
  }
 }
 
+
+/* 0.4.62.121: subdued images by default; reveal the original on hover.
+   Only image media is shaded, never text or interactive links. */
+#ppi-public-startpage .ppi-public-start-card-image::after {
+ background:linear-gradient(135deg,rgba(8,18,26,.32),rgba(8,18,26,.40))!important;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.15)!important;
+ opacity:1!important;
+ transition:opacity .22s ease!important;
+}
+@media (hover:hover) and (pointer:fine){
+ #ppi-public-startpage .ppi-public-start-card:hover .ppi-public-start-card-image::after {
+  opacity:0!important;
+ }
+}
+#ppi-public-startpage .ppi-public-start-card:focus-visible .ppi-public-start-card-image::after{
+ opacity:0!important;
+}
+/* Text stays inside the fixed-height area but uses more horizontal space. */
+#ppi-public-startpage .ppi-public-start-card-content {
+ padding-left:5px!important;padding-right:5px!important;
+}
+#ppi-public-startpage .ppi-public-start-card-content small{
+ font-size:clamp(14px,1vw,15px)!important;
+}
+/* Restore pre-0.4.62.120 regular two-column flow: no periodic
+   double-width cards, only a single card may fill both tracks. */
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card {
+ grid-column:span 1!important;
+}
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:only-child {
+ grid-column:span 2!important;
+}
+@media(max-width:650px){
+ #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card,
+ #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:only-child {
+  grid-column:span 1!important;
+ }
+}
+@media(prefers-reduced-motion:reduce){
+ #ppi-public-startpage .ppi-public-start-card-image::after {transition:none!important}
+}
+
 </style>
