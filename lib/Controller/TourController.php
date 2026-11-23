@@ -276,7 +276,7 @@ final class TourController extends Controller {
             mb_strlen($description) > 1000 || !in_array($layout, ['hero', 'split', 'gallery'], true) ||
             !preg_match('/^#[0-9a-fA-F]{6}$/D', $headingColor) ||
             !preg_match('/^#[0-9a-fA-F]{6}$/D', $descriptionColor) ||
-            !in_array($designEffect, ['subtle', 'glass'], true) ||
+            !in_array($designEffect, ['subtle', 'glass', 'glossy'], true) ||
             !preg_match('/^#[0-9a-fA-F]{6}$/D', $backgroundColor) ||
             $backgroundFileId === false || $backgroundFileId < 0 ||
             !in_array($tileColumns, ['auto', '2', '3', '4', '5'], true)) {
