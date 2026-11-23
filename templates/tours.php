@@ -56,6 +56,21 @@
           <label>Hintergrundfarbe <input id="ppi-start-page-background-color" type="color" value="#000000"></label>
           <label>Überschriftenfarbe <input id="ppi-start-page-heading-color" type="color" value="#ffffff"></label>
           <label>Beschreibungsfarbe <input id="ppi-start-page-description-color" type="color" value="#ffffff"></label>
+          <fieldset class="ppi-startpage-effect-picker">
+            <legend>Design-Effekt</legend>
+            <p>Voreingestellte Effekte für Überschrift, Beschreibung und Textfläche. Beide Varianten enthalten die vereinbarten Schrift-Schatten.</p>
+            <div class="ppi-startpage-effect-options" role="group" aria-label="Design-Effekt wählen">
+              <button type="button" data-startpage-effect="subtle" aria-pressed="true">
+                <span class="ppi-effect-mini ppi-effect-mini-subtle" aria-hidden="true"><i>360°</i></span>
+                <span>Dezent</span>
+              </button>
+              <button type="button" data-startpage-effect="glass" aria-pressed="false">
+                <span class="ppi-effect-mini ppi-effect-mini-glass" aria-hidden="true"><i>360°</i></span>
+                <span>Glas</span>
+              </button>
+            </div>
+            <input type="hidden" id="ppi-start-page-effect" value="subtle">
+          </fieldset>
           <fieldset class="ppi-startpage-layout-presets">
             <legend>Tour-Kacheln anordnen</legend>
             <p>Klicke auf eine Anordnung. Die Vorschau passt sich sofort an.</p>
@@ -1572,6 +1587,57 @@
 }
 @media(max-width:420px){
  #ppi-tours-app .ppi-startpage-preview-grid[data-cols]{grid-template-columns:1fr!important}
+}
+
+
+/* 0.4.62.108: selectable editorial / glassmorphism presets, usable on any background. */
+#ppi-tours-app .ppi-startpage-effect-picker{min-width:0;padding:12px;border:1px solid var(--color-border);border-radius:11px}
+#ppi-tours-app .ppi-startpage-effect-picker p{font-size:12px;line-height:1.5;margin:5px 0 10px;color:var(--color-text-maxcontrast)}
+#ppi-tours-app .ppi-startpage-effect-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#ppi-tours-app .ppi-startpage-effect-options button{display:flex;flex-direction:column;align-items:center;gap:7px;padding:10px!important;border:2px solid var(--color-border)!important;border-radius:11px!important;background:var(--color-main-background)!important;color:var(--color-main-text)!important;font-weight:700;min-width:0;cursor:pointer}
+#ppi-tours-app .ppi-startpage-effect-options button[aria-pressed="true"]{border-color:var(--color-primary-element)!important;box-shadow:0 0 0 1px var(--color-primary-element)}
+#ppi-tours-app .ppi-startpage-effect-options button:focus-visible{outline:3px solid var(--color-primary-element);outline-offset:3px}
+#ppi-tours-app .ppi-effect-mini{display:grid;place-items:center;width:96px;height:52px;max-width:100%;border-radius:8px;background:linear-gradient(130deg,#142335,#4c7891);overflow:hidden}
+#ppi-tours-app .ppi-effect-mini i{display:grid;place-items:center;width:68px;height:32px;font-size:16px;font-style:normal;color:#fff;text-shadow:0 2px 3px #0008}
+#ppi-tours-app .ppi-effect-mini-glass i{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.45);border-radius:8px;box-shadow:0 5px 12px #0004;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#ppi-tours-app .ppi-startpage-preview-header{
+  --ppi-startpage-shadow:rgba(0,0,0,.40);
+  --ppi-startpage-shadow-soft:rgba(0,0,0,.20);
+  --ppi-startpage-stroke:rgba(0,0,0,.40);
+}
+#ppi-tours-app .ppi-startpage-preview-header h2{
+  -webkit-text-stroke:.45px var(--ppi-startpage-stroke)!important;
+  paint-order:stroke fill;
+  text-shadow:0 2px 5px var(--ppi-startpage-shadow),0 1px 2px var(--ppi-startpage-shadow)!important;
+}
+#ppi-tours-app .ppi-startpage-preview-header p{
+  text-shadow:0 1px 3px var(--ppi-startpage-shadow-soft)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="subtle"] .ppi-startpage-preview-header{
+  border-radius:0;background-color:transparent;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glass"] .ppi-startpage-preview-header{
+  position:relative;isolation:isolate;
+  width:calc(100% - 16px);max-width:100%;box-sizing:border-box;
+  margin:10px auto 16px!important;padding:24px 15px!important;
+  border:1px solid rgba(255,255,255,.42)!important;
+  border-radius:16px!important;
+  background:rgba(25,39,54,.27)!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.22)!important;
+  backdrop-filter:blur(12px) saturate(125%);-webkit-backdrop-filter:blur(12px) saturate(125%);
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"][data-effect="glass"] .ppi-startpage-preview-header{
+  margin:12px auto 20px!important;
+  box-shadow:0 10px 22px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.22)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"][data-effect="glass"] .ppi-startpage-preview-header{
+  background:rgba(255,255,255,.10)!important;
+}
+@media(prefers-reduced-transparency:reduce){
+  #ppi-tours-app .ppi-startpage-live-preview[data-effect="glass"] .ppi-startpage-preview-header{
+    backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(17,25,32,.86)!important;
+  }
 }
 
 </style>
