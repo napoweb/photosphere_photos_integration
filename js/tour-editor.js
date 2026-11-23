@@ -1625,8 +1625,74 @@
     byId('ppi-start-page-bg-browser').hidden = true;
     updateStartPagePreview();
   });
+  function startPagePublicUrl(page) {
+    if (!page?.publicToken) return '';
+    const path = '/apps/photosphere_photos_integration/startpage/' + encodeURIComponent(page.publicToken);
+    return new URL(window.OC?.generateUrl ? window.OC.generateUrl(path) : '/index.php'+path, location.origin).href;
+  }
+  function refreshStartPageShareControls(page) {
+    const shared = !!page?.publicToken;
+    byId('ppi-start-page-share-expiry').value = page?.shareExpiresOn || '';
+    byId('ppi-start-page-share-password').value = '';
+    byId('ppi-start-page-share-status').textContent = shared
+      ? (page.passwordProtected ? 'Link aktiv · Passwortgeschützt' : 'Link aktiv · Ohne Passwort')
+      : 'Noch kein Freigabelink erstellt';
+    byId('ppi-start-page-share-url').value = startPagePublicUrl(page);
+    byId('ppi-start-page-share-enable').textContent = shared ? 'Freigabeeinstellungen speichern' : 'Freigabelink erstellen';
+    byId('ppi-start-page-share-disable').hidden = !shared;
+    byId('ppi-start-page-share-remove-password').hidden = !shared || !page.passwordProtected;
+    byId('ppi-start-page-share-copy').disabled = !shared;
+    byId('ppi-start-page-share-open').disabled = !shared;
+  }
+  byId('ppi-start-page-share-enable').addEventListener('click', async () => {
+    if (!activeStartPage) return;
+    try {
+      const result = await request(startPagesApi + '/' + encodeURIComponent(activeStartPage.id) + '/share','POST',{
+        enabled:'1',
+        expiresOn:byId('ppi-start-page-share-expiry').value,
+        password:byId('ppi-start-page-share-password').value
+      });
+      activeStartPage = {...activeStartPage,...result.page};
+      refreshStartPageShareControls(activeStartPage);
+      await refreshStartPages();
+      notify('Freigabelink gespeichert. Tour-Passwörter bleiben unverändert.');
+    } catch(e) { notify('Freigabe konnte nicht gespeichert werden: '+e.message,true); }
+  });
+  byId('ppi-start-page-share-remove-password').addEventListener('click', async () => {
+    if (!activeStartPage || !confirm('Startseiten-Passwort entfernen? Jeder mit dem Link kann dann die Startseite öffnen.')) return;
+    try {
+      const result = await request(startPagesApi + '/' + encodeURIComponent(activeStartPage.id) + '/share','POST',{
+        enabled:'1',expiresOn:byId('ppi-start-page-share-expiry').value,passwordAction:'remove'
+      });
+      activeStartPage = {...activeStartPage,...result.page};
+      refreshStartPageShareControls(activeStartPage);
+      await refreshStartPages();
+      notify('Startseiten-Passwort entfernt.');
+    } catch(e) { notify(e.message,true); }
+  });
+  byId('ppi-start-page-share-disable').addEventListener('click', async () => {
+    if (!activeStartPage || !confirm('Startseiten-Link deaktivieren? Der bisherige Link wird sofort ungültig.')) return;
+    try {
+      const result = await request(startPagesApi + '/' + encodeURIComponent(activeStartPage.id) + '/share','POST',{enabled:'0'});
+      activeStartPage = {...activeStartPage,...result.page};
+      refreshStartPageShareControls(activeStartPage);
+      await refreshStartPages();
+      notify('Startseiten-Link deaktiviert.');
+    } catch(e) { notify(e.message,true); }
+  });
+  byId('ppi-start-page-share-copy').addEventListener('click', async () => {
+    const url = byId('ppi-start-page-share-url').value;
+    if (!url) return;
+    try { await navigator.clipboard.writeText(url); notify('Startseiten-Link kopiert.'); }
+    catch { byId('ppi-start-page-share-url').select(); notify('Link markieren und kopieren.'); }
+  });
+  byId('ppi-start-page-share-open').addEventListener('click',()=>{
+    const url = byId('ppi-start-page-share-url').value;
+    if (url) window.open(url,'_blank','noopener,noreferrer');
+  });
   function showStartPageEditor(page) {
     activeStartPage = clone(page);
+    refreshStartPageShareControls(page);
     byId('ppi-start-page-name').value = page.name || '';
     byId('ppi-start-page-headline').value = page.headline || '';
     byId('ppi-start-page-description').value = page.description || '';
@@ -1696,7 +1762,7 @@
       tile.append(cover);
       const body = node('div', undefined, 'ppi-overview-body');
       body.append(node('h3', page.name, 'ppi-overview-name'));
-      body.append(node('div', '🔒 Privater Entwurf · ' + (page.tourIds || []).length + ' Touren', 'ppi-overview-status'));
+      body.append(node('div', (page.publicToken ? '🌐 Freigegeben' : '🔒 Privater Entwurf') + ' · ' + (page.tourIds || []).length + ' Touren', 'ppi-overview-status'));
       const actions = node('div', undefined, 'ppi-overview-actions');
       actions.append(tourAction('Bearbeiten', () => showStartPageEditor(page), true));
       actions.append(tourAction('Startseite duplizieren', async () => {
@@ -1760,6 +1826,7 @@
         tourIds:JSON.stringify(values.tourIds)
       });
       activeStartPage = clone(result.page);
+      refreshStartPageShareControls(activeStartPage);
       savedStartPageSnapshot = JSON.stringify(startPageFormValues());
       updateStartPagePreview();
       await refreshStartPages();
