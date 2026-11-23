@@ -1518,6 +1518,37 @@
   for (const button of effectButtons) {
     button.addEventListener('click',() => setStartPageEffect(button.dataset.startpageEffect));
   }
+  // Keep the description box aligned with the actual lower edge of the
+  // adjacent live preview. ResizeObserver tracks changing tile composition.
+  const descriptionField = byId('ppi-start-page-description');
+  const descriptionPreview = byId('ppi-startpage-preview');
+  let descriptionResizeQueued = false;
+  function syncDescriptionToPreview() {
+    if (!activeStartPage ||
+        byId('ppi-start-page-editor').hidden ||
+        byId('ppi-start-page-editor').querySelector('[data-startpage-panel="start"]').hidden) return;
+    if (window.matchMedia('(max-width:900px)').matches) {
+      descriptionField.style.removeProperty('--ppi-description-height');
+      return;
+    }
+    const top = descriptionField.getBoundingClientRect().top;
+    const bottom = descriptionPreview.getBoundingClientRect().bottom;
+    if (!Number.isFinite(top) || !Number.isFinite(bottom) || bottom <= top) return;
+    descriptionField.style.setProperty('--ppi-description-height',
+      Math.max(180, Math.round(bottom - top)) + 'px');
+  }
+  function queueDescriptionResize() {
+    if (descriptionResizeQueued) return;
+    descriptionResizeQueued = true;
+    window.requestAnimationFrame(() => {
+      descriptionResizeQueued = false;
+      syncDescriptionToPreview();
+    });
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(queueDescriptionResize).observe(descriptionPreview);
+  }
+  window.addEventListener('resize', queueDescriptionResize);
   function updateStartPagePreview() {
     if (!activeStartPage) return;
     const values = startPageFormValues();
@@ -1578,6 +1609,7 @@
     if (!grid.children.length) grid.append(node('p','Wähle unter „Touren wählen“ mindestens eine Tour aus.','ppi-startpage-preview-empty'));
     byId('ppi-startpage-dirty').textContent =
       JSON.stringify(values) === savedStartPageSnapshot ? 'Gespeicherter Stand' : '● Ungespeicherte Änderungen';
+    queueDescriptionResize();
   }
   const layoutPresetButtons = [...byId('ppi-start-page-tile-presets').querySelectorAll('[data-columns]')];
   function chooseTileLayout(value) {
@@ -1606,6 +1638,7 @@
     const workspace = byId('ppi-start-page-editor').querySelector('.ppi-startpage-workspace');
     workspace.classList.toggle('ppi-startpage-share-only', tab === 'share');
     byId('ppi-start-page-editor').querySelector('.ppi-startpage-preview-column').hidden = tab === 'share';
+    if (tab === 'start') queueDescriptionResize();
   }
   byId('ppi-start-page-editor').querySelectorAll('[data-startpage-tab]').forEach(button => {
     button.addEventListener('click', () => showStartPageTab(button.dataset.startpageTab));
