@@ -541,6 +541,7 @@ final class TourController extends Controller {
             'pickerPreferencesUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.savePickerPreferences'),
             'pickerPanoramaOnly' => ($this->userId() !== null && $this->config->getUserValue($this->userId(), self::APP_ID, self::PICKER_PANORAMA_ONLY, '0') === '1'),
             'filesUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.browse'),
+            'pickerTagsUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.listPickerTags'),
             'imageUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.imageBytes'),
             'watermarkLibraryUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.watermark.tourLibrary'),
             'watermarkThumbnailUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.watermark.tourThumbnail'),
