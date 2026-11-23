@@ -198,4 +198,23 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
  }
 }
 
+
+/* 0.4.62.114: Vollbild uses the available screen width for all tours and
+   aligns headline/glass edges to the same card grid edges. */
+#ppi-public-startpage[data-layout=hero] .ppi-public-start-inner {
+ width:100%!important;max-width:none!important;margin-inline:auto!important
+}
+#ppi-public-startpage[data-layout=hero] .ppi-public-start-header {
+ width:100%!important;padding-inline:0!important
+}
+#ppi-public-startpage[data-layout=hero] .ppi-public-start-copy {
+ width:100%!important;max-width:none!important;margin-inline:0!important;
+ box-sizing:border-box
+}
+#ppi-public-startpage[data-layout=hero] .ppi-public-start-tour-section {
+ width:100%!important;padding-inline:0!important
+}
+#ppi-public-startpage[data-layout=hero] .ppi-public-start-grid {
+ width:100%!important
+}
 </style>
