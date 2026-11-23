@@ -30,6 +30,7 @@ return [
         ['name' => 'tour#publicOptimizedImage', 'url' => '/tour/{token}/optimized/{fileId}/{profile}', 'verb' => 'GET'],
         ['name' => 'tour#publicImage', 'url' => '/tour/{token}/image/{fileId}', 'verb' => 'GET'],
         ['name' => 'tour#browse', 'url' => '/tours/files', 'verb' => 'GET'],
+        ['name' => 'tour#listPickerTags', 'url' => '/tours/tags', 'verb' => 'GET'],
         ['name' => 'tour#savePickerPreferences', 'url' => '/tours/picker/preferences', 'verb' => 'POST'],
         ['name' => 'tour#imageBytes', 'url' => '/tours/image', 'verb' => 'GET'],
         ['name' => 'tourNavigation#status', 'url' => '/tour-navigation/status', 'verb' => 'GET'],
