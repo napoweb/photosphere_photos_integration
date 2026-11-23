@@ -8,16 +8,17 @@ $effect = in_array(($page['designEffect'] ?? 'subtle'), ['subtle', 'glass', 'glo
 $columns = in_array((string)($page['tileColumns'] ?? 'auto'), ['auto','2','3','4','5'], true) ? (string)$page['tileColumns'] : 'auto';
 $color = static fn($v,$fallback) => is_string($v) && preg_match('/^#[0-9a-fA-F]{6}$/D',$v) ? $v : $fallback;
 $bg = $color($page['backgroundColor'] ?? null, '#000000');
+$headerBg = $color($page['headerBackgroundColor'] ?? ($page['backgroundColor'] ?? null), $bg);
 $heading = $color($page['headingColor'] ?? null, '#ffffff');
 $description = $color($page['descriptionColor'] ?? null, '#ffffff');
 $light = static fn($hex) => (299*hexdec(substr($hex,1,2)) + 587*hexdec(substr($hex,3,2)) + 114*hexdec(substr($hex,5,2))) >= 160000;
 $headingStroke = $light($heading) ? 'rgba(0,0,0,.50)' : 'rgba(255,255,255,.68)';
 $headingShadow = 'rgba(0,0,0,.40)';
 $descriptionShadow = 'rgba(0,0,0,.20)';
-$dividerColor = $light($bg) ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.60)';
+$dividerColor = $light($headerBg) ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.60)';
 ?>
 <main id="ppi-public-startpage" data-layout="<?php p($layout); ?>" data-effect="<?php p($effect); ?>" data-cols="<?php p($columns); ?>"
- style="--page-bg:<?php p($bg); ?>;--title-color:<?php p($heading); ?>;--desc-color:<?php p($description); ?>;--title-shadow:<?php p($headingShadow); ?>;--title-stroke:<?php p($headingStroke); ?>;--desc-shadow:<?php p($descriptionShadow); ?>;--split-divider:<?php p($dividerColor); ?>;<?php if (!empty($_['backgroundUrl'])): ?>--bg-image:url('<?php p($_['backgroundUrl']); ?>');<?php endif; ?>">
+ style="--page-bg:<?php p($bg); ?>;--header-bg:<?php p($headerBg); ?>;--title-color:<?php p($heading); ?>;--desc-color:<?php p($description); ?>;--title-shadow:<?php p($headingShadow); ?>;--title-stroke:<?php p($headingStroke); ?>;--desc-shadow:<?php p($descriptionShadow); ?>;--split-divider:<?php p($dividerColor); ?>;<?php if (!empty($_['backgroundUrl'])): ?>--bg-image:url('<?php p($_['backgroundUrl']); ?>');<?php endif; ?>">
 <?php if ($invalid): ?>
  <section class="ppi-public-start-message"><h1>Startseite nicht verfügbar</h1><p>Der Link ist ungültig, abgelaufen oder deaktiviert.</p></section>
 <?php elseif ($locked): ?>
@@ -424,6 +425,45 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
 @media(prefers-reduced-motion:reduce) {
  #ppi-public-startpage .ppi-public-start-card-image::after,
  #ppi-public-startpage .ppi-public-start-card {transition:none!important}
+}
+
+
+/* 0.4.62.119: stronger opposing outline and active cast shadow on heading. */
+#ppi-public-startpage .ppi-public-start-copy h1 {
+ -webkit-text-stroke:1.15px var(--title-stroke)!important;
+ paint-order:stroke fill;
+ text-shadow:0 2px 4px var(--title-shadow),0 5px 12px rgba(0,0,0,.55)!important;
+}
+/* Split layout has independently selectable top and lower colors.
+   The uploaded image, when present, remains visible above the top color. */
+#ppi-public-startpage[data-layout=split] .ppi-public-start-header {
+ background-color:var(--header-bg,var(--page-bg,#000000))!important;
+}
+/* On manual column counts, allow a lone card to span at most two tracks.
+   An orphan at the end of an even-column grid may use the final two slots. */
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-card:last-child:nth-child(odd),
+#ppi-public-startpage[data-cols="4"] .ppi-public-start-card:last-child:nth-child(4n + 3) {
+ grid-column:span 2!important;
+}
+#ppi-public-startpage .ppi-public-start-card-content{
+ height:105px!important;min-height:105px!important;max-height:105px!important;
+ flex:0 0 105px!important;padding:9px 12px 10px!important;
+}
+#ppi-public-startpage .ppi-public-start-card-content strong{
+ font-size:clamp(17px,1.5vw,22px)!important;line-height:1.18!important;
+}
+#ppi-public-startpage .ppi-public-start-card-content small{
+ font-size:clamp(15px,1.05vw,16px)!important;line-height:1.4!important;
+}
+@media(max-width:900px){
+ #ppi-public-startpage[data-cols="4"] .ppi-public-start-card:last-child:nth-child(4n + 3){
+  grid-column:auto!important;
+ }
+}
+@media(max-width:650px){
+ #ppi-public-startpage[data-cols] .ppi-public-start-card {grid-column:auto!important}
+ #ppi-public-startpage .ppi-public-start-card-content strong{font-size:20px!important}
+ #ppi-public-startpage .ppi-public-start-card-content small{font-size:15px!important}
 }
 
 </style>
