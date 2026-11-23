@@ -1296,7 +1296,22 @@
       quickView.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();previewImage(item);});
       card.append(checkbox,thumb,caption,quickView);imageBox.append(card);
     }
-    byId('ppi-picker-results').textContent=images.length+' Treffer'+(pickerData.panoramaOnly?' · 360°-Filter aktiv · '+Number(pickerData.nonPanoramasExcluded||0)+' normale JPEGs ausgeblendet':'')+(pickerData.truncated?' (begrenzt)':'');
+    // Count only recognized 360° panoramas, before and after the filters.
+    const totalPanoramas=Number(pickerData.totalPanoramas);
+    const filteredPanoramas=Number(pickerData.filteredPanoramas);
+    const visiblePanoramas=images.filter(item=>item.isPanorama===true).length;
+    const completeList=Number.isFinite(filteredPanoramas) &&
+      pickerData.items.filter(item=>item.type==='image' && item.isPanorama===true).length===filteredPanoramas;
+    const exactTotals=!pickerData.truncated && completeList && Number.isFinite(totalPanoramas);
+    const resultsLabel=byId('ppi-picker-results');
+    if (exactTotals) {
+      const hiddenPanoramas=Math.max(0,totalPanoramas-visiblePanoramas);
+      resultsLabel.textContent=visiblePanoramas+' Treffer · '+hiddenPanoramas+
+        ' Panoramen ausgeblendet · '+totalPanoramas+' insgesamt';
+    } else {
+      resultsLabel.textContent=visiblePanoramas+' sichtbare Panoramen · Zählung unvollständig'+
+        (Number.isFinite(totalPanoramas)?' · mindestens '+totalPanoramas+' erkannt':'');
+    }
     const warning=byId('ppi-picker-limit-warning');
     warning.hidden=!pickerData.truncated;
     warning.textContent=pickerData.truncated
@@ -1334,6 +1349,7 @@
       folderId:String(folderId),
       q:pickerValue('ppi-picker-search').trim(),
       searchMode:pickerValue('ppi-picker-search-mode'),
+      tagId:pickerValue('ppi-picker-search-mode')==='tags'?pickerValue('ppi-picker-tag'):'',
       sort:pickerValue('ppi-picker-sort'),
       date:pickerValue('ppi-picker-date'),
       size:pickerValue('ppi-picker-size'),
@@ -1345,7 +1361,7 @@
       if(serial!==browseSerial)return;
       // A stale PHP controller can silently ignore the search-mode parameter.
       // Never display misleading filename hits as tag-only results.
-      if (data.searchMode !== params.get('searchMode')) {
+      if (data.searchMode !== params.get('searchMode') || String(data.tagId ?? '') !== params.get('tagId')) {
         throw new Error('Suchmodus wurde vom Server nicht bestätigt. Bitte den aktualisierten PHP-Controller der Test-App installieren.');
       }
       browsing={id:Number(data.folderId),path:data.path,parentId:Number(data.parentId||0)};
@@ -1376,8 +1392,52 @@
   const searchInput=byId('ppi-picker-search');
   const searchMode=byId('ppi-picker-search-mode');
   const searchModeLabel=byId('ppi-picker-search-mode-label');
+  const tagSelect=byId('ppi-picker-tag');
+  const tagWrap=byId('ppi-picker-tag-wrap');
+  const tagSearchControl=tagWrap.closest('.ppi-picker-search-control');
+  const tagSearchGroup=tagWrap.closest('.ppi-picker-search-combined');
+  const updateTagAppearance=()=>{
+    const selected=searchMode.value==='tags' && tagSelect.value!=='';
+    tagWrap.classList.toggle('ppi-tag-active',selected);
+    tagSearchControl?.classList.toggle('ppi-has-selected-tag',selected);
+    tagSearchGroup?.classList.toggle('ppi-has-selected-tag',selected);
+  };
+  let pickerTagRequest=null;
+  async function loadPickerTags() {
+    if (pickerTagRequest) return pickerTagRequest;
+    const remembered=tagSelect.value;
+    tagSelect.disabled=true;
+    tagSelect.replaceChildren(new Option('Tags werden geladen …',''));
+    pickerTagRequest=(async()=>{
+      try {
+        const data=await request(root.dataset.pickerTagsUrl);
+        const options=[new Option('Alle Tags','')];
+        for(const tag of data.tags||[]) {
+          if (typeof tag.id !== 'string' || typeof tag.name !== 'string') continue;
+          options.push(new Option(tag.name,tag.id));
+        }
+        if (options.length===1) options[0].textContent='Keine sichtbaren Tags';
+        tagSelect.replaceChildren(...options);
+        if ([...tagSelect.options].some(option=>option.value===remembered)) tagSelect.value=remembered;
+        updateTagAppearance();
+      } catch(e) {
+        tagSelect.replaceChildren(new Option('Tags nicht verfügbar',''));
+        notify('Nextcloud-Tags konnten nicht geladen werden: '+e.message,true);
+      } finally {
+        tagSelect.disabled=false;
+        pickerTagRequest=null;
+      }
+    })();
+    return pickerTagRequest;
+  }
   const syncSearchModeLabel=()=>{
     searchModeLabel.textContent=searchMode.options[searchMode.selectedIndex]?.textContent || 'Suchbereich';
+    const showTags=searchMode.value==='tags';
+    tagWrap.hidden=!showTags;
+    if (!showTags) tagSelect.value='';
+    updateTagAppearance();
+    searchInput.placeholder=showTags?'Tag-Name suchen (optional) …':'Suchbegriff eingeben …';
+    if (showTags) loadPickerTags();
   };
   searchMode.addEventListener('change',()=>{
     syncSearchModeLabel();
@@ -1386,6 +1446,14 @@
     reapplyPicker();
   });
   syncSearchModeLabel();
+  tagSelect.addEventListener('change',()=>{
+    updateTagAppearance();
+    if (tagSelect.value) searchInput.value='';
+    searchEditing=false;
+    ++browseSerial;
+    clearTimeout(pickerDebounce);
+    reapplyPicker();
+  });
   // Genuine user interaction elsewhere ends the typing session.
   root.addEventListener('pointerdown', event => {
     if (!searchInput.contains(event.target)) searchEditing = false;
