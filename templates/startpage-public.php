@@ -11,11 +11,12 @@ $bg = $color($page['backgroundColor'] ?? null, '#000000');
 $heading = $color($page['headingColor'] ?? null, '#ffffff');
 $description = $color($page['descriptionColor'] ?? null, '#ffffff');
 $light = static fn($hex) => (299*hexdec(substr($hex,1,2)) + 587*hexdec(substr($hex,3,2)) + 114*hexdec(substr($hex,5,2))) >= 160000;
-$headingShadow = $light($heading) ? 'rgba(0,0,0,.4)' : 'rgba(255,255,255,.4)';
-$descriptionShadow = $light($description) ? 'rgba(0,0,0,.2)' : 'rgba(255,255,255,.2)';
+$headingStroke = $light($heading) ? 'rgba(0,0,0,.50)' : 'rgba(255,255,255,.68)';
+$headingShadow = 'rgba(0,0,0,.40)';
+$descriptionShadow = 'rgba(0,0,0,.20)';
 ?>
 <main id="ppi-public-startpage" data-layout="<?php p($layout); ?>" data-effect="<?php p($effect); ?>" data-cols="<?php p($columns); ?>"
- style="--page-bg:<?php p($bg); ?>;--title-color:<?php p($heading); ?>;--desc-color:<?php p($description); ?>;--title-shadow:<?php p($headingShadow); ?>;--desc-shadow:<?php p($descriptionShadow); ?>;<?php if (!empty($_['backgroundUrl'])): ?>--bg-image:url('<?php p($_['backgroundUrl']); ?>');<?php endif; ?>">
+ style="--page-bg:<?php p($bg); ?>;--title-color:<?php p($heading); ?>;--desc-color:<?php p($description); ?>;--title-shadow:<?php p($headingShadow); ?>;--title-stroke:<?php p($headingStroke); ?>;--desc-shadow:<?php p($descriptionShadow); ?>;<?php if (!empty($_['backgroundUrl'])): ?>--bg-image:url('<?php p($_['backgroundUrl']); ?>');<?php endif; ?>">
 <?php if ($invalid): ?>
  <section class="ppi-public-start-message"><h1>Startseite nicht verfügbar</h1><p>Der Link ist ungültig, abgelaufen oder deaktiviert.</p></section>
 <?php elseif ($locked): ?>
@@ -66,8 +67,8 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage){margin:0!importa
 .ppi-public-start-inner{max-width:1200px;margin:auto}
 .ppi-public-start-header{text-align:center;padding:55px 12px 32px}
 .ppi-public-start-copy{max-width:900px;margin:auto;padding:21px}
-.ppi-public-start-copy h1{margin:0 0 14px;color:var(--title-color)!important;font-size:clamp(25px,4vw,45px);line-height:1.2;font-weight:750;overflow-wrap:anywhere;-webkit-text-stroke:.45px var(--title-shadow);paint-order:stroke fill;text-shadow:0 2px 5px var(--title-shadow),0 1px 2px var(--title-shadow)}
-.ppi-public-start-copy p{margin:0;color:var(--desc-color)!important;font-size:clamp(14px,1.7vw,18px);white-space:pre-wrap;line-height:1.5;text-shadow:0 1px 3px var(--desc-shadow)}
+.ppi-public-start-copy h1{margin:0 0 14px;color:var(--title-color)!important;font-size:clamp(25px,4vw,45px);line-height:1.2;font-weight:750;overflow-wrap:anywhere;-webkit-text-stroke:.35px var(--title-stroke);paint-order:stroke fill;text-shadow:0 2px 4px var(--title-shadow)}
+.ppi-public-start-copy p{margin:0;color:var(--desc-color)!important;font-size:clamp(14px,1.7vw,18px);white-space:pre-wrap;line-height:1.65;text-shadow:0 1px 2px var(--desc-shadow)}
 #ppi-public-startpage[data-effect=glass] .ppi-public-start-copy{border:1px solid #ffffff77;border-radius:17px;background:#19273645;backdrop-filter:blur(12px) saturate(125%);-webkit-backdrop-filter:blur(12px) saturate(125%);box-shadow:0 12px 28px #0005,inset 0 1px 0 #ffffff33}
 .ppi-public-start-tour-section{padding:10px 10px 32px}
 .ppi-public-start-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
@@ -96,4 +97,43 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage){margin:0!importa
 @media(max-width:900px){#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid,#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){#ppi-public-startpage{padding:14px 8px}#ppi-public-startpage[data-cols] .ppi-public-start-grid{grid-template-columns:1fr}#ppi-public-startpage[data-layout=split] .ppi-public-start-header{padding:38px 12px}}
 @media(prefers-reduced-transparency:reduce){#ppi-public-startpage[data-effect=glass] .ppi-public-start-copy{backdrop-filter:none;-webkit-backdrop-filter:none;background:#142536eb}}
+
+/* Public landing must not inherit Nextcloud guest login's narrow central column. */
+html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden!important}
+#ppi-public-startpage {
+  position:fixed!important;inset:0!important;z-index:11000!important;
+  width:100vw!important;max-width:none!important;
+  height:100dvh!important;min-height:100dvh!important;
+  overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain;
+  padding:clamp(20px,3.6vw,52px) clamp(14px,3vw,46px)!important;
+  background-attachment:scroll!important;
+}
+#ppi-public-startpage .ppi-public-start-inner {
+  width:min(100%,1360px)!important;max-width:1360px!important;margin-inline:auto!important;
+}
+#ppi-public-startpage .ppi-public-start-header {
+  padding:clamp(18px,5vh,56px) 0 clamp(24px,4vh,42px)!important;
+}
+#ppi-public-startpage .ppi-public-start-copy {
+  width:min(100%,990px)!important;max-width:990px!important;
+  padding:clamp(20px,3.5vw,38px) clamp(18px,4vw,48px)!important;
+  margin-inline:auto!important;
+}
+#ppi-public-startpage .ppi-public-start-tour-section {padding:16px 0 48px!important}
+#ppi-public-startpage .ppi-public-start-grid {gap:clamp(14px,2vw,25px)!important}
+#ppi-public-startpage .ppi-public-start-card-content {padding:clamp(14px,1.8vw,22px)!important}
+#ppi-public-startpage .ppi-public-start-card-image {aspect-ratio:16/9!important}
+#ppi-public-startpage[data-layout=split] {padding:0!important}
+#ppi-public-startpage[data-layout=split] .ppi-public-start-header {
+  padding:clamp(45px,8vh,110px) max(18px,4vw) clamp(45px,7vh,85px)!important;
+}
+#ppi-public-startpage[data-layout=split] .ppi-public-start-tour-section {padding:35px clamp(14px,3vw,46px) 48px!important}
+#ppi-public-startpage[data-layout=gallery] .ppi-public-start-header {padding:18px 0 24px!important}
+@media(max-width:650px) {
+  #ppi-public-startpage {padding:14px 10px!important}
+  #ppi-public-startpage .ppi-public-start-copy {padding:18px 14px!important}
+  #ppi-public-startpage .ppi-public-start-tour-section {padding:10px 0 30px!important}
+  #ppi-public-startpage[data-layout=split] .ppi-public-start-header {padding:40px 12px 32px!important}
+  #ppi-public-startpage[data-layout=split] .ppi-public-start-tour-section {padding:25px 10px!important}
+}
 </style>
