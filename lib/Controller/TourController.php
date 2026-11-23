@@ -200,7 +200,9 @@ final class TourController extends Controller {
     }
 
     private function startPageIndexKey(string $token): string {
-        return self::STARTPAGE_INDEX_PREFIX . hash('sha256', $token);
+        // oc_appconfig.configkey supports at most 64 chars on supported Nextcloud databases.
+        // Prefix (9) + truncated SHA-256 (40) matches the established tour share index.
+        return self::STARTPAGE_INDEX_PREFIX . substr(hash('sha256', $token), 0, 40);
     }
 
     private function findPublicStartPage(string $token): ?array {
