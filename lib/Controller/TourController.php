@@ -213,7 +213,7 @@ final class TourController extends Controller {
         if (count($pages) >= 30) { return $this->error('Maximal 30 Startseiten pro Benutzer'); }
         $page = ['id' => bin2hex(random_bytes(12)), 'name' => $name,
             'headline' => $name, 'description' => '', 'layout' => 'hero',
-            'headingColor' => '#ffffff', 'backgroundColor' => '#000000',
+            'headingColor' => '#ffffff', 'descriptionColor' => '#ffffff', 'backgroundColor' => '#000000',
             'backgroundFileId' => 0, 'tileColumns' => 'auto',
             'tourIds' => [], 'created' => gmdate('c'), 'modified' => gmdate('c')];
         $pages[] = $page;
@@ -230,6 +230,7 @@ final class TourController extends Controller {
         $description = trim((string)$this->request->getParam('description', ''));
         $layout = (string)$this->request->getParam('layout', 'hero');
         $headingColor = (string)$this->request->getParam('headingColor', '#ffffff');
+        $descriptionColor = (string)$this->request->getParam('descriptionColor', '#ffffff');
         $backgroundColor = (string)$this->request->getParam('backgroundColor', '#000000');
         $backgroundFileIdRaw = $this->request->getParam('backgroundFileId', '0');
         $backgroundFileId = filter_var($backgroundFileIdRaw, FILTER_VALIDATE_INT);
@@ -237,6 +238,7 @@ final class TourController extends Controller {
         if ($name === '' || mb_strlen($name) > 100 || mb_strlen($headline) > 120 ||
             mb_strlen($description) > 1000 || !in_array($layout, ['hero', 'split', 'gallery'], true) ||
             !preg_match('/^#[0-9a-fA-F]{6}$/D', $headingColor) ||
+            !preg_match('/^#[0-9a-fA-F]{6}$/D', $descriptionColor) ||
             !preg_match('/^#[0-9a-fA-F]{6}$/D', $backgroundColor) ||
             $backgroundFileId === false || $backgroundFileId < 0 ||
             !in_array($tileColumns, ['auto', '2', '3', '4', '5'], true)) {
@@ -265,6 +267,7 @@ final class TourController extends Controller {
             $page['description'] = $description;
             $page['layout'] = $layout;
             $page['headingColor'] = $headingColor;
+            $page['descriptionColor'] = $descriptionColor;
             $page['backgroundColor'] = $backgroundColor;
             $page['backgroundFileId'] = $backgroundFileId;
             $page['tileColumns'] = $tileColumns;
