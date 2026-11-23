@@ -178,13 +178,22 @@
             for (const row of pageRows) {
                 const tr = document.createElement('tr');
                 const visibility = row.visibility || 'unknown';
-                cell(tr, visibility === 'own' ? row.id : '–');
-                cell(tr, visibility === 'own' ? (row.name || 'Dateiname nicht hinterlegt')
-                    : visibility === 'other' ? '🔒 Datei eines anderen Benutzers'
-                    : '🔒 Besitzer nicht ermittelbar', 'filename');
-                cell(tr, visibility === 'own' && Array.isArray(row.tourNames) && row.tourNames.length
+                const hasOwnTour = visibility === 'own';
+                const accessibleSource = row.sourceAvailable === true;
+                // Display a cache file ID only if the source is currently readable
+                // through the admin's mount tree or their own saved tour.
+                cell(tr, (hasOwnTour || accessibleSource) && row.id != null ? row.id : '–');
+                const filename = accessibleSource && row.name
+                    ? row.name
+                    : hasOwnTour && row.name
+                        ? row.name + ' (aus eigener Tour; Original nicht erreichbar)'
+                        : hasOwnTour
+                            ? 'Dateiname nicht hinterlegt (Original nicht erreichbar)'
+                            : '🔒 Original nicht erreichbar oder kein Zugriff';
+                cell(tr, filename, 'filename');
+                cell(tr, hasOwnTour && Array.isArray(row.tourNames) && row.tourNames.length
                     ? row.tourNames.join(', ')
-                    : visibility === 'other' ? '🔒 Andere Tour (geschützt)'
+                    : row.used && !hasOwnTour ? '🔒 Andere Tour (geschützt)'
                     : row.used ? 'Tourname nicht hinterlegt' : '–', 'tourname');
                 cell(tr, row.used ? 'Verwendet' : row.markedSince !== null ? 'Vorgemerkt' : 'Nicht verwendet');
                 cell(tr, row.desktop ? 'Ja' : 'Nein');
