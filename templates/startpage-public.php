@@ -569,4 +569,13 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
  border:6px solid #fff!important;
 }
 
+
+/* 0.4.62.128: the split-mode separator remains white on any cover image
+   or header color, and spans the full viewport-width hero container. */
+#ppi-public-startpage[data-layout="split"] .ppi-public-start-header{
+ box-sizing:border-box!important;
+ border-bottom:2px solid #fff!important;
+ box-shadow:0 8px 18px rgba(0,0,0,.32),0 2px 3px rgba(0,0,0,.45)!important;
+}
+
 </style>
