@@ -324,41 +324,6 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
  background-size:cover!important;
 }
 
-/* 0.4.62.117: one wide tour is never wider than two grid tracks.
-   Odd auto galleries feature the first tour; mobile is always one column. */
-#ppi-public-startpage .ppi-public-start-card {
-  grid-column:span 1;
-  min-width:0;
-}
-#ppi-public-startpage[data-cols="auto"] .ppi-public-start-card:first-child:nth-last-child(odd) {
-  grid-column:span 2!important;
-}
-#ppi-public-startpage[data-cols="2"] .ppi-public-start-card:only-child,
-#ppi-public-startpage[data-cols="3"] .ppi-public-start-card:only-child,
-#ppi-public-startpage[data-cols="4"] .ppi-public-start-card:only-child,
-#ppi-public-startpage[data-cols="5"] .ppi-public-start-card:only-child {
-  grid-column:span 2!important;
-}
-/* Manual column counts use two tracks for the featured tile only
-   when the number of tours is exactly one. Other tiles retain the
-   explicitly selected column configuration. */
-@media(max-width:900px) {
- #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid,
- #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid,
- #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid {
-  grid-template-columns:repeat(2,minmax(0,1fr))!important;
- }
-}
-@media(max-width:650px) {
- #ppi-public-startpage[data-cols] .ppi-public-start-grid {
-  grid-template-columns:minmax(0,1fr)!important;
- }
- #ppi-public-startpage[data-cols] .ppi-public-start-card {
-  grid-column:auto!important;
- }
-}
-
-
 /* 0.4.62.118: equal-size cards, more prominent names, compact description
    and a lightweight glass highlight over the image which clears on hover. */
 #ppi-public-startpage .ppi-public-start-card {
@@ -461,56 +426,6 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
 }
 
 
-/* 0.4.62.120: distributed two-track features for the explicit 2–5 column
-   layouts. Each 4-row cycle starts with a two-track card and alternates
-   the next featured card towards the opposite edge; no empty grid holes.
-   Card order remains DOM order (no grid-auto-flow:dense reordering). */
-#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card,
-#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card,
-#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card,
-#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card {
- grid-column:span 1!important;
-}
-#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 1),
-#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 4),
-#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(10n + 1),
-#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(10n + 7),
-#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(14n + 1),
-#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(14n + 10),
-#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(18n + 1),
-#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(18n + 13) {
- grid-column:span 2!important;
-}
-/* All explicit layouts become two-track at tablet widths, using the
-   same alternating 2-column layout; narrow phones get one full column. */
-@media(max-width:900px){
- #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card,
- #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card,
- #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card,
- #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card {
-  grid-column:span 1!important;
- }
- #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 1),
- #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 4),
- #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 1),
- #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 4),
- #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 1),
- #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 4),
- #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 1),
- #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(6n + 4) {
-  grid-column:span 2!important;
- }
-}
-@media(max-width:650px){
- #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card,
- #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card,
- #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card,
- #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card {
-  grid-column:span 1!important;
- }
-}
-
-
 /* 0.4.62.121: subdued images by default; reveal the original on hover.
    Only image media is shaded, never text or interactive links. */
 #ppi-public-startpage .ppi-public-start-card-image::after {
@@ -534,22 +449,85 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
 #ppi-public-startpage .ppi-public-start-card-content small{
  font-size:clamp(14px,1vw,15px)!important;
 }
-/* Restore pre-0.4.62.120 regular two-column flow: no periodic
-   double-width cards, only a single card may fill both tracks. */
-#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card {
- grid-column:span 1!important;
-}
-#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:only-child {
- grid-column:span 2!important;
-}
-@media(max-width:650px){
- #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card,
- #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:only-child {
-  grid-column:span 1!important;
- }
-}
 @media(prefers-reduced-motion:reduce){
  #ppi-public-startpage .ppi-public-start-card-image::after {transition:none!important}
 }
+
+/* 0.4.62.122: deterministic automatic 1x1/2x1/2x2 mosaic.
+    Full cycles leave no grid gaps; the DOM reading order is preserved. */
+#ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid,
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid,
+#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid,
+#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid,
+#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid {
+ grid-auto-rows:clamp(235px,24vw,310px)!important;
+ grid-auto-flow:row!important;
+ align-items:stretch!important;
+}
+#ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n),
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n),
+#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n),
+#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n),
+#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n){
+ grid-column:span 1!important;grid-row:span 1!important;
+ height:100%!important;min-height:0!important;max-height:none!important;
+}
+#ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(7n + 1),
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(7n + 1){
+ grid-column:span 1!important;grid-row:span 1!important;
+}
+#ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(7n + 1),
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(7n + 1){
+ grid-column:span 2!important;grid-row:span 2!important;
+}
+#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(8n + 1){
+ grid-column:span 2!important;grid-row:span 2!important;
+}
+#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(8n + 4){
+ grid-column:span 2!important;grid-row:span 1!important;
+}
+#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(12n + 1){
+ grid-column:span 2!important;grid-row:span 2!important;
+}
+#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(12n + 6){
+ grid-column:span 2!important;grid-row:span 1!important;
+}
+#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(16n + 1){
+ grid-column:span 2!important;grid-row:span 2!important;
+}
+#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(16n + 8){
+ grid-column:span 2!important;grid-row:span 1!important;
+}
+@media(max-width:900px){
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid,
+#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid,
+#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid,
+#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+#ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n),
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n),
+#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n),
+#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n),
+#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n){grid-column:span 1!important;grid-row:span 1!important;}
+#ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(7n + 1),
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(7n + 1),
+#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(7n + 1),
+#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(7n + 1),
+#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(7n + 1){grid-column:span 2!important;grid-row:span 2!important;}
+}
+@media(max-width:650px){
+#ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid,
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid,
+#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid,
+#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid,
+#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid{grid-template-columns:minmax(0,1fr)!important;grid-auto-rows:270px!important;}
+#ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n),
+#ppi-public-startpage[data-cols="2"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n),
+#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n),
+#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n),
+#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n){grid-column:span 1!important;grid-row:span 1!important;}
+}
+#ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n):nth-child(n){grid-column:span 1!important;grid-row:span 1!important;}
+#ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(7n + 1):nth-child(n){grid-column:span 2!important;grid-row:span 2!important;}
+@media(max-width:650px){#ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n):nth-child(n){grid-column:span 1!important;grid-row:span 1!important;}}
 
 </style>
