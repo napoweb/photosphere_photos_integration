@@ -1514,9 +1514,10 @@
     const header = preview.querySelector('.ppi-startpage-preview-header');
     const lightHeading = isLightStartPageColor(values.headingColor);
     const lightDescription = isLightStartPageColor(values.descriptionColor);
-    header.style.setProperty('--ppi-startpage-shadow',lightHeading ? 'rgba(0,0,0,.40)' : 'rgba(255,255,255,.40)');
-    header.style.setProperty('--ppi-startpage-stroke',lightHeading ? 'rgba(0,0,0,.40)' : 'rgba(255,255,255,.40)');
-    header.style.setProperty('--ppi-startpage-shadow-soft',lightDescription ? 'rgba(0,0,0,.20)' : 'rgba(255,255,255,.20)');
+    // Opposing outline only; the cast shadow stays dark for either text color.
+    header.style.setProperty('--ppi-startpage-shadow','rgba(0,0,0,.40)');
+    header.style.setProperty('--ppi-startpage-stroke',lightHeading ? 'rgba(0,0,0,.50)' : 'rgba(255,255,255,.68)');
+    header.style.setProperty('--ppi-startpage-shadow-soft','rgba(0,0,0,.20)');
     preview.style.setProperty('--ppi-startpage-bg', values.backgroundColor);
     preview.style.setProperty('--ppi-startpage-heading', values.headingColor);
     preview.style.setProperty('--ppi-startpage-description', values.descriptionColor);
@@ -1569,6 +1570,10 @@
     byId('ppi-start-page-editor').querySelectorAll('[data-startpage-panel]').forEach(section => {
       section.hidden = section.dataset.startpagePanel !== tab;
     });
+    // The share tab is a dedicated full-width form, not a visual design step.
+    const workspace = byId('ppi-start-page-editor').querySelector('.ppi-startpage-workspace');
+    workspace.classList.toggle('ppi-startpage-share-only', tab === 'share');
+    byId('ppi-start-page-editor').querySelector('.ppi-startpage-preview-column').hidden = tab === 'share';
   }
   byId('ppi-start-page-editor').querySelectorAll('[data-startpage-tab]').forEach(button => {
     button.addEventListener('click', () => showStartPageTab(button.dataset.startpageTab));
