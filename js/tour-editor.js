@@ -1520,7 +1520,7 @@
   }
   // Keep the description box aligned with the actual lower edge of the
   // adjacent live preview. ResizeObserver tracks changing tile composition.
-  const descriptionField = byId('ppi-start-page-description');
+  const startPageDescriptionField = byId('ppi-start-page-description');
   const descriptionPreview = byId('ppi-startpage-preview');
   let descriptionResizeQueued = false;
   function syncDescriptionToPreview() {
@@ -1528,13 +1528,13 @@
         byId('ppi-start-page-editor').hidden ||
         byId('ppi-start-page-editor').querySelector('[data-startpage-panel="start"]').hidden) return;
     if (window.matchMedia('(max-width:900px)').matches) {
-      descriptionField.style.removeProperty('--ppi-description-height');
+      startPageDescriptionField.style.removeProperty('--ppi-description-height');
       return;
     }
-    const top = descriptionField.getBoundingClientRect().top;
+    const top = startPageDescriptionField.getBoundingClientRect().top;
     const bottom = descriptionPreview.getBoundingClientRect().bottom;
     if (!Number.isFinite(top) || !Number.isFinite(bottom) || bottom <= top) return;
-    descriptionField.style.setProperty('--ppi-description-height',
+    startPageDescriptionField.style.setProperty('--ppi-description-height',
       Math.max(180, Math.round(bottom - top)) + 'px');
   }
   function queueDescriptionResize() {
