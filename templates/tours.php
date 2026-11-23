@@ -1870,4 +1870,23 @@
    background:rgba(16,31,44,.90)!important;
  }
 }
+
+/* 0.4.62.116: align split preview with card grid and show gallery JPEG in
+   all effect presets, as in the real public start page. */
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-hero{
+  box-sizing:border-box!important;width:100%!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-header{
+  box-sizing:border-box!important;width:calc(100% - 28px)!important;
+  max-width:none!important;margin:0 auto!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-grid{
+  box-sizing:border-box!important;width:calc(100% - 28px)!important;
+  margin:24px 14px 10px!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"]{
+  background-color:var(--ppi-startpage-bg,#000)!important;
+  background-image:linear-gradient(rgba(0,0,0,.20),rgba(0,0,0,.20)),var(--ppi-startpage-image,none)!important;
+  background-size:cover!important;background-position:center!important;
+}
 </style>
