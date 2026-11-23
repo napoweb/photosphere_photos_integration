@@ -1930,7 +1930,8 @@
     if (mode !== 'tours' && mode !== 'startpages') return;
     managementMode = mode;
     const pages = mode === 'startpages';
-    byId('ppi-section-icon').textContent = pages ? '▦' : '🌐';
+    // Keep the same left pictogram in both management views to avoid a visual jump.
+    byId('ppi-section-icon').textContent = '🌐';
     byId('ppi-section-heading').textContent = pages ? 'Meine 360°-Startseiten' : 'Meine 360°-Touren';
     byId('ppi-section-subtitle').textContent = pages ?
       'Startseiten mit mehreren Panorama-Touren gestalten' : 'Touren aus deinen Nextcloud-Panoramen zusammenstellen';
