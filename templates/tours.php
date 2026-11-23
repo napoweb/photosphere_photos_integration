@@ -111,10 +111,12 @@
             </div>
             <input id="ppi-start-page-tile-columns" type="hidden" value="auto">
           </fieldset>
-          <label id="ppi-start-page-header-color-row" hidden>Kopfbereich-Farbe (ohne Hintergrundbild) <input id="ppi-start-page-header-color" type="color" value="#000000"></label>
-          <label id="ppi-start-page-background-color-row">Hintergrundfarbe (Tourenbereich) <input id="ppi-start-page-background-color" type="color" value="#000000"></label>
-          <label>Überschriftenfarbe <input id="ppi-start-page-heading-color" type="color" value="#ffffff"></label>
-          <label>Beschreibungsfarbe <input id="ppi-start-page-description-color" type="color" value="#ffffff"></label>
+          <div class="ppi-startpage-color-controls" aria-label="Farben der Startseite">
+            <label id="ppi-start-page-header-color-row" hidden><span>Kopfbereich-Farbe (ohne Hintergrundbild)</span><input id="ppi-start-page-header-color" type="color" value="#000000"></label>
+            <label id="ppi-start-page-background-color-row"><span>Hintergrundfarbe (Tourenbereich)</span><input id="ppi-start-page-background-color" type="color" value="#000000"></label>
+            <label><span>Überschriftenfarbe</span><input id="ppi-start-page-heading-color" type="color" value="#ffffff"></label>
+            <label><span>Beschreibungsfarbe</span><input id="ppi-start-page-description-color" type="color" value="#ffffff"></label>
+          </div>
           <fieldset class="ppi-startpage-background-picker">
             <legend>Hintergrundbild aus Nextcloud-Dateien</legend>
             <p>Wähle ein JPEG aus deinen Dateien. Die Vorschau lädt nur eine optimierte Nextcloud-Vorschau statt des großen Originals. Neue Bilder kannst du vorher in Nextcloud „Dateien“ hochladen.</p>
@@ -123,12 +125,18 @@
               <button type="button" id="ppi-start-page-bg-remove">Hintergrundbild entfernen</button>
             </div>
             <p id="ppi-start-page-bg-selected">Kein Bild ausgewählt</p>
-            <div id="ppi-start-page-bg-browser" hidden>
-              <div class="ppi-startpage-bg-toolbar">
-                <button type="button" id="ppi-start-page-bg-up">← Übergeordneter Ordner</button>
-                <span id="ppi-start-page-bg-path">/</span>
+            <div id="ppi-start-page-bg-browser" class="ppi-startpage-bg-overlay" hidden>
+              <div class="ppi-startpage-bg-dialog" role="dialog" aria-modal="true" aria-labelledby="ppi-startpage-bg-dialog-title" tabindex="-1">
+                <div class="ppi-startpage-bg-dialog-heading">
+                  <h4 id="ppi-startpage-bg-dialog-title">Hintergrundbild auswählen</h4>
+                  <button type="button" id="ppi-start-page-bg-close" aria-label="Bildauswahl schließen" title="Schließen">✕</button>
+                </div>
+                <div class="ppi-startpage-bg-toolbar">
+                  <button type="button" id="ppi-start-page-bg-up">← Übergeordneter Ordner</button>
+                  <span id="ppi-start-page-bg-path">/</span>
+                </div>
+                <div id="ppi-start-page-bg-files" class="ppi-startpage-bg-files"></div>
               </div>
-              <div id="ppi-start-page-bg-files" class="ppi-startpage-bg-files"></div>
             </div>
           </fieldset>
         </section>
@@ -2330,6 +2338,115 @@
  #ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options,.ppi-startpage-layout-presets-grid) > button{
   padding:8px 3px!important;min-height:102px!important;font-size:11px!important;
  }
+}
+
+
+/* 0.4.62.130: compact, responsive 4-across / 2-by-2 color strip,
+   below the Tour-Kacheln selection. Hidden colors keep stored values. */
+#ppi-tours-app .ppi-startpage-color-controls{
+ display:grid!important;
+ grid-template-columns:repeat(4,minmax(0,1fr))!important;
+ gap:8px!important;
+ min-width:0!important;
+ container-type:inline-size;
+}
+#ppi-tours-app .ppi-startpage-color-controls > label{
+ display:flex!important;flex-direction:column!important;
+ align-items:center!important;justify-content:space-between!important;
+ gap:6px!important;
+ min-width:0!important;box-sizing:border-box!important;
+ padding:9px 5px!important;
+ border:1px solid var(--color-border)!important;border-radius:10px!important;
+ background:var(--color-main-background)!important;
+ text-align:center!important;
+ font-size:11px!important;line-height:1.25!important;
+}
+#ppi-tours-app .ppi-startpage-color-controls > label[hidden]{display:none!important}
+#ppi-tours-app .ppi-startpage-color-controls > label > span{
+ display:block!important;overflow-wrap:anywhere!important;
+}
+#ppi-tours-app .ppi-startpage-color-controls input[type="color"]{
+ flex:0 0 auto!important;
+ display:block!important;
+ width:54px!important;max-width:100%!important;
+ height:36px!important;min-height:36px!important;
+ padding:3px!important;margin:0!important;
+ cursor:pointer!important;
+}
+@media(max-width:600px){
+ #ppi-tours-app .ppi-startpage-color-controls{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+}
+/* Constrain the layout editor's own compact column, not just the viewport. */
+@supports (container-type:inline-size){
+ #ppi-tours-app .ppi-start-page-fields{container-type:inline-size;}
+ @container (max-width:540px){
+  #ppi-tours-app .ppi-startpage-color-controls{
+   grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+ }
+}
+/* Floating image picker: no page-height jump when the browser opens. */
+#ppi-tours-app #ppi-start-page-bg-browser.ppi-startpage-bg-overlay{
+ position:fixed!important;inset:0!important;
+ z-index:10000!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ box-sizing:border-box!important;
+ padding:20px!important;
+ background:rgba(8,18,30,.67)!important;
+ backdrop-filter:blur(3px);
+}
+#ppi-tours-app #ppi-start-page-bg-browser.ppi-startpage-bg-overlay[hidden]{
+ display:none!important;
+}
+#ppi-tours-app .ppi-startpage-bg-dialog{
+ display:flex!important;flex-direction:column!important;
+ width:min(760px,100%)!important;
+ max-width:100%!important;
+ max-height:min(80vh,780px)!important;
+ min-height:0!important;
+ padding:16px!important;
+ gap:12px!important;
+ box-sizing:border-box!important;
+ border:1px solid var(--color-border)!important;
+ border-radius:15px!important;
+ background:var(--color-main-background)!important;
+ color:var(--color-main-text)!important;
+ box-shadow:0 22px 70px rgba(0,0,0,.65),0 6px 20px rgba(0,0,0,.40)!important;
+}
+#ppi-tours-app .ppi-startpage-bg-dialog-heading{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+#ppi-tours-app .ppi-startpage-bg-dialog-heading h4{
+ margin:0!important;font-size:17px!important;font-weight:700!important;
+}
+#ppi-tours-app #ppi-start-page-bg-close{
+ min-width:40px!important;min-height:40px!important;
+ font-size:20px!important;border-radius:9px!important;
+}
+#ppi-tours-app .ppi-startpage-bg-dialog #ppi-start-page-bg-path{
+ min-width:0;overflow-wrap:anywhere;font-size:12px;
+}
+#ppi-tours-app .ppi-startpage-bg-dialog .ppi-startpage-bg-files{
+ min-height:0;overflow-y:auto!important;
+ max-height:none!important;
+ grid-template-columns:repeat(auto-fill,minmax(min(100%,135px),1fr))!important;
+}
+#ppi-tours-app .ppi-startpage-bg-dialog .ppi-startpage-bg-files button{
+ cursor:pointer;text-align:left;
+}
+@media(max-width:520px){
+ #ppi-tours-app #ppi-start-page-bg-browser.ppi-startpage-bg-overlay{padding:9px!important}
+ #ppi-tours-app .ppi-startpage-bg-dialog{padding:12px!important;max-height:88vh!important}
+}
+/* Exactly the same text sizing for both upper create actions. */
+#ppi-tours-app .ppi-tour-intro-header #ppi-tour-create,
+#ppi-tours-app .ppi-tour-intro-header #ppi-start-page-create{
+ font-size:14px!important;
+ font-weight:650!important;
+ letter-spacing:normal!important;
+ font-family:inherit!important;
 }
 
 </style>
