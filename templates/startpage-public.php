@@ -481,19 +481,19 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
 #ppi-public-startpage[data-cols="2"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(7n + 1){
  grid-column:span 2!important;grid-row:span 2!important;
 }
-#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(8n + 1){
+#ppi-public-startpage[data-cols="3"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(8n + 1):nth-last-child(n + 3){
  grid-column:span 2!important;grid-row:span 2!important;
 }
 #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(8n + 4){
  grid-column:span 2!important;grid-row:span 1!important;
 }
-#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(12n + 1){
+#ppi-public-startpage[data-cols="4"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(12n + 1):nth-last-child(n + 5){
  grid-column:span 2!important;grid-row:span 2!important;
 }
 #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(12n + 6){
  grid-column:span 2!important;grid-row:span 1!important;
 }
-#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(16n + 1){
+#ppi-public-startpage[data-cols="5"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(16n + 1):nth-last-child(n + 7){
  grid-column:span 2!important;grid-row:span 2!important;
 }
 #ppi-public-startpage[data-cols="5"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:nth-child(16n + 8){
