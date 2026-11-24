@@ -1056,6 +1056,11 @@
       card.append(tourAction(link.disabled?'Link aktivieren':'Link deaktivieren',()=>{
         if(link.disabled || confirm('Diesen Link vorübergehend deaktivieren?'))return extraAction(link.id,link.disabled?'enable':'disable');
       }));
+      card.append(tourAction('Token erneuern',()=>{
+        if(confirm('Token für diesen Freigabelink erneuern? Der bisherige Link und seine Bild-URLs werden sofort ungültig. Passwort und Einstellungen bleiben erhalten.')){
+          return extraAction(link.id,'rotate');
+        }
+      }));
       card.append(tourAction('Diesen Link widerrufen',()=>{
         if(confirm('Diesen Freigabelink endgültig widerrufen? Andere Links bleiben gültig.'))return extraAction(link.id,'revoke');
       }));

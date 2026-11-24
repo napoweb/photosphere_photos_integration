@@ -1450,7 +1450,7 @@ final class TourController extends Controller {
         $uid = $this->userId();
         if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
         $action = (string)$this->request->getParam('action', '');
-        if (!in_array($action, ['settings', 'password', 'removePassword', 'disable', 'enable', 'revoke'], true)) {
+        if (!in_array($action, ['settings', 'password', 'removePassword', 'disable', 'enable', 'revoke', 'rotate'], true)) {
             return $this->error('Ungültige Aktion');
         }
         $expiry = null;
@@ -1496,8 +1496,44 @@ final class TourController extends Controller {
                         }
                         unset($link['disabled']);
                     }
+                    if ($action === 'rotate') {
+                        $oldToken = (string)($link['token'] ?? '');
+                        if (!preg_match('/^[a-f0-9]{48}$/D', $oldToken)) {
+                            return $this->error('Ungültiges bisheriges Freigabe-Token', 409);
+                        }
+
+                        // Eigenständiges, kryptografisch sicheres Token.
+                        // Niemals einen bestehenden Freigabeindex überschreiben.
+                        do {
+                            $newToken = bin2hex(random_bytes(24));
+                        } while ($this->config->getAppValue(
+                            self::APP_ID,
+                            $this->shareIndexKey($newToken),
+                            ''
+                        ) !== '');
+
+                        // Zuerst neuen Index vorbereiten.
+                        $this->config->setAppValue(
+                            self::APP_ID,
+                            $this->shareIndexKey($newToken),
+                            json_encode(['uid' => $uid, 'id' => $id])
+                        );
+
+                        // Nur den Token dieses Zusatzlinks ersetzen.
+                        // Passwort, Name, Ablaufdatum und Status bleiben erhalten.
+                        $link['token'] = $newToken;
+                    }
+
                     $tour['modified'] = gmdate('c');
                     $this->persist($uid, $tours);
+
+                    if ($action === 'rotate') {
+                        // Alter Link und alte Besuchersitzungen werden ungültig.
+                        $this->config->deleteAppValue(
+                            self::APP_ID,
+                            $this->shareIndexKey($oldToken)
+                        );
+                    }
                 }
                 return new JSONResponse(['success' => true, 'tour' => $this->publicRecord($tour)]);
             }

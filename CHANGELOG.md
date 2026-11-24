@@ -1,4 +1,5 @@
 ## 0.4.62.140 (Release-Kandidat, noch nicht veröffentlicht – 24.11.2026)
+- 360°-Touren: Zusätzliche Freigabelinks können ihre Tokens jetzt einzeln erneuern. Alte URLs und Besuchersitzungen verlieren sofort den Zugriff; Passwörter, Ablaufdaten, Hauptfreigaben und andere Links bleiben erhalten. Sicherheitstest 7 bestanden.
 - Stand der Docker-Testversion 0.4.62.139 in eine lokale GitHub-Release-Arbeitskopie übernommen.
 - Startseiten: zusätzliche, voneinander unabhängige Freigabelinks mit Bezeichnung, Ablaufdatum, Passwort und Token-Verwaltung.
 - Startseiten: Layout, Beschriftung und Anordnung der zusätzlichen Freigabelinks an die 360°-Touren angeglichen.
