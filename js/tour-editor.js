@@ -342,7 +342,7 @@
   let ppiTourAutoManual = false;
   let ppiTourAutoFailed = false;
   const ppiTourAutoStatus = [];
-  for (const id of ['ppi-tour-save','ppi-design-save']) {
+  for (const id of ['ppi-tour-save']) {
     const button=byId(id);
     if (!button) continue;
     const status=document.createElement('span');
@@ -353,6 +353,8 @@
     ppiTourAutoStatus.push(status);
   }
   function ppiTourAutoMessage(text,failed=false) {
+    // Reattach the existing indicator if an editor render relocated its header.
+    if (typeof ppiSyncTourAutoStatusToVisibleTab === 'function') ppiSyncTourAutoStatusToVisibleTab();
     for (const status of ppiTourAutoStatus) {
       status.textContent=text;
       status.style.color=failed?'#b3261e':'';
@@ -387,7 +389,7 @@
     ppiTourAutoId=active?String(active.id):null;
     ppiTourAutoLast=active?ppiTourAutoSignature(ppiTourAutoValues()):'';
     ppiTourAutoFailed=false;
-    ppiTourAutoMessage('');
+    ppiTourAutoMessage(active ? 'Gespeichert ✓' : '');
   }
   function ppiTourAutoSchedule() {
     if (!active || !ppiTourAutoId || String(active.id)!==ppiTourAutoId || ppiTourAutoManual) return;
@@ -413,7 +415,9 @@
         ppiTourAutoLast=signature;
         ppiTourAutoFailed=false;
         // Do not replace active: user might have clicked again during request.
-        active.display={...active.display,...values.display};
+        if (ppiTourAutoSignature(ppiTourAutoValues()) === signature) {
+          active.display={...active.display,...values.display};
+        }
         ppiTourAutoMessage('Gespeichert ✓');
       }
     } catch(error) {
@@ -438,7 +442,8 @@
     if (['ppi-design-yaw','ppi-design-size','ppi-design-pin-color'].includes(event.target?.id)) ppiTourAutoSchedule();
   });
   // Preset color buttons change the value programmatically; they need a trigger.
-  root.querySelectorAll('[data-pin-color]').forEach(button=>button.addEventListener('click',ppiTourAutoSchedule));
+  /* PPI SVG COLOR AUTOSAVE ORDER V3 2026-11-24 */
+  // Palette autosave is deliberately triggered AFTER the chosen color has been assigned.
 
   function node(tag, label, className) {
     const el = document.createElement(tag);
@@ -523,7 +528,23 @@
       body.append(actions);tile.append(body);container.append(tile);
     }
   }
+  /* PPI TOUR PICKER INNER SCROLL FIX V2 2026-11-24 */
   function show(view) {
+    const picker = byId('ppi-tour-picker');
+    // V1 set a min-height on the picker itself. CSS min-height beats max-height
+    // and disables the intended inner scroll. Keep the picker unconstrained
+    // except for its existing CSS max-height + overflow-y:auto.
+    picker.style.removeProperty('min-height');
+    if (view === 'picker') {
+      // Reserve the previous editor's page height on the OUTER app container,
+      // so hiding the graph does not clamp Nextcloud's scroll position.
+      // The picker itself stays viewport-height-limited and internally scrolls.
+      const appHeight = root.getBoundingClientRect().height;
+      if (appHeight > 0) root.style.minHeight = Math.ceil(appHeight) + 'px';
+    } else {
+      // Restore natural height when leaving the picker.
+      root.style.removeProperty('min-height');
+    }
     for (const [name, id] of [['overview', 'ppi-tour-overview'], ['editor', 'ppi-tour-editor'], ['picker', 'ppi-tour-picker']]) {
       const element = byId(id);
       // Some Nextcloud themes override the browser's [hidden] rendering.
@@ -535,16 +556,72 @@
     // The top-level navigation belongs to the overview, not to tour editing
     // or panorama selection. Match the existing Startseiten editor behavior.
     byId('ppi-overview-switch').hidden = view !== 'overview';
-    if (view === 'picker') {
-      const dialog = byId('ppi-tour-picker');
-      // The Add button may be below the fold. Reveal the picker immediately.
-      requestAnimationFrame(() => {
-        if (!dialog.hidden) {
-          dialog.scrollIntoView({block: 'start', behavior: 'instant'});
-          // Do not focus the picker wrapper: this can steal focus from the search input.
-        }
-      });
-    }
+    // Do not call scrollIntoView for the picker: retain the user's viewport.
+  }
+  /* PPI TOUR AUTOSAVE STATUS POSITION V1 2026-11-24 */
+  /* PPI TOUR AUTOSAVE TAB FIX V3 2026-11-24 */
+  // A single status node. Place it directly in the appropriate tab header.
+  // Test that the target is present and connected before moving the node.
+  function ppiPlaceTourAutoStatus(step) {
+    const status = ppiTourAutoStatus[0];
+    if (!status || !status.isConnected) return;
+    const panel = byId('ppi-step-' + step);
+    if (!panel || panel.hidden) return;
+
+    if (step === 'edit') {
+      const add = byId('ppi-tour-add');
+      const row = add?.parentElement;
+      if (!row || !panel.contains(row) || !row.querySelector('h2')) return;
+      if (status.parentElement !== row || status.nextElementSibling !== add) {
+        row.insertBefore(status, add);
+      }
+    } else if (step === 'design' || step === 'share') {
+      const heading = panel.querySelector(':scope > h2, :scope > .ppi-tour-autosave-heading-row > h2');
+      if (!heading) return;
+      let row = heading.parentElement;
+      if (!row.classList.contains('ppi-tour-autosave-heading-row')) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'ppi-tour-autosave-heading-row';
+        wrapper.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
+        heading.before(wrapper);
+        wrapper.append(heading);
+        row = wrapper;
+      }
+      if (status.parentElement !== row || status !== row.lastElementChild) {
+        row.append(status);
+      }
+    } else return;
+    status.style.marginInline = '0';
+    status.style.marginLeft = 'auto';
+    status.style.fontSize = '12px';
+    status.style.whiteSpace = 'normal';
+    status.style.textAlign = 'right';
+    status.style.maxWidth = '100%';
+  }
+  /* PPI TOUR AUTOSAVE TAB VISIBILITY FIX V2 2026-11-24 */
+  // The autosave node exists once. Move it to the panel that is ACTUALLY visible.
+  // This also covers tab changes outside setSetupStep and delayed DOM updates.
+  function ppiSyncTourAutoStatusToVisibleTab() {
+    if (!ppiTourAutoStatus[0]) return;
+    const design = byId('ppi-step-design');
+    const share = byId('ppi-step-share');
+    const edit = byId('ppi-step-edit');
+    if (!design || !share || !edit) return;
+    const step = !design.hidden ? 'design' : (!share.hidden ? 'share' : (!edit.hidden ? 'edit' : null));
+    if (!step) return;
+    ppiPlaceTourAutoStatus(step);
+  }
+  // React to any source of panel visibility changes without observing DOM children:
+  // moving the status itself cannot trigger a feedback loop.
+  const ppiTourStatusPanels = ['ppi-step-edit','ppi-step-design','ppi-step-share']
+    .map(byId).filter(Boolean);
+  const ppiTourStatusVisibilityObserver = new MutationObserver(() => {
+    ppiSyncTourAutoStatusToVisibleTab();
+  });
+  for (const panel of ppiTourStatusPanels) {
+    ppiTourStatusVisibilityObserver.observe(panel, {
+      attributes: true, attributeFilter: ['hidden']
+    });
   }
   function setSetupStep(step) {
     const share=step==='share',design=step==='design';
@@ -564,6 +641,9 @@
       else tab.removeAttribute('aria-current');
     }
     if(share) updateShareUi();
+    ppiPlaceTourAutoStatus(step);
+    ppiSyncTourAutoStatusToVisibleTab();
+    requestAnimationFrame(ppiSyncTourAutoStatusToVisibleTab);
   }
   const sizeSteps=['xsmall','small','medium','large','xlarge'];
   const sizeNames=['Extra klein','Klein','Mittel','Groß','Extra groß'];
@@ -603,6 +683,134 @@
   }
   const designDefault = {watermarkEnabled:false,watermarkId:'none',startImageId:0,startYaw:0,showTitle:true,showNavigation:true,showFullscreen:true,hotspotSize:'medium',hotspotStyle:'classic',introText:'',socialPreviewMode:'cover',svgPinColor:'#1687bc'};
   function currentDesign(){return {...designDefault,...(active?.display||{})};}
+  /* PPI START PANORAMA CARD PICKER V1 2026-11-24 */
+  // One persisted property for both editing tabs; no separate data model.
+  let ppiStartPickMode = false;
+  /* PPI TOUR SCROLL POSITION FIX V1 2026-11-24 */
+  // Keep the scroll position of Nextcloud's content scroller AND the window.
+  // Rebuilding a panorama graph removes the focused card and can otherwise
+  // make Firefox scroll automatically. This does not touch the saved tour.
+  function ppiKeepTourScroll(run) {
+    const scrollers = [];
+    const seen = new Set();
+    const remember = element => {
+      if (!element || seen.has(element)) return;
+      seen.add(element);
+      scrollers.push({element, top:element.scrollTop, left:element.scrollLeft});
+    };
+    remember(byId('ppi-tour-graph'));
+    for (let element = root; element; element = element.parentElement) {
+      remember(element);
+    }
+    remember(document.scrollingElement);
+    const winLeft = window.scrollX;
+    const winTop = window.scrollY;
+    const restore = () => {
+      for (const item of scrollers) {
+        if (!item.element.isConnected) continue;
+        item.element.scrollTop = item.top;
+        item.element.scrollLeft = item.left;
+      }
+      window.scrollTo({left:winLeft, top:winTop, behavior:'instant'});
+    };
+    try {
+      return run();
+    } finally {
+      restore();
+      requestAnimationFrame(() => {
+        restore();
+        requestAnimationFrame(restore);
+      });
+    }
+  }
+  function ppiStartSelectedId() {
+    if (!active || !Array.isArray(active.images)) return 0;
+    const stored = Number(currentDesign().startImageId) || 0;
+    if (active.images.some(image => Number(image.id) === stored)) return stored;
+    return Number(active.images[0]?.id) || 0;
+  }
+  function ppiStartReconcileRemoved() {
+    if (!active) return;
+    const stored = Number(currentDesign().startImageId) || 0;
+    if (stored && !active.images.some(img => Number(img.id) === stored)) {
+      active.display = {...currentDesign(), startImageId: Number(active.images[0]?.id) || 0};
+    }
+  }
+  const ppiStartPickButton = document.createElement('button');
+  ppiStartPickButton.type = 'button';
+  ppiStartPickButton.id = 'ppi-tour-start-pick-mode';
+  ppiStartPickButton.textContent = '✓ Startpanorama auswählen';
+  ppiStartPickButton.title = 'Startpanorama direkt in den Panoramavorschauen auswählen';
+  const ppiStartAddButton = byId('ppi-tour-add');
+  ppiStartAddButton.style.marginLeft = 'auto';
+  ppiStartAddButton.insertAdjacentElement('afterend', ppiStartPickButton);
+  function ppiStartUpdatePickButton() {
+    ppiStartPickButton.textContent = ppiStartPickMode ? 'Auswahl abbrechen' : '✓ Startpanorama auswählen';
+    ppiStartPickButton.setAttribute('aria-pressed', String(ppiStartPickMode));
+    ppiStartPickButton.classList.toggle('ppi-tour-start-pick-active', ppiStartPickMode);
+    root.classList.toggle('ppi-tour-start-picking', ppiStartPickMode);
+  }
+  function ppiStartChoiceButton(img) {
+    const button = node('button', undefined, 'ppi-tour-card-delete ppi-tour-start-check');
+    button.type = 'button';
+    /* PPI START PANORAMA DESIGN V2 2026-11-24 */
+    const ns = 'http://www.w3.org/2000/svg';
+    const mark = document.createElementNS(ns, 'svg');
+    mark.classList.add('ppi-start-check-glyph');
+    mark.setAttribute('viewBox', '0 0 24 24');
+    mark.setAttribute('aria-hidden', 'true');
+    mark.setAttribute('focusable', 'false');
+    const tick = document.createElementNS(ns, 'path');
+    tick.setAttribute('d', 'M5 12l4.5 4.5L19 7');
+    tick.setAttribute('fill', 'none');
+    tick.setAttribute('stroke', 'currentColor');
+    tick.setAttribute('stroke-width', '2.8');
+    tick.setAttribute('stroke-linecap', 'round');
+    tick.setAttribute('stroke-linejoin', 'round');
+    mark.append(tick);
+    button.append(mark);
+    button.title = `Als Startpanorama festlegen: ${img.name}`;
+    button.setAttribute('aria-label', button.title);
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!active || !active.images.some(item => Number(item.id) === Number(img.id))) return;
+      active.display = {...currentDesign(), startImageId: Number(img.id)};
+      const select = byId('ppi-design-start');
+      if ([...select.options].some(option => Number(option.value) === Number(img.id))) {
+        select.value = String(img.id);
+      }
+      if (!byId('ppi-step-design').hidden) refreshDesignPreviews();
+      ppiKeepTourScroll(() => {
+        ppiStartPickMode = false;
+        ppiStartUpdatePickButton();
+        renderGraph();
+      });
+      ppiTourAutoSchedule();
+    });
+    return button;
+  }
+  ppiStartPickButton.addEventListener('click', () => {
+    if (!active?.images?.length) {
+      notify('Bitte zuerst mindestens ein Panorama zur Tour hinzufügen.', true);
+      return;
+    }
+    ppiKeepTourScroll(() => {
+      ppiStartPickMode = !ppiStartPickMode;
+      ppiStartUpdatePickButton();
+      if (!byId('ppi-step-edit').hidden) renderGraph();
+    });
+  });
+  // Changing the existing selector in tab 2 updates the very same value.
+  // The existing delegated change handler then persists it via tour autosave.
+  byId('ppi-design-start').addEventListener('change', () => {
+    if (!active) return;
+    const id = Number(byId('ppi-design-start').value);
+    if (!active.images.some(image => Number(image.id) === id)) return;
+    active.display = {...currentDesign(), startImageId: id};
+    if (!byId('ppi-step-edit').hidden) renderGraph();
+  });
+  ppiStartUpdatePickButton();
   function updateSocialPreviewStatus(){
     const indicator=byId('ppi-design-social-status');
     if(!indicator)return;
@@ -665,8 +873,43 @@
   });
   byId('ppi-design-watermark-id').addEventListener('change',refreshWatermarkThumbnail);
   byId('ppi-design-social').addEventListener('change',updateSocialPreviewStatus);
-  byId('ppi-design-pin-color').addEventListener('input',refreshDesignPreviews);
-  root.querySelectorAll('[data-pin-color]').forEach(button=>button.addEventListener('click',()=>{byId('ppi-design-pin-color').value=button.dataset.pinColor;refreshDesignPreviews();}));
+  // Native color picker: Firefox may dispatch input, change or both.
+  // Queue autosave only AFTER the input value is already updated.
+  for (const eventType of ['input', 'change']) {
+    byId('ppi-design-pin-color').addEventListener(eventType, () => {
+      refreshDesignPreviews();
+      ppiTourAutoSchedule();
+    });
+  }
+  /* PPI SVG COLOR SINGLE CLICK 2026-11-24 */
+  // Firefox may focus the fully transparent native color input on the first
+  // click instead of opening its picker. Let the visible preview receive the
+  // click and open the native picker directly while user activation is active.
+  // The input remains in the DOM for keyboard access, color changes and autosave.
+  {
+    const colorInput = byId('ppi-design-pin-color');
+    const colorPreview = colorInput.closest('.ppi-design-color-preview');
+    if (!colorPreview) throw new Error('SVG-Farbvorschau nicht gefunden.');
+    colorInput.style.pointerEvents = 'none';
+    colorPreview.addEventListener('click', () => {
+      try {
+        if (typeof colorInput.showPicker === 'function') {
+          colorInput.showPicker();
+        } else {
+          colorInput.click();
+        }
+      } catch (error) {
+        // Older browsers may reject showPicker: use the native click fallback.
+        colorInput.click();
+      }
+    });
+  }
+
+  root.querySelectorAll('[data-pin-color]').forEach(button=>button.addEventListener('click',()=>{
+    byId('ppi-design-pin-color').value=button.dataset.pinColor;
+    refreshDesignPreviews();
+    ppiTourAutoSchedule();
+  }));
   ['ppi-design-start','ppi-design-style','ppi-design-size'].forEach(id=>byId(id).addEventListener(id==='ppi-design-size'?'input':'change',refreshDesignPreviews));
   byId('ppi-design-yaw').addEventListener('input',()=>{byId('ppi-design-yaw-value').textContent=byId('ppi-design-yaw').value+'°';});
   // Lightweight description formatting: store only text, not user HTML.
@@ -778,7 +1021,7 @@
     finally {ppiTourAutoManual=false;ppiTourAutoSchedule();}
   });
   root.querySelectorAll('.ppi-setup-tab:not(:disabled)').forEach(tab=>tab.addEventListener('click',()=>setSetupStep(tab.dataset.step)));
-  async function openTour(tour,step='edit') { active=clone(tour); ppiTourAutoId=null; await loadTourWatermarks(); show('editor'); render(); setSetupStep(step); ppiTourAutoReset(); }
+  async function openTour(tour,step='edit') { ppiStartPickMode=false;ppiStartUpdatePickButton();active=clone(tour); ppiTourAutoId=null; await loadTourWatermarks(); show('editor'); render(); setSetupStep(step); ppiTourAutoReset(); }
   function renderExtraShareLinks() {
     const list=byId('ppi-extra-list');
     list.replaceChildren();
@@ -953,6 +1196,7 @@
     const names=new Map(active.images.map(i=>[Number(i.id),i.name]));
     active.images.forEach(img=>{
       const card=node('div',undefined,'ppi-mobile-pano');
+      card.classList.toggle('ppi-tour-start-selected', Number(img.id) === ppiStartSelectedId());
       const photo=node('button',undefined,'ppi-mobile-pano-photo');photo.type='button';photo.title=`Panorama öffnen: ${img.name}`;
       photo.append(imageThumb(img.id,420,240));photo.addEventListener('click',()=>previewImage(img));
       const title=node('div',img.name,'ppi-mobile-pano-title');
@@ -973,13 +1217,15 @@
       }
       const actions=node('div',undefined,'ppi-mobile-pano-actions');
       const open=node('button','360° öffnen');open.type='button';open.addEventListener('click',()=>previewImage(img));
-      const remove=node('button','Entfernen');remove.type='button';remove.addEventListener('click',()=>{
+      const remove=node('button','Entfernen');remove.type='button';remove.classList.add('ppi-mobile-pano-remove');remove.addEventListener('click',()=>{
         if(!confirm(`„${img.name}“ aus dieser Tour entfernen? Zugehörige Verbindungen werden ebenfalls gelöscht. Die Originaldatei bleibt erhalten.`))return;
         active.images=active.images.filter(x=>Number(x.id)!==Number(img.id));
         active.links=active.links.filter(x=>Number(x.from)!==Number(img.id)&&Number(x.to)!==Number(img.id));
         render();notify('Panorama entfernt (Entwurf). Bitte Änderungen speichern.');
       });
-      actions.append(open,remove);card.append(photo,title,linksBox,actions);list.append(card);
+      actions.append(open,remove);card.append(photo,title,linksBox,actions);
+      if (ppiStartPickMode) card.append(ppiStartChoiceButton(img));
+      list.append(card);
     });
     container.append(list);
   }
@@ -1321,6 +1567,7 @@
     active.images.forEach(img=>{
       const p=positions.get(String(img.id));
       const card=node('div',undefined,'ppi-tour-graph-card');
+      card.classList.toggle('ppi-tour-start-selected', Number(img.id) === ppiStartSelectedId());
       const imageId=String(img.id);
       card.addEventListener('mouseenter',()=>focusConnections(imageId));
       card.addEventListener('mouseleave',()=>focusConnections(null));
@@ -1345,12 +1592,15 @@
         active.links=active.links.filter(x=>Number(x.from)!==Number(img.id)&&Number(x.to)!==Number(img.id));
         render();notify('Panorama aus Tour entfernt (Entwurf). Bitte Änderungen speichern.');
       });
-      card.append(picture,name,remove);board.append(card);
+      card.append(picture,name,remove);
+      if (ppiStartPickMode) card.append(ppiStartChoiceButton(img));
+      board.append(card);
     });
     container.append(board);
   }
   function render() {
     if(!active)return;
+    ppiStartReconcileRemoved();
     // Keep the open panorama's available destinations synchronized after add/delete.
     if (!previewDialog.hidden && previewImageId && active.images.some(item => Number(item.id) === Number(previewImageId))) {
       updateAvailableTargets();
@@ -1660,16 +1910,49 @@
     return payload;
   }
   function ppiAutoSignature(values) { return JSON.stringify(values); }
+  /* PPI STARTPAGE AUTOSAVE STATUS POSITION 2026-11-24 */
+  // Move ONE status node between headings; never clone or create duplicates.
+  function ppiAutoPositionStatus(tab) {
+    if (!ppiAutoStatus) return;
+    const help = byId('ppi-start-page-editor').querySelector(
+      '.ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-share-help-disclosure');
+    const preview = byId('ppi-startpage-dirty');
+    if (tab === 'share') {
+      // The status is directly before the help button on the same heading row.
+      help.style.marginLeft = '0';
+      ppiAutoStatus.style.marginLeft = 'auto';
+      help.before(ppiAutoStatus);
+    } else {
+      help.style.marginLeft = '';
+      ppiAutoStatus.style.marginLeft = 'auto';
+      preview.after(ppiAutoStatus);
+    }
+  }
+  function ppiAutoUpdateDirtyNotice() {
+    const dirty = byId('ppi-startpage-dirty');
+    const changed = JSON.stringify(startPageFormValues()) !== savedStartPageSnapshot;
+    // Keep the warning for fields that require manual saving, but remove
+    // 'Gespeicherter Stand' from the preview heading as requested.
+    dirty.hidden = !changed;
+    dirty.textContent = changed ? '● Ungespeicherte Änderungen' : '';
+  }
   function ppiAutoSetStatus(value, error=false) {
     if (!ppiAutoStatus) {
       ppiAutoStatus = document.createElement('span');
       ppiAutoStatus.id = 'ppi-startpage-safe-autosave-status';
-      ppiAutoStatus.style.cssText = 'margin-inline:10px;font-size:12px;white-space:normal;';
+      ppiAutoStatus.style.cssText = 'font-size:12px;white-space:normal;max-width:100%;';
       ppiAutoStatus.setAttribute('role','status');
-      byId('ppi-start-page-save').insertAdjacentElement('afterend',ppiAutoStatus);
+      ppiAutoPositionStatus('start');
     }
     ppiAutoStatus.textContent = value;
     ppiAutoStatus.style.color = error ? '#a83232' : '';
+  }
+  /* PPI STARTPAGE SHARE UNIFIED AUTOSAVE STATUS 2026-11-24 */
+  function ppiShareAutosaveStatus(message) {
+    // Display consistent wording for the same single top-of-page status node.
+    const text = message === 'Tour-Auswahl gespeichert ✓' ? 'Gespeichert ✓'
+      : message === 'Speichere Tour-Auswahl …' ? 'Speichern …' : message;
+    ppiAutoSetStatus(text, /^(Nicht gespeichert|Bitte )/.test(text));
   }
   function ppiAutoReset(page) {
     if (ppiAutoTimer !== null) clearTimeout(ppiAutoTimer);
@@ -1677,7 +1960,7 @@
     ppiAutoPageId = page ? String(page.id) : null;
     ppiAutoLast = page ? ppiAutoSignature(ppiAutoPayload()) : '';
     ppiAutoError = false;
-    ppiAutoSetStatus('');
+    ppiAutoSetStatus(page ? 'Gespeichert ✓' : '');
   }
   function ppiAutoSchedule() {
     if (!activeStartPage || String(activeStartPage.id) !== ppiAutoPageId || ppiAutoManualBusy) return;
@@ -1713,6 +1996,7 @@
         const saved = JSON.parse(savedStartPageSnapshot || '{}');
         savedStartPageSnapshot = JSON.stringify({...saved,...values});
         ppiAutoSetStatus('Gespeichert ✓');
+        ppiAutoUpdateDirtyNotice();
         // The visible form may have changed during this request.
         if (ppiAutoSignature(ppiAutoPayload()) !== signature) ppiAutoSchedule();
       }
@@ -2077,8 +2361,7 @@
       grid.append(tile);
     }
     if (!grid.children.length) grid.append(node('p','Wähle unter „Touren wählen“ mindestens eine Tour aus.','ppi-startpage-preview-empty'));
-    byId('ppi-startpage-dirty').textContent =
-      JSON.stringify(values) === savedStartPageSnapshot ? 'Gespeicherter Stand' : '● Ungespeicherte Änderungen';
+    ppiAutoUpdateDirtyNotice();
     queueDescriptionResize();
     ppiAutoSchedule();
   }
@@ -2123,6 +2406,7 @@
     // The share tab is a dedicated full-width form, not a visual design step.
     workspace.classList.toggle('ppi-startpage-share-only', tab === 'share');
     byId('ppi-start-page-editor').querySelector('.ppi-startpage-preview-column').hidden = tab === 'share';
+    ppiAutoPositionStatus(tab);
     byId('ppi-start-page-editor').querySelector('.ppi-preset-preview-save').hidden = tab !== 'layout';
     if (tab === 'start') queueDescriptionResize();
   }
@@ -2306,11 +2590,13 @@
   /* PPI STARTPAGE SELECTION AUTOSAVE 2026-11-24 */
   // Auto-save only one setting, with the *stored* expiry. Never submit password
   // input or an unsaved expiry change while toggling tour checkboxes.
-  const startPageSelectionMessage = node('small','','ppi-startpage-selection-save-status');
-  startPageSelectionMessage.setAttribute('role','status');
-  startPageSelectionMessage.style.display = 'block';
-  startPageSelectionMessage.style.marginTop = '8px';
-  byId('ppi-start-page-tour-password-selection').append(startPageSelectionMessage);
+  // The Tour-Passwortregel and selected-tour checkboxes share the same top status.
+  // Preserve the existing code paths by forwarding their status text; no extra node.
+  const startPageSelectionMessage = {
+    set textContent(message) { ppiShareAutosaveStatus(message); }
+  };
+  const oldSelectionMessage = byId('ppi-startpage-selection-save-status');
+  if (oldSelectionMessage) oldSelectionMessage.remove();
   let selectionAutoSaveQueued = false;
   let selectionAutoSavePromise = null;
   const selectedTourIdsNow = () => [...byId('ppi-start-page-tour-password-list')
@@ -2388,7 +2674,8 @@
     // PPI PROTECTED TOUR TILE VISIBILITY 2026-11-24
     byId('ppi-start-page-show-locked-tours').checked = page?.showPasswordProtectedTours !== false;
     byId('ppi-start-page-show-locked-status').textContent = '';
-    startPageSelectionMessage.textContent = '';
+    byId('ppi-start-page-show-locked-status').hidden = true;
+    // Shared status remains visible until the next save or page change.
     const shared = !!page?.publicToken;
     byId('ppi-start-page-share-expiry').value = page?.shareExpiresOn || '';
     byId('ppi-start-page-tour-password-mode').value = ['keep','all','selected'].includes(page?.tourPasswordMode) ? page.tourPasswordMode : 'keep';
@@ -2409,7 +2696,8 @@
   let protectedVisibilitySaving = false;
   byId('ppi-start-page-show-locked-tours').addEventListener('change', async () => {
     const input = byId('ppi-start-page-show-locked-tours');
-    const status = byId('ppi-start-page-show-locked-status');
+    // Redirect visibility autosave to the same top status (no local message).
+    const status = { set textContent(message) { ppiShareAutosaveStatus(message); } };
     if (protectedVisibilitySaving) return;
     const page = activeStartPage;
     if (!page?.publicToken) {
@@ -2515,51 +2803,120 @@
   const extraLinkApi = (pageId,linkId) => startPagesApi + '/' + encodeURIComponent(pageId) +
     '/share/links' + (linkId ? '/' + encodeURIComponent(linkId) : '');
   const extraStatus = byId('ppi-startpage-extra-status');
+  /* PPI STARTPAGE EXTRA LINKS TOUR DESIGN V1 2026-11-24 */
   function refreshStartPageExtraLinks(page) {
     const list = byId('ppi-startpage-extra-list');
     list.replaceChildren();
     byId('ppi-start-page-main-rotate').hidden = !page?.publicToken;
     for (const link of page?.shareLinks || []) {
-      const wrap = node('div', undefined, 'ppi-startpage-extra-entry');
-      wrap.style.cssText = 'border-top:1px solid var(--color-border,#ddd);padding:12px 0;display:grid;gap:7px';
-      const name = node('input'); name.type='text'; name.value=link.name||''; name.maxLength=60;
-      name.setAttribute('aria-label','Bezeichnung');
-      const expiry = node('input'); expiry.type='date'; expiry.value=link.expiresOn||'';
-      expiry.setAttribute('aria-label','Ablaufdatum');
-      const pw = node('input'); pw.type='password'; pw.placeholder='Neues Passwort (optional)';
-      pw.maxLength=128; pw.autocomplete='new-password'; pw.setAttribute('aria-label','Neues Passwort');
-      const url=node('input');url.type='text';url.readOnly=true;url.value=extraLinkUrl(link.token);
-      url.setAttribute('aria-label','Freigabelink');
-      const label=node('strong',link.disabled?'Deaktiviert':link.expiresOn && link.expiresOn < new Date().toISOString().slice(0,10)?'Abgelaufen':link.passwordProtected?'Passwortgeschützt':'Ohne Passwort');
-      const fields=node('div');fields.style.cssText='display:flex;flex-wrap:wrap;gap:8px';fields.append(name,expiry,pw);
-      const actions=node('div'); actions.style.cssText='display:flex;flex-wrap:wrap;gap:6px';
-      const status=node('small');status.setAttribute('role','status');
-      const make=(caption,action)=>{const btn=node('button',caption);btn.type='button';btn.addEventListener('click',async()=>{
-        if (!activeStartPage) return;
-        if ((action==='revoke'||action==='rotate'||action==='removePassword') &&
-            !confirm(action==='revoke'?'Link endgültig widerrufen?':action==='rotate'?'Token erneuern? Der bisherige Link wird ungültig.':'Passwort entfernen?')) return;
-        const payload={action};
-        if(action==='settings'){payload.name=name.value;payload.expiresOn=expiry.value;}
-        if(action==='password'){if(!pw.value){status.textContent='Bitte ein neues Passwort eingeben.';return;}payload.password=pw.value;}
-        btn.disabled=true;status.textContent='Speichere …';
-        try{
-          const result=await request(extraLinkApi(activeStartPage.id,link.id),'POST',payload);
-          activeStartPage={...activeStartPage,...result.page};
-          refreshStartPageExtraLinks(activeStartPage);
-          await refreshStartPages();notify('Freigabelink aktualisiert.');
-        }catch(e){status.textContent='Nicht gespeichert: '+e.message;notify(e.message,true);btn.disabled=false;}
-      });actions.append(btn);};
-      make('Einstellungen speichern','settings');make('Passwort setzen / ändern','password');
-      if(link.passwordProtected) make('Passwort entfernen','removePassword');
-      make(link.disabled?'Aktivieren':'Deaktivieren',link.disabled?'enable':'disable');
-      make('Token erneuern','rotate');make('Link widerrufen','revoke');
-      const copy=node('button','Link kopieren');copy.type='button';copy.addEventListener('click',async()=>{
-        try{await navigator.clipboard.writeText(url.value);notify('Link kopiert.');}
-        catch{url.select();notify('Link markieren und kopieren.');}
-      });actions.prepend(copy);
-      wrap.append(label,fields,url,actions,status);list.append(wrap);
+      const card = node('article', undefined, 'ppi-extra-entry ppi-startpage-extra-entry');
+      const expired = !!(link.expiresOn && link.expiresOn < new Date().toISOString().slice(0, 10));
+      const state = link.disabled ? 'Deaktiviert' : expired ? 'Abgelaufen' :
+        link.passwordProtected ? 'Mit Passwort' : 'Ohne Passwort';
+      const heading = node('strong', (link.name || 'Freigabelink') + ' · ' + state);
+      card.append(heading);
+
+      const url = node('input');
+      url.type = 'text';
+      url.readOnly = true;
+      url.value = extraLinkUrl(link.token);
+      url.setAttribute('aria-label', 'Freigabelink ' + (link.name || ''));
+      const urlRow = node('div', undefined, 'ppi-extra-link');
+      const copy = node('button', 'Kopieren');
+      copy.type = 'button';
+      copy.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(url.value);
+          notify('Link kopiert.');
+        } catch (_) {
+          url.select();
+          notify('Link markieren und kopieren.');
+        }
+      });
+      const open = node('button', 'Öffnen');
+      open.type = 'button';
+      open.addEventListener('click', () => window.open(url.value, '_blank', 'noopener,noreferrer'));
+      urlRow.append(url, copy, open);
+      card.append(urlRow);
+
+      const fields = node('div', undefined, 'ppi-extra-fields');
+      const nameLabel = node('label', 'Bezeichnung');
+      const name = node('input');
+      name.type = 'text'; name.maxLength = 60; name.value = link.name || '';
+      nameLabel.append(name);
+      const dateLabel = node('label', 'Ablaufdatum');
+      const expiry = node('input');
+      expiry.type = 'date'; expiry.value = link.expiresOn || '';
+      dateLabel.append(expiry);
+      const passwordFields = node('div', undefined, 'ppi-extra-fields');
+      const passwordLabel = node('label', 'Eigenes Passwort');
+      const password = node('input');
+      password.type = 'password';
+      password.maxLength = 128;
+      password.autocomplete = 'new-password';
+      password.placeholder = 'Neues Passwort';
+      passwordLabel.append(password);
+      passwordFields.append(passwordLabel);
+      const actions = node('div', undefined, 'ppi-startpage-extra-actions');
+      const status = node('small');
+      status.setAttribute('role', 'status');
+      status.setAttribute('aria-live', 'polite');
+
+      const addAction = (caption, action, parent) => {
+        const button = node('button', caption);
+        button.type = 'button';
+        button.addEventListener('click', async () => {
+          const pageId = page?.id;
+          if (!activeStartPage || String(activeStartPage.id) !== String(pageId)) return;
+          if ((action === 'revoke' || action === 'rotate' || action === 'removePassword') &&
+              !confirm(action === 'revoke' ? 'Link endgültig widerrufen?' :
+                action === 'rotate' ? 'Token erneuern? Der bisherige Link wird ungültig.' :
+                'Passwort entfernen?')) return;
+          const payload = {action};
+          if (action === 'settings') {
+            payload.name = name.value;
+            payload.expiresOn = expiry.value;
+          }
+          if (action === 'password') {
+            if (!password.value) {
+              status.textContent = 'Bitte ein neues Passwort eingeben.';
+              password.focus({preventScroll:true});
+              return;
+            }
+            payload.password = password.value;
+          }
+          button.disabled = true;
+          status.textContent = 'Speichere …';
+          try {
+            const result = await request(extraLinkApi(pageId, link.id), 'POST', payload);
+            if (String(activeStartPage?.id) !== String(pageId)) return;
+            activeStartPage = {...activeStartPage, ...result.page};
+            refreshStartPageExtraLinks(activeStartPage);
+            await refreshStartPages();
+            notify('Freigabelink aktualisiert.');
+          } catch (error) {
+            status.textContent = 'Nicht gespeichert: ' + error.message;
+            notify(error.message, true);
+          } finally {
+            button.disabled = false;
+          }
+        });
+        parent.append(button);
+      };
+      addAction('Änderungen speichern', 'settings', fields);
+      fields.prepend(nameLabel, dateLabel);
+      card.append(fields);
+      addAction(link.passwordProtected ? 'Passwort ändern' : 'Passwort setzen', 'password', passwordFields);
+      if (link.passwordProtected) addAction('Passwort entfernen', 'removePassword', passwordFields);
+      card.append(passwordFields);
+      addAction(link.disabled ? 'Link aktivieren' : 'Link deaktivieren', link.disabled ? 'enable' : 'disable', actions);
+      addAction('Diesen Link widerrufen', 'revoke', actions);
+      // Die Startseiten können ihre einzelnen Link-Tokens zusätzlich erneuern.
+      addAction('Token erneuern', 'rotate', actions);
+      card.append(actions, status);
+      list.append(card);
     }
-    if (!list.children.length) list.append(node('p','Noch keine zusätzlichen Freigabelinks.'));
+    if (!list.children.length) list.append(node('p', 'Noch keine zusätzlichen Freigabelinks.'));
   }
   byId('ppi-startpage-extra-create').addEventListener('click',async()=>{
     const page=activeStartPage;if(!page)return;
@@ -2913,7 +3270,7 @@
     // Always start a new picker session with panoramas not yet in this tour.
     // Keep any user-selected tour status while navigating within the open picker.
     byId('ppi-picker-status').value='unused';
-    browse(0, true);
+    ppiKeepTourScroll(() => { void browse(0, true); });
   });
   byId('ppi-picker-close').addEventListener('click',()=>{++browseSerial;show('editor');});
   byId('ppi-picker-up').addEventListener('click',()=>browse(browsing?.parentId || 0));

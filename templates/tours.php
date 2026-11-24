@@ -259,18 +259,21 @@
             <button type="button" id="ppi-start-page-main-rotate">Token erneuern</button>
           </div>
           <!-- PPI STARTPAGE MULTISHARE V1 2026-11-24 -->
-          <fieldset class="ppi-startpage-extra-links" style="margin-top:14px;padding:12px;border:1px solid var(--color-border, #ddd);border-radius:10px">
-            <legend><strong>Weitere Freigabelinks</strong></legend>
-            <p style="margin:4px 0 10px">Unabhängige Links mit eigener Bezeichnung, eigenem Ablaufdatum und eigenem Passwort. Tokens werden sicher automatisch generiert.</p>
-            <div class="ppi-startpage-share-inline" style="display:flex;flex-wrap:wrap;gap:8px;align-items:end">
-              <label>Bezeichnung<input type="text" id="ppi-startpage-extra-name" maxlength="60" placeholder="z. B. Familie"></label>
+          <section class="ppi-tour-share-box ppi-startpage-extra-links" aria-label="Zusätzliche Freigabelinks">
+            <div class="ppi-share-heading">
+              <strong>Weitere Freigabelinks</strong>
+              <span>Unabhängige Links pro Startseite</span>
+            </div>
+            <p>Erstelle zusätzliche Links mit eigener Bezeichnung, Ablaufdatum und eigenem Passwort. Bestehende Links bleiben unverändert.</p>
+            <div class="ppi-extra-create">
+              <label>Bezeichnung<input type="text" id="ppi-startpage-extra-name" maxlength="60" placeholder="z. B. Freunde, Familie oder Verein"></label>
               <label>Ablaufdatum (optional)<input type="date" id="ppi-startpage-extra-expiry"></label>
-              <label>Passwort (optional)<input type="password" id="ppi-startpage-extra-password" maxlength="128" autocomplete="new-password"></label>
+              <label>Passwort (optional)<input type="password" id="ppi-startpage-extra-password" maxlength="128" autocomplete="new-password" placeholder="Nach Nextcloud-Richtlinie"></label>
               <button type="button" id="ppi-startpage-extra-create">+ Weiteren Link erstellen</button>
             </div>
-            <div id="ppi-startpage-extra-status" role="status" style="margin:8px 0"></div>
-            <div id="ppi-startpage-extra-list"></div>
-          </fieldset>
+            <div id="ppi-startpage-extra-status" role="status" aria-live="polite"></div>
+            <div id="ppi-startpage-extra-list" class="ppi-extra-list" aria-live="polite"></div>
+          </section>
         </section>
       </div>
       <aside class="ppi-startpage-preview-column" aria-label="Live-Vorschau der Startseite">
@@ -2833,6 +2836,91 @@
   #ppi-tours-app .ppi-startpage-extra-links #ppi-startpage-extra-create {
     top: 0;
   }
+}
+
+
+/* PPI START PANORAMA CARD PICKER CSS V1 2026-11-24 */
+/* Same base button class as 'Panorama aus Tour entfernen'. Only icon, color,
+   and its mirrored top-left position differ. */
+#ppi-tours-app #ppi-tour-start-pick-mode{margin-left:8px;white-space:normal}
+#ppi-tours-app #ppi-tour-start-pick-mode.ppi-tour-start-pick-active{
+  border-color:#448f68!important;color:#246e43!important;
+}
+/* Background of the complete card around the thumbnail; no extra outline. */
+#ppi-tours-app .ppi-tour-graph-card.ppi-tour-start-selected,
+#ppi-tours-app .ppi-mobile-pano.ppi-tour-start-selected{
+  /* PPI TOUR STARTPANORAMA SANDFARBE V1 2026-11-24 */
+  background-color:#F0F0F0!important;
+  border:1px solid var(--color-border)!important;
+}
+#ppi-tours-app .ppi-tour-graph-card .ppi-tour-card-delete.ppi-tour-start-check,
+#ppi-tours-app .ppi-mobile-pano .ppi-tour-card-delete.ppi-tour-start-check{
+  position:absolute!important;z-index:5!important;
+  top:8px!important;left:8px!important;right:auto!important;
+  transform:translate(-50%,-50%)!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  opacity:1!important;pointer-events:auto!important;
+  color:#23814d!important;border-color:rgba(35,129,77,.45)!important;
+}
+#ppi-tours-app .ppi-tour-graph-card .ppi-tour-card-delete.ppi-tour-start-check:hover,
+#ppi-tours-app .ppi-mobile-pano .ppi-tour-card-delete.ppi-tour-start-check:hover{
+  background:#23814d!important;color:#fff!important;
+}
+#ppi-tours-app .ppi-start-check-glyph{
+  display:block!important;width:19px!important;height:19px!important;
+  min-width:19px!important;min-height:19px!important;
+  flex:0 0 19px!important;position:static!important;transform:none!important;
+}
+/* Mobile image begins after the card's 10px padding. Keep the same corner placement. */
+#ppi-tours-app .ppi-mobile-pano{position:relative}
+#ppi-tours-app .ppi-mobile-pano .ppi-tour-card-delete.ppi-tour-start-check{
+  top:18px!important;left:18px!important;
+}
+@media (hover:none){
+  #ppi-tours-app .ppi-tour-graph-card .ppi-tour-card-delete.ppi-tour-start-check,
+  #ppi-tours-app .ppi-mobile-pano .ppi-tour-card-delete.ppi-tour-start-check{
+    opacity:1!important;pointer-events:auto!important;
+  }
+}
+
+/* PPI START PANORAMA DESIGN CSS V2 2026-11-24 */
+/* During choosing, hide panorama deletion controls (but not the green ticks). */
+#ppi-tours-app.ppi-tour-start-picking .ppi-tour-graph-card .ppi-tour-card-delete:not(.ppi-tour-start-check),
+#ppi-tours-app.ppi-tour-start-picking .ppi-mobile-pano .ppi-mobile-pano-remove{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+/* PPI STARTPANORAMA VERBINDUNGEN LOESCHEN AUSBLENDEN V3 2026-11-24 */
+/* Only while choosing the start panorama: keep edge-delete controls hidden
+   even when hover/focus handlers temporarily apply their active class.
+   When selection ends or is cancelled, the normal controls return. */
+#ppi-tours-app.ppi-tour-start-picking .ppi-tour-edge-delete,
+#ppi-tours-app.ppi-tour-start-picking .ppi-mobile-link button[title="Verbindung entfernen"] {
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+/* PPI STARTPAGE EXTRA LINKS TOUR DESIGN V1 2026-11-24 */
+#ppi-tours-app .ppi-startpage-extra-links{min-width:0}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-create{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr));gap:10px;align-items:end;margin:14px 0}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-create label{display:flex;flex-direction:column;gap:5px;min-width:0}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-create input,
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-fields input,
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-link input{width:100%;max-width:none!important;min-width:0;box-sizing:border-box}
+#ppi-tours-app .ppi-startpage-extra-links #ppi-startpage-extra-create{position:static!important;top:auto!important;align-self:end}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-list{margin-top:12px}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-link input{flex:1 1 250px;width:auto!important}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-fields label{flex:1 1 160px}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-startpage-extra-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:12px}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-startpage-extra-entry > small{display:block;margin-top:8px}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-startpage-extra-entry > small:empty,
+#ppi-tours-app .ppi-startpage-extra-links #ppi-startpage-extra-status:empty{display:none}
+@media (max-width:620px){
+ #ppi-tours-app .ppi-startpage-extra-links .ppi-extra-link input{flex:1 1 100%;width:100%!important}
+ #ppi-tours-app .ppi-startpage-extra-links .ppi-extra-fields label{flex:1 1 100%}
 }
 
 </style>

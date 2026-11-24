@@ -1,3 +1,14 @@
+## 0.4.62.140 (Release-Kandidat, noch nicht veröffentlicht – 24.11.2026)
+- Stand der Docker-Testversion 0.4.62.139 in eine lokale GitHub-Release-Arbeitskopie übernommen.
+- Startseiten: zusätzliche, voneinander unabhängige Freigabelinks mit Bezeichnung, Ablaufdatum, Passwort und Token-Verwaltung.
+- Startseiten: Layout, Beschriftung und Anordnung der zusätzlichen Freigabelinks an die 360°-Touren angeglichen.
+- Tour-Editor: Startpanorama direkt an der Panoramakarte wählen und mit dem Dropdown im Design-Reiter synchronisieren.
+- Tour-Editor: einheitliche Anzeige des Autosave-Status in den drei Bearbeitungsreitern.
+- Startseiten-Editor: übergreifende Autosave-Statusanzeige in den Bearbeitungsreitern.
+- Panorama-Auswahl: Scrollposition stabilisieren und internes Scrollen der Dateiauswahl wiederherstellen (V2).
+- App-Store-Metadaten, README und Versionshistorie für die nächste Version aktualisiert.
+- Hinweis: Dieser Eintrag beschreibt den Release-Kandidaten; Veröffentlichung und Kompatibilitätsfreigabe erfolgen erst nach Prüfung und Signierung.
+
 ## 0.4.62.138 (Testversion)
 - Gemeinsame, responsive Fehlerdarstellung für ungültige, abgelaufene und deaktivierte öffentliche Tour- und Startseiten-Links.
 - Statuscodes und öffentliche Zugriffsprüfungen unverändert; keine Änderung an Tour-Passwortfreigaben.
