@@ -14,7 +14,7 @@
       <?php if (!empty($_['passwordError'])): ?><p role="alert">Das Passwort ist nicht korrekt. Bitte versuche es erneut.</p><?php endif; ?>
       <form method="post" action="<?php p($_['unlockUrl']); ?>" class="ppi-tour-password-form">
         <label for="ppi-tour-public-password">Freigabepasswort</label>
-        <input id="ppi-tour-public-password" name="password" type="password" required autocomplete="current-password" maxlength="128" />
+        <input id="ppi-tour-public-password" autofocus name="password" type="password" required autocomplete="current-password" maxlength="128" />
         <button type="submit">Tour entsperren</button>
       </form>
     </div>

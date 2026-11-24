@@ -215,14 +215,17 @@
           </div>
           <div class="ppi-startpage-share-field-row">
             <label for="ppi-start-page-share-password">Startseiten-Passwort (optional, leer lassen zum Beibehalten)</label>
-            <div class="ppi-startpage-share-inline">
-              <input type="password" id="ppi-start-page-share-password" maxlength="128" autocomplete="new-password">
+            <div class="ppi-startpage-share-inline ppi-startpage-share-password-row">
+              <input type="password" id="ppi-start-page-share-password" maxlength="128" autocomplete="new-password" placeholder="Passwort nach Nextcloud-Richtlinie">
+              <button type="button" id="ppi-start-page-share-password-apply">Passwort setzen / ändern</button>
               <button type="button" id="ppi-start-page-share-remove-password">Passwort entfernen</button>
             </div>
+            <small class="ppi-startpage-share-helptext">Leeres Feld: bestehendes Passwort bleibt erhalten. Passwortänderungen sperren bisherige Besuchersitzungen.</small>
           </div>
           <fieldset class="ppi-startpage-tour-security">
             <legend>Passwortschutz eingebundener Touren</legend>
-            <p>Standardmäßig behalten alle Touren ihr eigenes Passwort. Bei einer geschützten Startseite kannst du stattdessen eine Freischaltung für diese Browser-Sitzung erlauben. Direkte Tour-Links bleiben unabhängig geschützt.</p>
+            <!-- PPI DYNAMIC STARTPAGE PASSWORD DESCRIPTION 2026-11-24 -->
+            <p id="ppi-start-page-tour-password-description" aria-live="polite">Jede Tour behält ihren eigenen Passwortschutz. Geschützte Touren verlangen beim Öffnen ihr eigenes Tour-Passwort. Direkte Tour-Links bleiben unverändert geschützt.</p>
             <label for="ppi-start-page-tour-password-mode">Tour-Passwortregel</label>
             <select id="ppi-start-page-tour-password-mode">
               <option value="keep">Tour-Passwörter beibehalten (empfohlen)</option>
@@ -235,6 +238,16 @@
             </div>
             <p id="ppi-start-page-tour-password-notice" role="status"></p>
           </fieldset>
+          <!-- PPI PROTECTED TOUR TILE VISIBILITY 2026-11-24 -->
+          <div class="ppi-startpage-protected-visibility" style="margin:14px 0 16px">
+            <label for="ppi-start-page-show-locked-tours" style="display:flex;align-items:center;gap:12px;cursor:pointer">
+              <input type="checkbox" id="ppi-start-page-show-locked-tours" checked
+                style="width:18px;min-width:18px;height:18px;flex:0 0 18px;margin:0">
+              <span>Passwortgeschützte Touren anzeigen</span>
+            </label>
+            <p style="margin:5px 0 0 30px;font-size:.9em;opacity:.85">Aus: Touren mit weiterhin erforderlichem eigenem Passwort werden auf der öffentlichen Startseite ausgeblendet. Bereits über die Startseite freigeschaltete Touren bleiben sichtbar.</p>
+            <small id="ppi-start-page-show-locked-status" role="status" style="display:block;margin:6px 0 0 30px"></small>
+          </div>
           <p id="ppi-start-page-share-status">Noch kein Freigabelink erstellt</p>
           <div class="ppi-startpage-bg-toolbar ppi-startpage-share-actions">
             <button type="button" id="ppi-start-page-share-disable">Freigabelink deaktivieren</button>
@@ -243,7 +256,21 @@
           <div class="ppi-startpage-bg-toolbar">
             <button type="button" id="ppi-start-page-share-copy">Link kopieren</button>
             <button type="button" id="ppi-start-page-share-open">Startseite im neuen Tab öffnen</button>
+            <button type="button" id="ppi-start-page-main-rotate">Token erneuern</button>
           </div>
+          <!-- PPI STARTPAGE MULTISHARE V1 2026-11-24 -->
+          <fieldset class="ppi-startpage-extra-links" style="margin-top:14px;padding:12px;border:1px solid var(--color-border, #ddd);border-radius:10px">
+            <legend><strong>Weitere Freigabelinks</strong></legend>
+            <p style="margin:4px 0 10px">Unabhängige Links mit eigener Bezeichnung, eigenem Ablaufdatum und eigenem Passwort. Tokens werden sicher automatisch generiert.</p>
+            <div class="ppi-startpage-share-inline" style="display:flex;flex-wrap:wrap;gap:8px;align-items:end">
+              <label>Bezeichnung<input type="text" id="ppi-startpage-extra-name" maxlength="60" placeholder="z. B. Familie"></label>
+              <label>Ablaufdatum (optional)<input type="date" id="ppi-startpage-extra-expiry"></label>
+              <label>Passwort (optional)<input type="password" id="ppi-startpage-extra-password" maxlength="128" autocomplete="new-password"></label>
+              <button type="button" id="ppi-startpage-extra-create">+ Weiteren Link erstellen</button>
+            </div>
+            <div id="ppi-startpage-extra-status" role="status" style="margin:8px 0"></div>
+            <div id="ppi-startpage-extra-list"></div>
+          </fieldset>
         </section>
       </div>
       <aside class="ppi-startpage-preview-column" aria-label="Live-Vorschau der Startseite">
@@ -2626,16 +2653,27 @@
 
 
 /* PPI STARTPAGE SHARE INPUT ROWS 2026-11-23 */
-#ppi-tours-app .ppi-startpage-share-field-row {margin:12px 0 16px;max-width:850px;min-width:0}
-#ppi-tours-app .ppi-startpage-share-field-row > label {display:block!important;margin-bottom:7px;font-weight:600}
-#ppi-tours-app .ppi-startpage-share-inline {display:flex;flex-direction:row;align-items:center;justify-content:flex-start;flex-wrap:wrap;gap:10px;min-width:0}
-#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-inline input {flex:1 1 250px!important;width:auto!important;max-width:450px!important;min-width:180px!important;box-sizing:border-box}
-#ppi-tours-app .ppi-startpage-share-inline button {flex:0 0 auto;min-height:36px;white-space:normal}
-#ppi-tours-app .ppi-startpage-share-actions {margin-top:12px}
-@media (max-width:620px) {
-  #ppi-tours-app .ppi-startpage-share-inline {align-items:stretch}
-  #ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-inline input {flex:1 1 100%!important;max-width:none!important;min-width:0!important}
-  #ppi-tours-app .ppi-startpage-share-inline button {width:100%}
+/* PPI STARTPAGE SHARE COMPACT FORM 2026-11-24 */
+#ppi-tours-app .ppi-startpage-share-field-row{margin:16px 0 18px;max-width:none;min-width:0}
+#ppi-tours-app .ppi-startpage-share-field-row > label{display:block!important;margin:0 0 8px!important;font-weight:500;line-height:1.35}
+#ppi-tours-app .ppi-startpage-share-inline{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;flex-wrap:wrap;gap:10px;min-width:0}
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-inline input{
+  flex:0 1 350px!important;width:min(350px,100%)!important;max-width:350px!important;min-width:0!important;
+  box-sizing:border-box;height:34px;min-height:34px;margin:0!important
+}
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-inline input[type="date"]{
+  flex:0 1 190px!important;width:190px!important;max-width:190px!important
+}
+#ppi-tours-app .ppi-startpage-share-inline button{flex:0 0 auto;min-height:34px;white-space:normal;margin:0!important}
+#ppi-tours-app .ppi-startpage-share-actions{margin-top:12px}
+#ppi-tours-app .ppi-startpage-share-helptext{display:block;font-size:11px;line-height:1.5;color:var(--color-text-maxcontrast,#6b7280);margin-top:8px}
+@media (max-width:620px){
+ #ppi-tours-app .ppi-startpage-share-inline{align-items:stretch!important}
+ #ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-inline input,
+ #ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-inline input[type="date"]{
+   flex:1 1 100%!important;width:100%!important;max-width:none!important
+ }
+ #ppi-tours-app .ppi-startpage-share-inline button{width:100%}
 }
 
 </style>
@@ -2688,4 +2726,113 @@
 #ppi-tours-app .ppi-startpage-tour-security p{color:var(--color-text-maxcontrast)}
 #ppi-tours-app .ppi-startpage-tour-password-choice{display:flex;align-items:center;gap:9px;padding:6px 0}
 #ppi-tours-app .ppi-startpage-tour-password-choice input{flex:0 0 auto}
+
+/* PPI STARTPAGE SHARE SPACING FIX 2026-11-24 */
+
+/* Nur den Startseiten-Freigabe-Reiter verändern */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+}
+
+/* Überschrift mit Hilfebutton */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-share-help-top {
+    margin: 0 0 12px;
+}
+
+/* Einleitung */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-private-note {
+    margin: 0 0 16px;
+    padding: 11px 13px;
+}
+
+/* Ablaufdatum und Passwort */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-field-row {
+    margin: 0 0 16px !important;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-field-row > label {
+    margin-bottom: 6px !important;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-inline {
+    gap: 8px;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-helptext {
+    margin-top: 5px;
+}
+
+/* Tour-Passwortregel */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-tour-security {
+    margin: 2px 0 12px !important;
+    padding: 11px 13px;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-tour-security p {
+    margin: 4px 0 7px;
+    line-height: 1.45;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-tour-security select {
+    margin: 5px 0 8px;
+}
+
+/* Automatisch gespeicherte Tour-Auswahl */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] #ppi-start-page-tour-password-selection > p {
+    margin: 4px 0 6px;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] #ppi-start-page-tour-password-notice {
+    margin: 5px 0 0;
+}
+
+/* Sichtbarkeitsschalter */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-protected-visibility {
+    margin: 2px 0 10px !important;
+}
+
+/* Freigabestatus */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] #ppi-start-page-share-status {
+    margin: 2px 0 8px !important;
+}
+
+/* Deaktivieren und Link-Aktionen */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-actions {
+    margin: 0 0 10px !important;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] label:has(#ppi-start-page-share-url) {
+    margin: 0 0 8px;
+    gap: 5px;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-bg-toolbar:last-child {
+    margin: 0;
+}
+
+/* Auf Smartphones etwas mehr Luft erhalten */
+@media (max-width: 620px) {
+    #ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-field-row {
+        margin-bottom: 14px !important;
+    }
+}
+
+
+
+/* PPI EXTRA SHARE BUTTON ALIGNMENT V2 2026-11-24
+   Only offset the button to align with labelled input controls.
+   No grid, no stretching, no modification of input sizing. */
+#ppi-tours-app .ppi-startpage-extra-links #ppi-startpage-extra-create {
+  position: relative;
+  top: 15px;
+}
+@media (max-width: 620px) {
+  #ppi-tours-app .ppi-startpage-extra-links #ppi-startpage-extra-create {
+    top: 0;
+  }
+}
+
 </style>

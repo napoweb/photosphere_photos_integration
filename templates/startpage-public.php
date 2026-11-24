@@ -27,7 +27,7 @@ $dividerColor = $light($headerBg) ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.60)';
  <?php if (!empty($_['passwordError'])): ?><p role="alert">Passwort nicht korrekt.</p><?php endif; ?>
  <form action="<?php p($_['unlockUrl'] ?? ''); ?>" method="post">
   <label for="ppi-startpage-password">Passwort</label>
-  <input id="ppi-startpage-password" name="password" type="password" required autocomplete="current-password" maxlength="128">
+  <input id="ppi-startpage-password" autofocus name="password" type="password" required autocomplete="current-password" maxlength="128">
   <button type="submit">Startseite öffnen</button>
  </form></section>
 <?php else: ?>
@@ -46,7 +46,7 @@ $dividerColor = $light($headerBg) ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.60)';
       <div class="ppi-public-start-card-image">
        <?php if (!empty($tour['image'])): ?>
         <img src="<?php p($tour['image']); ?>" alt="" loading="lazy" decoding="async">
-       <?php else: ?><span aria-hidden="true">🌐</span><?php endif; ?>
+       <?php else: ?><span aria-hidden="true"><?php echo !empty($tour['locked']) ? '🔑' : '🌐'; ?></span><?php endif; ?>
       </div>
       <div class="ppi-public-start-card-content"><strong><?php p($tour['name']); ?></strong>
       <?php if (!empty($tour['description'])): ?><small><?php p($tour['description']); ?></small><?php endif; ?>

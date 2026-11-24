@@ -13,7 +13,11 @@ return [
         ['name' => 'tour#saveStartPage', 'url' => '/tours/startpages/{id}', 'verb' => 'POST'],
         ['name' => 'tour#deleteStartPage', 'url' => '/tours/startpages/{id}', 'verb' => 'DELETE'],
         ['name' => 'tour#duplicateStartPage', 'url' => '/tours/startpages/{id}/duplicate', 'verb' => 'POST'],
+        // PPI STARTPAGE MULTISHARE V1 2026-11-24
         ['name' => 'tour#shareStartPage', 'url' => '/tours/startpages/{id}/share', 'verb' => 'POST'],
+        ['name' => 'tour#rotateStartPageToken', 'url' => '/tours/startpages/{id}/share/rotate', 'verb' => 'POST'],
+        ['name' => 'tour#createStartPageShareLink', 'url' => '/tours/startpages/{id}/share/links', 'verb' => 'POST'],
+        ['name' => 'tour#updateStartPageShareLink', 'url' => '/tours/startpages/{id}/share/links/{linkId}', 'verb' => 'POST'],
         ['name' => 'tour#publicStartPageUnlock', 'url' => '/startpage/{token}/unlock', 'verb' => 'POST'],
         ['name' => 'tour#publicStartPageBackground', 'url' => '/startpage/{token}/background', 'verb' => 'GET'],
         ['name' => 'tour#publicStartPage', 'url' => '/startpage/{token}', 'verb' => 'GET'],
