@@ -1,3 +1,9 @@
+## 0.4.63
+
+- App Store-compatible release version.
+- Same tested functionality as 0.4.62.140.
+- No functional changes.
+
 ## 0.4.62.138 (Testversion)
 - Gemeinsame, responsive Fehlerdarstellung für ungültige, abgelaufene und deaktivierte öffentliche Tour- und Startseiten-Links.
 - Statuscodes und öffentliche Zugriffsprüfungen unverändert; keine Änderung an Tour-Passwortfreigaben.

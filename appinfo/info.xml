@@ -86,7 +86,7 @@ Die App verwendet für öffentliche Inhalte serverseitige Zugriffsprüfungen. Wa
 
 Entdecke deine Panoramabilder aus einer neuen Perspektive und verwandle einzelne Aufnahmen in interaktive virtuelle Erlebnisse – direkt in deiner Nextcloud.
   ]]></description>
-  <version>0.4.62.140</version>
+  <version>0.4.63</version>
   <licence>AGPL-3.0-or-later</licence>
   <author>Stefan Sührer</author>
   <namespace>PhotospherePhotosIntegration</namespace>
