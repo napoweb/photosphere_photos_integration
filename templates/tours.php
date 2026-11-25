@@ -191,7 +191,7 @@
                 <h5>2. Passwort der Startseite</h5>
                 <p>Trage ein Passwort ein und speichere die Freigabeeinstellungen. Besucher müssen es beim Öffnen der Startseite eingeben. Ein leeres Passwortfeld lässt ein bereits gesetztes Passwort unverändert. Mit <strong>Passwort entfernen</strong> entfernst du den Passwortschutz der Startseite.</p>
                 <h5>3. Ablaufdatum</h5>
-                <p>Mit dem optionalen Ablaufdatum legst du fest, bis wann der Startseiten-Link gültig sein soll. Nach Ablauf kann die öffentliche Startseite nicht mehr geöffnet werden. Ohne Ablaufdatum bleibt der Link gültig, bis du ihn deaktivierst oder die Freigabe anderweitig endet.</p>
+                <p>Das Ablaufdatum bezeichnet den Beginn des Tages, an dem der Link nicht mehr zugänglich ist: 00:00 Uhr in deiner Nextcloud-Zeitzone. Ab diesem Zeitpunkt kann die öffentliche Startseite nicht mehr geöffnet werden. Ohne Ablaufdatum bleibt der Link gültig, bis du ihn deaktivierst oder die Freigabe anderweitig endet.</p>
                 <h5>4. Passwortschutz eingebundener Touren</h5>
                 <ul>
                   <li><strong>Tour-Passwörter beibehalten:</strong> Jede geschützte Tour verlangt weiterhin ihr eigenes Passwort (empfohlen).</li>
@@ -207,11 +207,12 @@
           </div>
           <p class="ppi-startpage-private-note">Ein eigener Startseiten-Link kann optional mit Passwort und Ablaufdatum geschützt werden. Touren behalten ihre bisherigen Freigaberegeln. Nur bereits freigegebene Touren erscheinen für Besucher.</p>
           <div class="ppi-startpage-share-field-row">
-            <label for="ppi-start-page-share-expiry">Ablaufdatum (optional)</label>
+            <label for="ppi-start-page-share-expiry">Ablaufdatum (optional, 00:00 Uhr)</label>
             <div class="ppi-startpage-share-inline">
               <input type="date" id="ppi-start-page-share-expiry">
               <button type="button" id="ppi-start-page-share-enable">Freigabeeinstellungen speichern</button>
             </div>
+            <small class="ppi-startpage-share-helptext">Ablauf um 00:00 Uhr am gewählten Datum in deiner Nextcloud-Zeitzone.</small>
           </div>
           <div class="ppi-startpage-share-field-row">
             <label for="ppi-start-page-share-password">Startseiten-Passwort (optional, leer lassen zum Beibehalten)</label>
@@ -264,10 +265,10 @@
               <strong>Weitere Freigabelinks</strong>
               <span>Unabhängige Links pro Startseite</span>
             </div>
-            <p>Erstelle zusätzliche Links mit eigener Bezeichnung, Ablaufdatum und eigenem Passwort. Bestehende Links bleiben unverändert.</p>
+            <p>Erstelle zusätzliche Links mit eigener Bezeichnung, Ablaufdatum (00:00 Uhr in deiner Nextcloud-Zeitzone) und eigenem Passwort. Bestehende Links bleiben unverändert.</p>
             <div class="ppi-extra-create">
               <label>Bezeichnung<input type="text" id="ppi-startpage-extra-name" maxlength="60" placeholder="z. B. Freunde, Familie oder Verein"></label>
-              <label>Ablaufdatum (optional)<input type="date" id="ppi-startpage-extra-expiry"></label>
+              <label>Ablaufdatum (optional, 00:00 Uhr)<input type="date" id="ppi-startpage-extra-expiry"></label>
               <label>Passwort (optional)<input type="password" id="ppi-startpage-extra-password" maxlength="128" autocomplete="new-password" placeholder="Nach Nextcloud-Richtlinie"></label>
               <button type="button" id="ppi-startpage-extra-create">+ Weiteren Link erstellen</button>
             </div>
@@ -424,7 +425,7 @@
         <button type="button" id="ppi-share-enable">Öffentlichen Link erstellen</button>
         <button type="button" id="ppi-share-disable" hidden>Hauptlink deaktivieren</button>
       </div>
-      <div class="ppi-share-expiry-row"><label for="ppi-share-expiry">Ablaufdatum (optional)</label><input type="date" id="ppi-share-expiry" aria-label="Ablaufdatum der öffentlichen Freigabe"/><button type="button" id="ppi-share-expiry-save" hidden>Ablaufdatum speichern</button><span class="ppi-share-expiry-hint">Ohne Datum bleibt der Link gültig, bis du ihn deaktivierst.</span></div>
+      <div class="ppi-share-expiry-row"><label for="ppi-share-expiry">Ablaufdatum (optional, 00:00 Uhr)</label><input type="date" id="ppi-share-expiry" aria-label="Ablaufdatum der öffentlichen Freigabe"/><button type="button" id="ppi-share-expiry-save" hidden>Ablaufdatum speichern</button><span class="ppi-share-expiry-hint">Ablauf am gewählten Datum um 00:00 Uhr in deiner Nextcloud-Zeitzone. Ohne Datum bleibt der Link gültig, bis du ihn deaktivierst.</span></div>
       <div class="ppi-share-password-row">
         <label for="ppi-share-password">Passwortschutz (optional)</label>
         <span id="ppi-share-password-state">Kein Passwort eingerichtet</span>
@@ -448,10 +449,10 @@
     </section>
     <section class="ppi-tour-share-box" aria-label="Zusätzliche Freigabelinks">
       <div class="ppi-share-heading"><strong>Weitere Freigabelinks</strong><span>Unabhängige Links pro Tour</span></div>
-      <p>Erstelle zusätzliche Links mit eigener Bezeichnung, Ablaufdatum und eigenem Passwort. Bestehende Links bleiben unverändert.</p>
+      <p>Erstelle zusätzliche Links mit eigener Bezeichnung, Ablaufdatum (00:00 Uhr in deiner Nextcloud-Zeitzone) und eigenem Passwort. Bestehende Links bleiben unverändert.</p>
       <div class="ppi-extra-create">
         <label>Bezeichnung<input type="text" id="ppi-extra-name" maxlength="60" placeholder="z. B. Freunde, Familie oder Verein"></label>
-        <label>Ablaufdatum (optional)<input type="date" id="ppi-extra-expiry"></label>
+        <label>Ablaufdatum (optional, 00:00 Uhr)<input type="date" id="ppi-extra-expiry"></label>
         <label>Passwort (optional)<input type="password" id="ppi-extra-password" maxlength="128" autocomplete="new-password" placeholder="Nach Nextcloud-Richtlinie"></label>
         <button type="button" id="ppi-extra-create">+ Weiteren Link erstellen</button>
       </div>

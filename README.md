@@ -32,7 +32,7 @@ Angemeldete Benutzer können eigene Touren aus ihren berechtigten Panorama-Datei
 
 ## Startseiten und Freigaben
 
-Angemeldete Benutzer können 360°-Touren zu eigenen, responsiv gestalteten Startseiten zusammenfassen. Layout und Designvorlagen lassen sich mit einer Live-Vorschau bearbeiten. Für Startseiten sind gesonderte öffentliche Freigaben mit optionalem Passwort und Ablaufdatum verfügbar. Zusätzliche Freigabelinks können unabhängig verwaltet werden. Dabei gelten die Berechtigungsprüfungen und die konfigurierten Tour-Passwortregeln weiterhin.
+Angemeldete Benutzer können 360°-Touren zu eigenen, responsiv gestalteten Startseiten zusammenfassen. Layout und Designvorlagen lassen sich mit einer Live-Vorschau bearbeiten. Für Startseiten sind gesonderte öffentliche Freigaben mit optionalem Passwort und Ablaufdatum verfügbar. Zusätzliche Freigabelinks können unabhängig verwaltet werden. Ein optionales Ablaufdatum sperrt den Link ab 00:00 Uhr am gewählten Datum in der Nextcloud-Zeitzone des Freigabebesitzers, auch für bestehende Besuchersitzungen. Dabei gelten die Berechtigungsprüfungen und die konfigurierten Tour-Passwortregeln weiterhin.
 
 ## Tour-Cache und Hintergrundjobs
 

@@ -155,6 +155,7 @@ final class TourController extends Controller {
     /** Never include a password hash in a response, even for the tour owner. */
     private function publicRecord(array $tour): array {
         $tour['sharePasswordProtected'] = !empty($tour['sharePasswordHash']);
+        $tour['shareExpiryTimezone'] = $this->shareExpiryZone($this->userId() ?? '')->getName();
         unset($tour['sharePasswordHash']);
         if (isset($tour['shareLinks']) && is_array($tour['shareLinks'])) {
             $tour['shareLinks'] = array_map(static function (array $link): array {
@@ -240,6 +241,7 @@ final class TourController extends Controller {
     /** Owner endpoints never include password hashes. */
     private function startPagePublicRecord(array $page): array {
         $page['passwordProtected'] = !empty($page['sharePasswordHash']);
+        $page['shareExpiryTimezone'] = $this->shareExpiryZone($this->userId() ?? '')->getName();
         unset($page['sharePasswordHash']);
         // PPI STARTPAGE MULTISHARE V1 2026-11-24: never leak hashes.
         if (isset($page['shareLinks']) && is_array($page['shareLinks'])) {
@@ -271,13 +273,13 @@ final class TourController extends Controller {
             if (!hash_equals((string)$page['id'], $index['id'])) { continue; }
             if (isset($page['publicToken']) && is_string($page['publicToken']) &&
                 hash_equals($page['publicToken'], $token)) {
-                if (!empty($page['shareExpiresOn']) && gmdate('Y-m-d') > $page['shareExpiresOn']) { return null; }
+                if (!empty($page['shareExpiresOn']) && $this->shareExpiryReached($page['shareExpiresOn'], $index['uid'])) { return null; }
                 return ['owner' => $index['uid'], 'page' => $page];
             }
             foreach ($page['shareLinks'] ?? [] as $link) {
                 if (!is_array($link) || !isset($link['token']) || !is_string($link['token']) ||
                     !hash_equals($link['token'], $token)) { continue; }
-                if (!empty($link['disabled']) || (!empty($link['expiresOn']) && gmdate('Y-m-d') > $link['expiresOn'])) { return null; }
+                if (!empty($link['disabled']) || (!empty($link['expiresOn']) && $this->shareExpiryReached($link['expiresOn'], $index['uid']))) { return null; }
                 // Sharing policies and selected tours are page-wide; credentials are link-specific.
                 if (empty($link['passwordHash'])) { unset($page['sharePasswordHash']); }
                 else { $page['sharePasswordHash'] = $link['passwordHash']; }
@@ -533,7 +535,7 @@ final class TourController extends Controller {
         if (!is_string($expiry) || ($expiry !== '' &&
             (!preg_match('/^\d{4}-\d{2}-\d{2}$/D', $expiry) ||
              !($date = \DateTimeImmutable::createFromFormat('!Y-m-d', $expiry, new \DateTimeZone('UTC'))) ||
-             $date->format('Y-m-d') !== $expiry || $expiry < gmdate('Y-m-d')))) {
+             $date->format('Y-m-d') !== $expiry || $this->shareExpiryReached($expiry, $uid)))) {
             return $this->error('Ungültiges Ablaufdatum');
         }
         $password = $this->request->getParam('password', '');
@@ -694,7 +696,7 @@ final class TourController extends Controller {
             if ($page['id'] !== $id) { continue; }
             foreach ($page['shareLinks'] ?? [] as $i => $link) {
                 if (!is_array($link) || ($link['id'] ?? '') !== $linkId) { continue; }
-                if ($action === 'enable' && !empty($link['expiresOn']) && $link['expiresOn'] < gmdate('Y-m-d')) {
+                if ($action === 'enable' && !empty($link['expiresOn']) && $this->shareExpiryReached($link['expiresOn'], $uid)) {
                     return $this->error('Vor dem Aktivieren das Ablaufdatum anpassen');
                 }
                 $oldToken = (string)$link['token'];
@@ -1280,7 +1282,7 @@ final class TourController extends Controller {
             if (isset($tour['publicToken']) && is_string($tour['publicToken'])
                 && hash_equals($tour['publicToken'], $token)) {
                 $expiry = $tour['shareExpiresOn'] ?? null;
-                if (is_string($expiry) && $expiry !== '' && gmdate('Y-m-d') > $expiry) { return null; }
+                if (is_string($expiry) && $expiry !== '' && $this->shareExpiryReached($expiry, $entry['uid'])) { return null; }
                 return ['owner' => $entry['uid'], 'tour' => $tour];
             }
             // Per-link credentials must never inherit the legacy link's password or expiry.
@@ -1288,7 +1290,7 @@ final class TourController extends Controller {
                 if (!is_array($link) || !isset($link['token']) || !is_string($link['token'])
                     || !hash_equals($link['token'], $token) || !empty($link['disabled'])) { continue; }
                 $expiry = $link['expiresOn'] ?? null;
-                if (is_string($expiry) && $expiry !== '' && gmdate('Y-m-d') > $expiry) { return null; }
+                if (is_string($expiry) && $expiry !== '' && $this->shareExpiryReached($expiry, $entry['uid'])) { return null; }
                 $selected = $tour;
                 $selected['publicToken'] = $link['token'];
                 $selected['sharePasswordHash'] = $link['passwordHash'] ?? null;
@@ -1311,7 +1313,7 @@ final class TourController extends Controller {
             if (!is_string($expiryRequest) || ($expiryRequest !== '' &&
                 (!preg_match('/^\d{4}-\d{2}-\d{2}$/D', $expiryRequest) ||
                 !($date = \DateTimeImmutable::createFromFormat('!Y-m-d', $expiryRequest, new \DateTimeZone('UTC'))) ||
-                $date->format('Y-m-d') !== $expiryRequest || $expiryRequest < gmdate('Y-m-d')))) {
+                $date->format('Y-m-d') !== $expiryRequest || $this->shareExpiryReached($expiryRequest, $uid)))) {
                 return $this->error('Ungültiges Ablaufdatum (heute oder später erforderlich)');
             }
             $expiry = $expiryRequest;
@@ -1399,10 +1401,33 @@ final class TourController extends Controller {
         return null;
     }
 
+    /** Expiry means 00:00 at the start of the chosen date in the owner's timezone.
+     * Core user preference and Nextcloud default_timezone are used; never visitor timezone.
+     */
+    private function shareExpiryZone(string $owner): \DateTimeZone {
+        $personal = $owner !== '' ? $this->config->getUserValue($owner, 'core', 'timezone', '') : '';
+        $default = $this->config->getSystemValueString('default_timezone', 'UTC');
+        foreach ([$personal, $default, 'UTC'] as $zoneName) {
+            if (!is_string($zoneName) || $zoneName === '') { continue; }
+            try { return new \DateTimeZone($zoneName); }
+            catch (\Throwable $e) { /* Nextcloud fallback */ }
+        }
+        return new \DateTimeZone('UTC');
+    }
+
+    private function shareExpiryReached(string $expiry, string $owner): bool {
+        if ($expiry === '') { return false; }
+        $zone = $this->shareExpiryZone($owner);
+        $midnight = \DateTimeImmutable::createFromFormat('!Y-m-d', $expiry, $zone);
+        // Invalid stored expiry must never grant public access.
+        if ($midnight === false || $midnight->format('Y-m-d') !== $expiry) { return true; }
+        return new \DateTimeImmutable('now', $zone) >= $midnight;
+    }
+
     private function validateShareExpiry(mixed $raw): ?string {
         if (!is_string($raw) || $raw === '') { return $raw === '' ? '' : null; }
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $raw, new \DateTimeZone('UTC'));
-        return ($date && $date->format('Y-m-d') === $raw && $raw >= gmdate('Y-m-d')) ? $raw : null;
+        return ($date && $date->format('Y-m-d') === $raw && !$this->shareExpiryReached($raw, $this->userId() ?? '')) ? $raw : null;
     }
 
     /** Additional links are stored inside the user's tour; only this owner can manage them. */
@@ -1486,7 +1511,7 @@ final class TourController extends Controller {
                     if ($action === 'removePassword') { unset($link['passwordHash']); }
                     if ($action === 'disable') { $link['disabled'] = true; }
                     if ($action === 'enable') {
-                        if (!empty($link['expiresOn']) && $link['expiresOn'] < gmdate('Y-m-d')) {
+                        if (!empty($link['expiresOn']) && $this->shareExpiryReached($link['expiresOn'], $uid)) {
                             return $this->error('Vor dem Aktivieren bitte das Ablaufdatum aktualisieren');
                         }
                         foreach ($tour['images'] ?? [] as $item) {

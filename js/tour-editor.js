@@ -10,6 +10,33 @@
   const filesApi = root.dataset.filesUrl;
   const imageApi = root.dataset.imageUrl;
   const publicRoute = root.dataset.publicRoute || '';
+  // Match the server's midnight rule using the owner's Nextcloud timezone.
+  // The API supplies the resolved timezone, including its configured fallback.
+  function shareExpiryToday(record) {
+    const zone = record?.shareExpiryTimezone || 'UTC';
+    let formatter;
+    try {
+      formatter = new Intl.DateTimeFormat('en-US-u-ca-gregory', {
+        timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit'
+      });
+    } catch (_) {
+      formatter = new Intl.DateTimeFormat('en-US-u-ca-gregory', {
+        timeZone: 'UTC', year: 'numeric', month: '2-digit', day: '2-digit'
+      });
+    }
+    const parts = Object.fromEntries(formatter.formatToParts(new Date())
+      .filter(part => ['year', 'month', 'day'].includes(part.type))
+      .map(part => [part.type, part.value]));
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  }
+  function shareExpiredOn(expiry, record) {
+    return Boolean(expiry && expiry <= shareExpiryToday(record));
+  }
+  function earliestShareExpiry(record) {
+    const [year, month, day] = shareExpiryToday(record).split('-').map(Number);
+    // UTC arithmetic is for calendar-day increment only; the server handles actual timezone midnight.
+    return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
+  }
   let tourWatermarks = [];
   async function loadTourWatermarks() {
     try {
@@ -1030,7 +1057,7 @@
     for(const link of links){
       const card=node('article',undefined,'ppi-extra-entry');
       const header=node('strong',link.name);
-      const state=node('span',link.expiresOn&&link.expiresOn<new Date().toISOString().slice(0,10)?' · Abgelaufen':(link.disabled?' · Deaktiviert':(link.passwordProtected?' · Mit Passwort':' · Ohne Passwort')));
+      const state=node('span',shareExpiredOn(link.expiresOn, active)?' · Abgelaufen':(link.disabled?' · Deaktiviert':(link.passwordProtected?' · Mit Passwort':' · Ohne Passwort')));
       header.append(state);card.append(header);
       const url=tourPublicUrl({publicToken:link.token});
       const linkRow=node('div',undefined,'ppi-extra-link');
@@ -1040,7 +1067,7 @@
       linkRow.append(urlInput,copy,open);card.append(linkRow);
       const fields=node('div',undefined,'ppi-extra-fields');
       const nameLabel=node('label','Bezeichnung');const name=node('input');name.value=link.name;name.maxLength=60;nameLabel.append(name);
-      const dateLabel=node('label','Ablaufdatum');const date=node('input');date.type='date';date.value=link.expiresOn||'';dateLabel.append(date);
+      const dateLabel=node('label','Ablaufdatum (00:00 Uhr)');const date=node('input');date.type='date';date.value=link.expiresOn||'';date.min=earliestShareExpiry(active);dateLabel.append(date);
       const save=tourAction('Änderungen speichern',()=>extraAction(link.id,'settings',{name:name.value,expiresOn:date.value}));
       fields.append(nameLabel,dateLabel,save);card.append(fields);
       const passwordFields=node('div',undefined,'ppi-extra-fields');
@@ -1089,9 +1116,10 @@
   });
   function updateShareUi() {
     renderExtraShareLinks();
+    byId('ppi-extra-expiry').min = earliestShareExpiry(active);
     updateSocialPreviewStatus();
     const token = active?.publicToken || null;
-    byId('ppi-share-state').textContent = token ? (active?.shareExpiresOn && active.shareExpiresOn < new Date().toISOString().slice(0,10) ? 'Abgelaufen' : 'Freigegeben') : 'Nicht freigegeben';
+    byId('ppi-share-state').textContent = token ? (shareExpiredOn(active?.shareExpiresOn, active) ? 'Abgelaufen' : 'Freigegeben') : 'Nicht freigegeben';
     byId('ppi-share-enable').hidden = Boolean(token);
     byId('ppi-share-disable').hidden = !token;
     byId('ppi-share-link-wrap').hidden = !token;
@@ -1104,7 +1132,7 @@
     byId('ppi-share-custom-token').disabled = !token;
     byId('ppi-share-custom-token').value = token || '';
     byId('ppi-share-expiry').value = active?.shareExpiresOn || '';
-    byId('ppi-share-expiry').min = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
+    byId('ppi-share-expiry').min = earliestShareExpiry(active);
     if (token) {
       byId('ppi-share-link').value = tourPublicUrl({publicToken:token});
     } else byId('ppi-share-link').value = '';
@@ -2683,12 +2711,15 @@
     // Shared status remains visible until the next save or page change.
     const shared = !!page?.publicToken;
     byId('ppi-start-page-share-expiry').value = page?.shareExpiresOn || '';
+    byId('ppi-start-page-share-expiry').min = earliestShareExpiry(page);
+    byId('ppi-startpage-extra-expiry').min = earliestShareExpiry(page);
     byId('ppi-start-page-tour-password-mode').value = ['keep','all','selected'].includes(page?.tourPasswordMode) ? page.tourPasswordMode : 'keep';
     byId('ppi-start-page-tour-password-list').replaceChildren();
     refreshStartPageTourPasswordSelection();
     byId('ppi-start-page-share-password').value = '';
     byId('ppi-start-page-share-status').textContent = shared
-      ? (page.passwordProtected ? 'Link aktiv · Passwortgeschützt' : 'Link aktiv · Ohne Passwort')
+      ? (shareExpiredOn(page.shareExpiresOn, page) ? 'Abgelaufen' :
+        (page.passwordProtected ? 'Link aktiv · Passwortgeschützt' : 'Link aktiv · Ohne Passwort'))
       : 'Kein aktiver Freigabelink';
     byId('ppi-start-page-share-url').value = startPagePublicUrl(page);
     byId('ppi-start-page-share-enable').textContent = shared ? 'Freigabeeinstellungen speichern' : 'Freigabelink erstellen';
@@ -2815,8 +2846,8 @@
     byId('ppi-start-page-main-rotate').hidden = !page?.publicToken;
     for (const link of page?.shareLinks || []) {
       const card = node('article', undefined, 'ppi-extra-entry ppi-startpage-extra-entry');
-      const expired = !!(link.expiresOn && link.expiresOn < new Date().toISOString().slice(0, 10));
-      const state = link.disabled ? 'Deaktiviert' : expired ? 'Abgelaufen' :
+      const expired = shareExpiredOn(link.expiresOn, page);
+      const state = expired ? 'Abgelaufen' : link.disabled ? 'Deaktiviert' :
         link.passwordProtected ? 'Mit Passwort' : 'Ohne Passwort';
       const heading = node('strong', (link.name || 'Freigabelink') + ' · ' + state);
       card.append(heading);
@@ -2849,9 +2880,9 @@
       const name = node('input');
       name.type = 'text'; name.maxLength = 60; name.value = link.name || '';
       nameLabel.append(name);
-      const dateLabel = node('label', 'Ablaufdatum');
+      const dateLabel = node('label', 'Ablaufdatum (00:00 Uhr)');
       const expiry = node('input');
-      expiry.type = 'date'; expiry.value = link.expiresOn || '';
+      expiry.type = 'date'; expiry.value = link.expiresOn || ''; expiry.min = earliestShareExpiry(page);
       dateLabel.append(expiry);
       const passwordFields = node('div', undefined, 'ppi-extra-fields');
       const passwordLabel = node('label', 'Eigenes Passwort');
