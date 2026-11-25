@@ -139,7 +139,7 @@
     byId('ppi-preview-image').style.display = 'none';
     sphereRoot.hidden = false; sphereRoot.style.display = 'block';
     sphereRoot.style.setProperty('--ppi-svg-pin-color',/^#[0-9a-fA-F]{6}$/.test(active?.display?.svgPinColor||'')?active.display.svgPinColor:'#1687bc');
-    sphereRoot.dataset.hotspotStyle=active?.display?.hotspotStyle==='chat-pin'?'map-pin':(['classic','blue','map-pin','label-pin','outline-pin'].includes(active?.display?.hotspotStyle)?active.display.hotspotStyle:'classic');
+    sphereRoot.dataset.hotspotStyle=active?.display?.hotspotStyle==='chat-pin'?'map-pin':(['classic','blue','map-pin','label-pin','outline-pin','gps-pin','you-pin'].includes(active?.display?.hotspotStyle)?active.display.hotspotStyle:'classic');
     const url = `${imageApi}?fileId=${encodeURIComponent(id)}`;
     // Preserve the loading overlay while WebGL is reconstructed. Allow it
     // to paint before potentially expensive image / texture work begins.
@@ -691,7 +691,7 @@
     classicPreview.hidden=!classic;
     classicPreview.style.display=classic?'block':'none';
     const pinPreview=byId('ppi-design-pin-preview');
-    const isPin=style==='map-pin'||style==='label-pin'||style==='outline-pin';
+    const isPin=['map-pin','label-pin','outline-pin','gps-pin','you-pin'].includes(style);
     const pinColor=byId('ppi-design-pin-color').value;
     // The color card remains visible in the top row; only SVG pin styles use its value.
     root.style.setProperty('--ppi-svg-pin-color',pinColor);
@@ -700,7 +700,7 @@
     pinPreview.hidden=!isPin;
     pinPreview.style.display=isPin?'block':'none';
     if(isPin){
-      const file=style==='label-pin'?'hotspot-label-pin.svg':style==='outline-pin'?'hotspot-outline-pin.svg':'hotspot-map-pin.svg';
+      const file=({ 'label-pin':'hotspot-label-pin.svg', 'outline-pin':'hotspot-outline-pin.svg', 'gps-pin':'hotspot-gps-pin.svg', 'you-pin':'hotspot-you-pin.svg' })[style] || 'hotspot-map-pin.svg';
       const path=window.OC?.filePath ? window.OC.filePath('photosphere_photos_integration','img',file) : '/custom_apps/photosphere_photos_integration/img/'+file;
       if(pinPreview.dataset.maskUrl!==path){pinPreview.dataset.maskUrl=path;pinPreview.style.webkitMaskImage=`url("${path}")`;pinPreview.style.maskImage=`url("${path}")`;}
     }
@@ -708,7 +708,7 @@
     byId('ppi-design-size-label').textContent=sizeNames[n];
     root.querySelector('.ppi-design-hotspot-preview')?.style.setProperty('--ppi-mini-scale',String([.72,.8,1,1.2,1.28][n]));
   }
-  const designDefault = {watermarkEnabled:false,watermarkId:'none',startImageId:0,startYaw:0,showTitle:true,showNavigation:true,showFullscreen:true,hotspotSize:'medium',hotspotStyle:'classic',introText:'',socialPreviewMode:'cover',svgPinColor:'#1687bc'};
+  const designDefault = {watermarkEnabled:false,watermarkId:'none',startImageId:0,startYaw:0,showTitle:true,showNavigation:true,showFullscreen:true,hotspotSize:'medium',hotspotStyle:'label-pin',introText:'',socialPreviewMode:'cover',svgPinColor:'#1687bc'};
   function currentDesign(){return {...designDefault,...(active?.display||{})};}
   /* PPI START PANORAMA CARD PICKER V1 2026-11-24 */
   // One persisted property for both editing tabs; no separate data model.
@@ -801,8 +801,19 @@
     button.addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
-      if (!active || !active.images.some(item => Number(item.id) === Number(img.id))) return;
-      active.display = {...currentDesign(), startImageId: Number(img.id)};
+      ppiChooseStartPanorama(img);
+    });
+    return button;
+  }
+
+  function ppiChooseStartPanorama(img) {
+    if (!active || !active.images.some(item =>
+      Number(item.id) === Number(img.id))) return;
+
+    active.display = {
+      ...currentDesign(),
+      startImageId: Number(img.id)
+    };
       const select = byId('ppi-design-start');
       if ([...select.options].some(option => Number(option.value) === Number(img.id))) {
         select.value = String(img.id);
@@ -813,9 +824,16 @@
         ppiStartUpdatePickButton();
         renderGraph();
       });
+      // 0.4.64: Neues Startpanorama automatisch speichern.
       ppiTourAutoSchedule();
-    });
-    return button;
+  }
+
+  function ppiHandleStartPanoramaClick(img) {
+    if (ppiStartPickMode) {
+      ppiChooseStartPanorama(img);
+    } else {
+      previewImage(img);
+    }
   }
   ppiStartPickButton.addEventListener('click', () => {
     if (!active?.images?.length) {
@@ -862,7 +880,7 @@
     byId('ppi-design-social').value=['cover','neutral','off'].includes(d.socialPreviewMode)?d.socialPreviewMode:'cover';
     byId('ppi-design-size').value=String(Math.max(0,sizeSteps.indexOf(d.hotspotSize)));
     byId('ppi-design-pin-color').value=/^#[0-9a-fA-F]{6}$/.test(d.svgPinColor||'')?d.svgPinColor:'#1687bc';
-    byId('ppi-design-style').value=d.hotspotStyle==='chat-pin'?'map-pin':(['classic','blue','map-pin','label-pin','outline-pin'].includes(d.hotspotStyle)?d.hotspotStyle:'classic');
+    byId('ppi-design-style').value=d.hotspotStyle==='chat-pin'?'map-pin':(['classic','blue','map-pin','label-pin','outline-pin','gps-pin','you-pin'].includes(d.hotspotStyle)?d.hotspotStyle:'classic');
     byId('ppi-design-title').checked=Boolean(d.showTitle);
     byId('ppi-design-nav').checked=Boolean(d.showNavigation);
     byId('ppi-design-fullscreen').checked=Boolean(d.showFullscreen);
@@ -1232,8 +1250,11 @@
     active.images.forEach(img=>{
       const card=node('div',undefined,'ppi-mobile-pano');
       card.classList.toggle('ppi-tour-start-selected', Number(img.id) === ppiStartSelectedId());
-      const photo=node('button',undefined,'ppi-mobile-pano-photo');photo.type='button';photo.title=`Panorama öffnen: ${img.name}`;
-      photo.append(imageThumb(img.id,420,240));photo.addEventListener('click',()=>previewImage(img));
+      const photo=node('button',undefined,'ppi-mobile-pano-photo');photo.type='button';photo.title=ppiStartPickMode
+        ? `Als Startpanorama festlegen: ${img.name}`
+        : `Panorama öffnen: ${img.name}`;
+      photo.append(imageThumb(img.id,420,240));photo.addEventListener('click',()=>
+        ppiHandleStartPanoramaClick(img));
       const title=node('div',img.name,'ppi-mobile-pano-title');
       const linksBox=node('div',undefined,'ppi-mobile-pano-links');
       const outgoing=active.links.filter(l=>Number(l.from)===Number(img.id));
@@ -1251,7 +1272,8 @@
         line.append(del);linksBox.append(line);
       }
       const actions=node('div',undefined,'ppi-mobile-pano-actions');
-      const open=node('button','360° öffnen');open.type='button';open.addEventListener('click',()=>previewImage(img));
+      const open=node('button','360° öffnen');open.type='button';open.addEventListener('click',()=>
+        ppiHandleStartPanoramaClick(img));
       const remove=node('button','Entfernen');remove.type='button';remove.classList.add('ppi-mobile-pano-remove');remove.addEventListener('click',()=>{
         if(!confirm(`„${img.name}“ aus dieser Tour entfernen? Zugehörige Verbindungen werden ebenfalls gelöscht. Die Originaldatei bleibt erhalten.`))return;
         active.images=active.images.filter(x=>Number(x.id)!==Number(img.id));
@@ -1613,10 +1635,13 @@
       card.style.left=p.x+'px';card.style.top=p.y+'px';
       const picture=node('button',undefined,'ppi-tour-graph-thumb');
       picture.type='button';
-      picture.title=`Panorama öffnen: ${img.name}`;
+      picture.title=ppiStartPickMode
+        ? `Als Startpanorama festlegen: ${img.name}`
+        : `Panorama öffnen: ${img.name}`;
       picture.setAttribute('aria-label',picture.title);
       picture.append(imageThumb(img.id,420,240),node('span','🌐','ppi-thumb-fallback'));
-      picture.addEventListener('click',()=>previewImage(img));
+      picture.addEventListener('click',()=>
+        ppiHandleStartPanoramaClick(img));
       const name=node('div',img.name,'ppi-tour-graph-name');name.title=img.path||img.name;
       const remove=node('button',undefined,'ppi-tour-card-delete');remove.type='button';remove.append(node('span','×','ppi-delete-glyph'));remove.title=`Panorama aus Tour entfernen: ${img.name}`;
       remove.setAttribute('aria-label',remove.title);
@@ -2453,8 +2478,10 @@
   const startPageBgOverlay = byId('ppi-start-page-bg-browser');
   const startPageBgDialog = startPageBgOverlay.querySelector('.ppi-startpage-bg-dialog');
   let startPageBgReturnFocus = null;
+  let cleanupStartPageBgVirtual = () => {};
   function closeStartPageBackground() {
     if (startPageBgOverlay.hidden) return;
+    cleanupStartPageBgVirtual();
     ++startPageBgRequestSerial;
     startPageBgOverlay.hidden = true;
     if (startPageBgReturnFocus?.isConnected) startPageBgReturnFocus.focus();
@@ -2489,6 +2516,7 @@
     }
   });
   async function browseStartPageBackground(folderId = 0) {
+    cleanupStartPageBgVirtual();
     const serial = ++startPageBgRequestSerial;
     const results = byId('ppi-start-page-bg-files');
     results.replaceChildren(node('p','Bilder werden geladen …'));
@@ -2501,28 +2529,426 @@
       byId('ppi-start-page-bg-path').textContent = result.path || '/';
       byId('ppi-start-page-bg-up').disabled = !!result.isRoot;
       results.replaceChildren();
-      const items = (result.items || []).filter(item => item.type === 'folder' || item.type === 'image').slice(0,160);
-      for (const item of items) {
-        const button = node('button',undefined);
+      const items = (result.items || [])
+        .filter(item => item.type === 'folder' || item.type === 'image')
+        .slice(0,160);
+      const folders = items.filter(item => item.type === 'folder');
+      const images = items.filter(item => item.type === 'image');
+
+      for (const item of folders) {
+        const button = node('button', undefined, 'ppi-bg-folder-option');
         button.type = 'button';
-        if (item.type === 'folder') {
-          button.append(node('span','📁 ' + item.name));
-          button.addEventListener('click',()=>browseStartPageBackground(item.id));
-        } else {
-          const image = imageThumb(item.id,260,146);
+        button.append(node('span', '📁 ' + item.name));
+        button.title = item.name;
+        button.addEventListener('click', () => browseStartPageBackground(item.id));
+        results.append(button);
+      }
+
+      // Virtual scrolling: only visible image tiles and a small buffer
+      // exist in the DOM. No manual "load more" button is needed.
+      if (images.length) {
+        const gallery = node('div', undefined, 'ppi-bg-virtual-gallery');
+        const windowGrid = node('div', undefined, 'ppi-bg-virtual-window');
+        gallery.append(windowGrid);
+        results.append(gallery);
+
+        const rowHeight = 148;
+        const gap = 7;
+        const minColumnWidth = 135;
+        const bufferRows = 2;
+
+        let columns = 1;
+        let previousStart = -1;
+        let previousEnd = -1;
+        let previousColumns = -1;
+        let frame = 0;
+        let visibleCards = new Map();
+
+        // Prioritized and abortable Nextcloud preview requests.
+        // All thumbnails still come from Nextcloud /core/preview.
+        const MAX_PARALLEL_THUMBS = 3;
+        const thumbJobs = new Map();
+        let runningThumbs = 0;
+        let visibleFirst = 0;
+        let visibleLast = 0;
+        let thumbQueueClosed = false;
+
+        function isVisibleThumb(index) {
+          return index >= visibleFirst && index < visibleLast;
+        }
+
+        function discardThumb(index) {
+          const job = thumbJobs.get(index);
+          if (!job) return;
+
+          thumbJobs.delete(index);
+          job.disposed = true;
+          job.controller?.abort();
+
+          if (job.objectUrl) {
+            URL.revokeObjectURL(job.objectUrl);
+            job.objectUrl = null;
+          }
+
+          job.image.removeAttribute('src');
+        }
+
+        async function startThumb(job) {
+          if (job.disposed || thumbQueueClosed) return;
+
+          const controller = new AbortController();
+          job.controller = controller;
+          job.state = 'loading';
+          runningThumbs++;
+
+          try {
+            const response = await fetch(
+              previewUrl(job.item.id, 260, 146),
+              {
+                credentials: 'same-origin',
+                cache: 'default',
+                signal: controller.signal,
+                headers: {Accept: 'image/*'}
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error(
+                'Nextcloud-Vorschau HTTP ' + response.status
+              );
+            }
+
+            const blob = await response.blob();
+
+            if (!blob.type.startsWith('image/')) {
+              throw new Error('Keine Bilddaten erhalten');
+            }
+
+            if (
+              controller.signal.aborted ||
+              job.disposed ||
+              thumbQueueClosed ||
+              serial !== startPageBgRequestSerial ||
+              thumbJobs.get(job.index) !== job
+            ) return;
+
+            job.objectUrl = URL.createObjectURL(blob);
+            job.state = 'loaded';
+            job.image.src = job.objectUrl;
+
+          } catch (error) {
+            if (
+              error?.name === 'AbortError' ||
+              controller.signal.aborted
+            ) {
+              if (!job.disposed) job.state = 'queued';
+            } else if (!job.disposed) {
+              job.state = 'failed';
+              job.image.parentElement?.classList.add(
+                'ppi-bg-thumb-failed'
+              );
+              console.warn(
+                '[Photo Sphere] Nextcloud-Vorschau:',
+                job.item.id,
+                error
+              );
+            }
+          } finally {
+            runningThumbs = Math.max(0, runningThumbs - 1);
+
+            if (job.controller === controller) {
+              job.controller = null;
+            }
+
+            if (!thumbQueueClosed) pumpThumbQueue();
+          }
+        }
+
+        function pumpThumbQueue() {
+          if (
+            thumbQueueClosed ||
+            startPageBgOverlay.hidden ||
+            serial !== startPageBgRequestSerial
+          ) return;
+
+          const waitingVisible = [...thumbJobs.values()].some(
+            job => job.state === 'queued' &&
+              isVisibleThumb(job.index)
+          );
+
+          // If visible images are waiting, cancel requests
+          // for buffered images outside the viewport first.
+          if (
+            waitingVisible &&
+            runningThumbs >= MAX_PARALLEL_THUMBS
+          ) {
+            for (const job of thumbJobs.values()) {
+              if (
+                job.state === 'loading' &&
+                !isVisibleThumb(job.index) &&
+                job.controller &&
+                !job.controller.signal.aborted
+              ) {
+                job.state = 'canceling';
+                job.controller.abort();
+              }
+            }
+          }
+
+          const center = (visibleFirst + visibleLast) / 2;
+
+          const waiting = [...thumbJobs.values()]
+            .filter(job => job.state === 'queued')
+            .sort((a, b) => {
+              const aVisible = isVisibleThumb(a.index) ? 0 : 1;
+              const bVisible = isVisibleThumb(b.index) ? 0 : 1;
+
+              if (aVisible !== bVisible) {
+                return aVisible - bVisible;
+              }
+
+              return Math.abs(a.index - center) -
+                Math.abs(b.index - center);
+            });
+
+          while (
+            runningThumbs < MAX_PARALLEL_THUMBS &&
+            waiting.length
+          ) {
+            const job = waiting.shift();
+            if (!job.disposed && job.state === 'queued') {
+              void startThumb(job);
+            }
+          }
+        }
+
+        function makeBackgroundCard(item) {
+          const button = node('button', undefined, 'ppi-bg-image-option');
+          button.type = 'button';
+          button.title = item.name;
+          button.setAttribute(
+            'aria-label', 'Hintergrundbild wählen: ' + item.name
+          );
+
+          const preview = node('div', undefined, 'ppi-bg-preview');
+          const image = node('img');
+          image.alt = '';
           image.loading = 'lazy';
-          button.append(image,node('span',item.name));
-          button.addEventListener('click',()=>{
+          image.decoding = 'async';
+
+          const fallback = node(
+            'span', 'Bildvorschau nicht verfügbar', 'ppi-bg-thumb-fallback'
+          );
+          fallback.setAttribute('aria-hidden', 'true');
+
+          image.addEventListener('error', () => {
+            preview.classList.add('ppi-bg-thumb-failed');
+          });
+
+          preview.append(image, fallback);
+
+          const filename = node('span', item.name, 'ppi-bg-image-name');
+          button.append(preview, filename);
+
+          button.addEventListener('click', () => {
             startPageBackgroundFileId = Number(item.id);
-            byId('ppi-start-page-bg-selected').textContent = 'Ausgewählt: ' + item.name;
+            byId('ppi-start-page-bg-selected').textContent =
+              'Ausgewählt: ' + item.name;
             closeStartPageBackground();
             updateStartPagePreview();
           });
+
+          return button;
         }
-        results.append(button);
+
+        function renderVirtualBackground() {
+          if (
+            serial !== startPageBgRequestSerial ||
+            startPageBgOverlay.hidden
+          ) return;
+
+          const width = gallery.clientWidth;
+
+          if (width <= 0) return;
+
+          const nextColumns = Math.max(
+            1, Math.floor((width + gap) / (minColumnWidth + gap))
+          );
+
+          columns = nextColumns;
+
+          const rows = Math.ceil(images.length / columns);
+          const pitch = rowHeight + gap;
+
+          // The gallery has its full virtual height, keeping the
+          // scrollbar stable even though most tiles do not exist.
+          gallery.style.height =
+            Math.max(0, rows * pitch - gap) + 'px';
+
+          const resultsRect = results.getBoundingClientRect();
+          const galleryRect = gallery.getBoundingClientRect();
+
+          const galleryTop =
+            galleryRect.top - resultsRect.top + results.scrollTop;
+
+          const firstVisiblePixel = Math.max(
+            0, results.scrollTop - galleryTop
+          );
+
+          const lastVisiblePixel = Math.max(
+            0,
+            results.scrollTop + results.clientHeight - galleryTop
+          );
+
+          const firstRow = Math.max(
+            0, Math.floor(firstVisiblePixel / pitch) - bufferRows
+          );
+
+          const lastRow = Math.min(
+            rows,
+            Math.ceil(lastVisiblePixel / pitch) + bufferRows
+          );
+
+          const firstIndex = Math.min(
+            images.length, firstRow * columns
+          );
+
+          const lastIndex = Math.min(
+            images.length, lastRow * columns
+          );
+
+          visibleFirst = Math.min(
+            images.length,
+            Math.floor(firstVisiblePixel / pitch) * columns
+          );
+
+          visibleLast = Math.min(
+            images.length,
+            Math.ceil(lastVisiblePixel / pitch) * columns
+          );
+
+          if (
+            firstIndex === previousStart &&
+            lastIndex === previousEnd &&
+            columns === previousColumns
+          ) {
+            pumpThumbQueue();
+            return;
+          }
+
+          const nextCards = new Map();
+          const fragment = document.createDocumentFragment();
+
+          for (let index = firstIndex; index < lastIndex; index++) {
+            const card = visibleCards.get(index) ||
+              makeBackgroundCard(images[index]);
+
+            nextCards.set(index, card);
+            fragment.append(card);
+          }
+
+          // Reuse overlapping cards so their images are not restarted
+          // while scrolling by only a few pixels.
+          // Immediately abort and release previews whose cards
+          // are no longer in the virtual window.
+          for (const index of [...thumbJobs.keys()]) {
+            if (!nextCards.has(index)) discardThumb(index);
+          }
+
+          // New cards enter the queue without starting their
+          // own image request.
+          for (const [index, card] of nextCards) {
+            if (!thumbJobs.has(index)) {
+              thumbJobs.set(index, {
+                index,
+                item: images[index],
+                image: card.querySelector('img'),
+                state: 'queued',
+                controller: null,
+                objectUrl: null,
+                disposed: false
+              });
+            }
+          }
+
+          windowGrid.replaceChildren(fragment);
+          windowGrid.style.top = firstRow * pitch + 'px';
+
+          visibleCards = nextCards;
+          previousStart = firstIndex;
+          previousEnd = lastIndex;
+          previousColumns = columns;
+
+          // Visible images first; buffer images only when
+          // there is available request capacity.
+          pumpThumbQueue();
+        }
+
+        function scheduleVirtualBackground() {
+          if (frame) return;
+
+          frame = requestAnimationFrame(() => {
+            frame = 0;
+            renderVirtualBackground();
+          });
+        }
+
+        results.addEventListener(
+          'scroll', scheduleVirtualBackground, {passive:true}
+        );
+
+        const resizeObserver =
+          typeof ResizeObserver === 'function'
+            ? new ResizeObserver(scheduleVirtualBackground)
+            : null;
+
+        resizeObserver?.observe(results);
+
+        // Fallback for browsers without ResizeObserver, and
+        // additional safety for viewport orientation changes.
+        window.addEventListener(
+          'resize', scheduleVirtualBackground
+        );
+
+        cleanupStartPageBgVirtual = () => {
+          thumbQueueClosed = true;
+
+          for (const index of [...thumbJobs.keys()]) {
+            discardThumb(index);
+          }
+
+          if (frame) cancelAnimationFrame(frame);
+          frame = 0;
+
+          results.removeEventListener(
+            'scroll', scheduleVirtualBackground
+          );
+
+          window.removeEventListener(
+            'resize', scheduleVirtualBackground
+          );
+
+          resizeObserver?.disconnect();
+          visibleCards.clear();
+          cleanupStartPageBgVirtual = () => {};
+        };
+
+        scheduleVirtualBackground();
       }
-      if (!items.length) results.append(node('p','Keine JPEG-Bilder in diesem Ordner.'));
-      if (result.truncated) results.append(node('p','Ergebnis begrenzt. Bitte einen Unterordner öffnen.'));
+
+      if (!items.length) {
+        results.append(node('p', 'Keine Bilder in diesem Ordner.'));
+      }
+
+      if (result.truncated) {
+        const warning = node(
+          'p',
+          'Die Dateiliste ist serverseitig begrenzt. ' +
+          'Weitere Bilder findest du gegebenenfalls in einem Unterordner.',
+          'ppi-bg-limit-warning'
+        );
+        results.append(warning);
+      }
     } catch (error) {
       if (serial === startPageBgRequestSerial) results.replaceChildren(node('p','Bilder nicht verfügbar: '+error.message));
     }

@@ -1,35 +1,14 @@
-# Photo Sphere – Versionshistorie
-
-## 0.4.64 – In Entwicklung
-
-### Neue Funktionen
-- Noch keine neuen Funktionen dokumentiert.
-
-### Verbesserungen
-- Versionshistorie übersichtlich und chronologisch aufbereitet.
-
-### Fehlerbehebungen
-- Noch keine Fehlerbehebungen dokumentiert.
-
 ## 0.4.63
 
 - App Store-compatible release version.
 - Same tested functionality as 0.4.62.140.
 - No functional changes.
 
-## 0.4.62.140 – Release-Kandidat
-
-### Verbesserungen
-- Getesteter Entwicklungsstand als Grundlage für die App-Store-Version 0.4.63.
-- Keine funktionalen Unterschiede zur veröffentlichten Version 0.4.63.
-
 ## 0.4.62.138 (Testversion)
-
 - Gemeinsame, responsive Fehlerdarstellung für ungültige, abgelaufene und deaktivierte öffentliche Tour- und Startseiten-Links.
 - Statuscodes und öffentliche Zugriffsprüfungen unverändert; keine Änderung an Tour-Passwortfreigaben.
 
 ## 0.4.62.137
-
 - Im Startseiten-Reiter „Vorlagen“ werden Standard- und eigene Vorlagen links als klickbare Miniaturkarten mit dezentem Schatten angezeigt.
 - Die bestehende Live-Vorschau wird rechts im Vorlagen-Reiter wiederverwendet; Auswahl aktualisiert das Design nur ungespeichert.
 - Responsive Anordnung für schmale Bildschirme.
@@ -53,14 +32,12 @@
 - Beinhaltet die Menü-Ausblendekorrektur und die reduzierten inneren Vorschaubild-Schatten.
 
 ## 0.4.62.133 (Docker test – Menüsteuerung)
-
 - Hide the top-level 360° Touren / Startseiten switch while editing a tour or choosing panoramas.
 - Restore the switch when returning to the tour overview; keep Startseiten behavior unchanged.
 - No changes to tour/share data, cache, permissions or background jobs.
 - Local test build is unsigned; a signed release requires re-signing by the app publisher.
 
 ## 0.4.62.132 (Integration Beta – Docker test only)
-
 - Merge permission-scoped Nextcloud tag selection from the productive 0.4.62.110 package into the 0.4.62.131 tour editor, preserving the newer start-page tools.
 - Restore filename-or-tag picker mode and selected tag-ID filtering with user-visible tag validation.
 - Restore cumulative JPEG size filters: under 20 MB and over 20/30/40/50 MB, and panorama counts.
@@ -68,50 +45,42 @@
 - Leave background-job deletion rules and seven-day safety grace unchanged. Run server PHP lint, JS syntax check, tag-rights tests, and Docker testcloud integration tests before any production use.
 
 ## 0.4.62.92
-
 - Refresh App Store metadata to describe the 360-degree tour editor, hotspots, public sharing, responsive viewer and app-owned panorama cache.
 - Update documentation and publication checklist; no changes to application runtime behavior, routes, access controls or cache deletion rules.
 - Release candidate for compatibility and signed-package validation; do not publish as stable before the remaining checks are complete.
 
 ## 0.4.62.91 (Security Beta)
-
 - Fix removing the legacy tour share password inadvertently stripping password hashes from independent additional tour share links. The additional links keep their own password protection intact.
 - All unrelated viewer, tour, app navigation, cache, watermark and cleanup functionality unchanged.
 
 ## 0.4.62.90 (Beta)
-
 - Optional admin-controlled 360°-Touren navigation shortcut using Nextcloud navigation event.
 - Admin settings grouped as Wasserzeichen, Zoom und Blickwinkel, Panorama-Cache and Navigation.
 - Navigation off by default, existing tours and panorama cache unchanged.
 
 ## 0.4.62.89 – Cache-Statistik: verschiebbare Spaltentrenner
-
 - Cache-Tabellenspalten über ziehbare Kopfzeilen-Trenner anpassbar (auch per Tastatur).
 - Lange Dateinamen und Zellen bleiben innerhalb ihrer Spalten, Tabelle horizontal scrollbar.
 - Keine Änderungen an Cache-Bereinigung, Berechtigungen oder Tour-Viewer.
 
 ## 0.4.62.88 (Beta)
-
 - Admin-Cache-Statistik: feste Spaltenbreiten und echte horizontale Scrollfläche beheben überlappende Dateinamen und Tournamen.
 - Lange Dateinamen werden gekürzt angezeigt; der vollständige Name ist per Mauszeiger verfügbar. Barrierearme Tastatur-Navigation für die Tabelle.
 - Datenschutz, Bereinigung, Schutzfrist, Tour-Viewer und Cache-Erzeugung unverändert.
 
 ## 0.4.62.87 (Beta)
-
 - Cache-Statistik: datei- und tourbezogene Namen ausschließlich aus eigenen gespeicherten Touren; für fremde oder nicht zuordenbare Einträge keine Namen oder Datei-IDs in der API-Antwort.
 - Eigene Panoramen: zugehörige Tournamen, auch bei Verwendung in mehreren Touren.
 - Cache-Tabelle mit eigenständiger Tournamenspalte, größeren Abständen und horizontalem Scrollen.
 - Unverändert: Hintergrundbereinigung, 7-Tage-Sicherheitsfrist, Tour-Viewer und Bild-Cache.
 
 ## 0.4.62.86 (Beta)
-
 - Admin read-only panorama cache statistics: total cached bytes, active tour references across users, currently used / unused / grace-period panoramas, filtered per-ID details.
 - Admin statistics endpoint fails closed if a full cross-user tour-reference scan fails; no caching, image conversion or deletion is triggered by viewing statistics.
 - Daily orphan cleanup job marked TIME_INSENSITIVE per Nextcloud 35 API guidance.
 - Existing cache files, seven-day grace markers, tour viewer and resolution profiles unchanged.
 
 ## 0.4.62.85 – Unused tour panorama cleanup after safety grace (Beta)
-
 - Introduce a daily Nextcloud TimedJob to inspect only the private panorama_derivatives_v1 app cache, even when the owner has removed their last tour; no server path or external utilities assumed.
 - Identify unused file IDs across ALL saved Photo Sphere user tour preferences through Nextcloud's IDBConnection QueryBuilder; no PostgreSQL-specific JSON functions, compatible in principle with MariaDB/MySQL.
 - Retain orphaned derivatives for at least 7 full days from first confirmed absence. Changes to the matching cache filenames reset the grace period; recheck all tour references immediately before deletion.
@@ -121,7 +90,6 @@
 - The new orphan behavior needs a live integration test on Nextcloud, including a separate MariaDB/MySQL test installation before release.
 
 ## 0.4.62.84 – Safe automatic cleanup of outdated panorama versions (Beta)
-
 - When a tour is visited, queue at most one lightweight cleanup job per user every 24 hours, using the existing Nextcloud background-job system.
 - Process up to 20 distinct images from that user’s saved tours per cleanup run; inspect only the private app-owned panorama_derivatives_v1 folder, never global previews.
 - Delete only older derivative versions of a verified, still-readable tour source when BOTH current desktop/mobile derivatives already exist; limit deletions to 40 per run.
@@ -131,13 +99,11 @@
 - Continue using the existing enabled toggle, worker settings, existing cache filenames, authorisation checks, tour viewer and preload behaviour.
 
 ## 0.4.62.83 – Panorama cache settings CSRF fix (Beta)
-
 - Allow admin-only read-only panorama-cache status GET without CSRF token, as recommended for Nextcloud GET endpoints; writing POST retains CSRF protection and admin access checks.
 - Improve request-token lookup fallback for saving the admin settings.
 - Cache preparation, existing derivatives, zoom/renderer, public tours and viewer scripts unchanged.
 
 ## 0.4.62.82 – Tour cache administration (Beta)
-
 - Moved Panorama-Optimierung directly below Zoom und Blickwinkel with explicit tour-only scope.
 - Fixed disabled switch when the status request fails and improved UI error feedback.
 - Configurable one to three concurrent panorama preparations (default one), single-host file locking slots.
@@ -205,7 +171,6 @@
 - Erweiterte unabhängige Freigabelinks aus 0.4.62.61 bleiben erhalten.
 
 ## 0.4.62.61 – Unabhängige Tour-Freigabelinks (Testversion)
-
 - Bis zu zwölf zusätzliche Freigabelinks je Tour mit eigener Bezeichnung, Passwort und Ablaufdatum.
 - Zusätzliche Links unabhängig deaktivieren, reaktivieren oder endgültig widerrufen.
 - Passwortprüfung verwendet Nextcloud-Freigaberichtlinien. Zugriff auf Bilder, Thumbnails, Manifest und Wasserzeichen ist je Link geprüft.
@@ -213,18 +178,15 @@
 - Keine Migration oder Datenbankänderungen erforderlich; Links werden im Benutzerdatensatz der Tour gespeichert.
 
 ## 0.4.62.56
-
 - Darstellung: obere Reihe Startpanorama, Wasserzeichen mit berechtigter Vorschau, SVG-Pin-Farbe mit gleichgroßem Farbfeld und Schnellfarben darunter sowie Hotspot-Design. Tourname oberhalb der Reihe.
 - Neue authentifizierte Wasserzeichen-Thumbnail-Route gibt nur für Touren freigegebene Grafiken aus. Bestehende Tour-Einstellungen unverändert.
 
 ## 0.4.62.50 – Tour-Wasserzeichen mit zentraler Panorama-Positionierung (Testversion)
-
 - Tour-Wasserzeichen verhalten sich nun wie im Photo-Sphere-Datei-Viewer: Im Modus „Im 360°-Panorama“ bleiben sie räumlich verankert und verschwinden außerhalb des Blickfelds.
 - Admin-Einstellungen für horizontale Position, getrennte Höhen und Größen auf Desktop/Mobil sowie der alternative Modus „Fest auf dem Bildschirm“ bleiben maßgeblich.
 - Wasserzeichen-Auswahl und Zugriffsschutz aus Version 0.4.62.49 unverändert.
 
 ## 0.4.62.49 – Wasserzeichen aus Admin-Galerie für Touren (Testversion)
-
 - Administratoren können bestehende Wasserzeichen pro Grafik für Touren freigeben; standardmäßig ist keines freigegeben.
 - Normale Benutzer wählen im Tab „Darstellung“ nur freigegebene Wasserzeichen und können sie für die Tour ein- oder ausschalten.
 - Öffentliche Touren beziehen das gewählte PNG über eine eigene token- und gegebenenfalls passwortgeschützte Bildroute.
@@ -232,69 +194,48 @@
 - Erste Ausbaustufe: Wasserzeichen liegt als feste Bildschirmeinblendung über der Tour, mit zentral definierten Desktop-/Mobilgrößen und Bildschirmposition.
 
 ## 0.4.62.44 – Pin-Bildebenen und dezenter Vorschau-Rahmen (Testversion)
-
 - Kleine Panorama-Vorschau hinter die SVG-Pin-Kontur gelegt; Schatten weiterhin dahinter.
 - Rahmen der vergrößerten Vorschau auf Desktop und Mobil von 3 auf 2 Pixel reduziert.
 - Hover-, Touch- und Doppelhüpfer-Bedienung bleiben unverändert.
 
 ## 0.4.62.42 – SVG-Pin-Zielbild und animierte Zoomvorschau (Testversion)
-
 - Kleine Zielpanorama-Vorschau innerhalb der transparenten Kontur der drei SVG-Pins (Map, Label, Kontur).
 - Kleines Bild hüpft synchron mit Pin und Schlagschatten; keine Änderungen an Männchen oder blauem Guide.
 - Ein erster Klick/Tipp zoomt die Vorschau weich aus dem Pin; ein zweiter Klick/Tipp öffnet das verknüpfte Panorama. Tipp auf das Panorama schließt die Vorschau.
 - Bestehende Tour-Daten, Touchsteuerung, Sichtbarkeitsbereich und Berechtigungen bleiben unverändert.
 
 ## 0.4.62.41 – Kompakter Größenregler und Sprechblasen-Pin aus Auswahl entfernt
-
 - Hilfstexte „Etwas kleiner“ und „Etwas größer“ am Größenregler entfernt; Höhe an Startblickrichtung angeglichen.
 - Sprechblasen-Pin steht nicht mehr zur Auswahl. Bereits gespeicherte Touren mit diesem Design werden im Viewer als Map-Pin dargestellt und beim nächsten Speichern auf Map-Pin übernommen.
 - Bestehende Tour-Daten, SVG-Farben, Schatten und Animationen bleiben erhalten.
 
 ## 0.4.62.34 – SVG-Pins: dezenter doppelter Hüpfer beim Passieren der Bildschirmmitte (Testversion)
-
 - Ausschließlich für Map-Pin, Sprechblasen-Pin, Label-Pin und Kontur-Pin.
 - Zwei sanfte Aufwärtsbewegungen (13 und 9 px) in 920 ms, nur beim tatsächlichen Passieren der horizontalen Bildmitte.
 - Bestehende zentrierte Sichtbarkeit, Zielpanorama-Vorschau und die zweistufige mobile Touch-Bedienung bleiben unverändert.
 - Auf `prefers-reduced-motion` wird Rücksicht genommen; kein Dauerhüpfen.
 
 ## 0.4.62.31 – Zentrierte Hotspot-Sichtbarkeit (Testversion)
-
 - Tour-Hotspots im mittleren horizontalen Bildschirmbereich: 50 % auf Desktop, 65 % auf Mobil-/Touchgeräten.
 - Sanfte Ease-in/Ease-out-Überblendung über 8 % der Anzeigebreite an beiden Grenzen; außerhalb des Bereichs sind Marker weder sichtbar noch anklickbar.
 - Gilt für Tour-Editor und öffentlichen Viewer, alle sechs Designs und die zugehörigen Zielpanorama-Vorschauen.
 - Keine zusätzliche Option im Darstellungs-Reiter; Tour-Daten und Koordinaten bleiben unverändert.
 
 ## 0.4.62.26
-
 - Two additional tour-wide hotspot designs: map pin and speech bubble, based on the supplied SVG icons.
 - Existing target panorama previews stay linked to all hotspot designs; new pin previews appear on hover/focus and touch.
 - Hotspot design remains a single setting for the entire tour; per-connection design selection is not introduced.
 
 ## 0.4.62.21 – Kompakter Darstellungs-Tab und dynamischer Messenger-Hinweis (Testversion)
-
 - Startpanorama- und Hotspot-Auswahl jeweils direkt unter die zugehörige Vorschau verschoben.
 - Die übrigen Felder in zwei unabhängig hohen Spalten gebündelt, um unnötige Leerflächen zu vermeiden.
 - Statusanzeige verdeutlicht die bereits serverseitig vorhandene dynamische Open-Graph-Regel: ohne Passwort Tourname/Beschreibung/Startpanorama (Modus cover); mit Passwort neutrale Angaben und neutrale Grafik.
 - Bestehende gespeicherte Auswahlwerte, öffentliche Sicherheitsprüfungen und Tour-Daten bleiben unverändert.
 
 ## 0.4.62.20 – Speicherbutton im Darstellungs-Reiter (Testversion)
-
 - „Darstellung speichern“ von unten in die obere Aktionsleiste neben „Tour löschen“ verschoben. Je Reiter wird nur der passende Speicherbutton angezeigt; Speichervorgang bleibt unverändert.
 
-## 0.4.62.19 – Open Graph link previews
-
-- Metadata for title, description and optional start panorama on public tours.
-- Password-protected tours expose only generic social metadata; image route denies access.
-- Social preview choices in Darstellung: cover, neutral, off.
-- All social image requests check active share token and original image read permissions.\n
-### 0.4.62.80 – Isolated panorama derivative cache (experimental)
-- Cache 4096/8192 panorama JPEG derivatives in private appdata, independent of global Nextcloud preview limits.
-- Schedule background preparation for saved tours and upon opening existing authorized tours.
-- Detect Imagick dynamically, preserve server resource limits; retain normal Nextcloud preview/original fallback when unavailable.
-- Cache keyed by source identity and ETag; original files and public-share checks remain unchanged.
-
 ## 0.4.62.15 – Öffentliche Touren mit Passwortschutz (Testversion)
-
 - Der Tour-Eigentümer kann für einen aktiven Freigabelink ein Passwort setzen, ändern oder entfernen (10–128 Zeichen).
 - Passwörter werden serverseitig mit password_hash gespeichert und nie an die Tour-API ausgeliefert.
 - Öffentliche Touransicht zeigt bei geschütztem Link ein Passwortformular, statt Viewer-Skripte zu laden.
@@ -304,7 +245,6 @@
 - Tour-Daten und bestehende ungeschützte Links bleiben unverändert.
 
 ## 0.4.62.13 – Freigabeverwaltung, Schritt 1 (Testversion)
-
 - Optionales Ablaufdatum für bestehende und neue öffentliche Tourlinks.
 - Ablaufprüfung für Tour-Seite, Manifest, Thumbnail und JPEG-Zugriff.
 - Sichere Token-Erneuerung mit Widerruf des alten Links.
@@ -317,12 +257,10 @@
 - Gegenläufige Verbindungen behalten eine stabile Reihenfolge; Hindernisrouting, geglättete Kurven, Löschfunktion und Tour-Daten bleiben unverändert.
 
 ## 0.4.62.11 – CSS-Ausgabe repariert
-
 - Die Hover- und Hotspot-Vorschau-CSS-Regeln liegen wieder innerhalb des Stylesheets, statt als Text auf der Seite zu erscheinen.
 - Alle anderen Funktionen aus 0.4.62.10 unverändert.
 
 ## 0.4.62.10 – Intelligentere Verbindungslinien und echte Hotspot-Vorschau
-
 - Abstandsbewertung für benachbarte Pfeilpfade und zusätzliche Umwegkorridore; weniger Überlagerungen bei langen Verbindungen.
 - Bei Hover/Fokus auf einer Panorama-Kachel werden ihre direkten Verbindungen hervorgehoben und andere transparent dargestellt.
 - Klassische Hotspot-Vorschau verwendet die identische gestrichelte SVG-Figur des 360°-Viewers statt einer abweichenden Strichfigur.
@@ -330,23 +268,19 @@
 - Keine Änderungen an Tour-Daten, öffentlicher Freigabe, Admin-Zoomwerten oder maximal drei Panorama-Spalten.
 
 ## 0.4.62.8
-
 - Tour-Verwaltung: dauerhaft auf eine maximale Breite von 1040 px begrenzt, damit die Seitenbreite unabhängig von der Touranzahl stabil bleibt.
 - Desktop-Verbindungsgraph: maximal drei Panorama-Karten pro Reihe, auch bei zehn oder mehr Panoramen.
 - Die Admin-Zoomwerte und übrigen Funktionen aus 0.4.62.7 bleiben unverändert.
 
 ## 0.4.62.5
-
 - Tour-Übersicht: responsive Kartenanordnung je nach Tour-Anzahl (1 breit, 2 nebeneinander, ab 3 erste Karte breit und weitere zweispaltig). Keine Änderungen an Tour-Daten und öffentlichen Freigaben.
 
 ## 0.4.61 – Mausrad-Zoom in öffentlichen Touren
-
 - Öffentliche 360°-Tour: Mausrad zoomt direkt wie im Datei-Panorama-Viewer.
 - Tour-Editor: Mausrad-Scrollen bleibt unverändert, um die Konfigurationsansicht nicht zu blockieren.
 - Touch/Gyro/Hotspot-Steuerung unverändert.
 
 ## 0.4.59 – Öffentliche Tour-Startseite (Test)
-
 - Öffentliche Links beginnen mit einer Startseite mit großem Startpanorama, Tour-Titel und Startknopf.
 - Erst nach bewusstem Start wird der bildschirmfüllende 360°-Viewer geladen.
 - Vorhandene sichere Freigabe-Token, Gyro- und Viewer-Bedienung unverändert.
@@ -361,25 +295,21 @@
 - Blauer Guide: dezenter Hover, höheres Zielbild und zusammenhängender Hoverbereich.
 
 ## 0.4.58.3 (test)
-
 - Selectable blue guide hotspot, with target image preview on hover/focus (visible on touch).
 - Includes layout-after-save fix from 0.4.58.2.
 
 ## 0.4.55 – Hotspot-Sichtbarkeit und Tour-Pfeilführung
-
 - Die ausgeblendeten Hotspot-Figuren respektieren wieder die Sichtbarkeitsprüfung in Editor und öffentlicher Tour (CSS display:flex!important wird durch [hidden] überschrieben).
 - Gegenläufige Verbindungspfeile erhalten getrennte, gebogene Lanes mit passend versetzten Andockpunkten, ohne unabhängig kreuzende Endpunkt-Sortierung.
 - Gespeicherte Tour-Daten, Wechselpunkte und Scrolling bleiben unverändert.
 
 ## 0.4.54 – Tour-Verbindungen und sichtbare Hotspots
-
 - Wechselpunkte nur anzeigen, wenn die vollständige Figur innerhalb des sichtbaren Panoramas liegt; keine am Bildrand klebenden Figuren.
 - Die Position der Hotspots wird beim Drehen neu projiziert; Tourdaten bleiben unverändert.
 - Zielpanorama-Tooltips ohne übliche Bilddateiendungen.
 - Verbindungspfeile an geteilten Kachelseiten automatisch auf getrennte Andockpunkte verteilen.
 
 ## 0.4.53 – Tour-Hotspots mit Zielbild und persönliche Einstellungen
-
 - 0.4.51/0.4.52: Kompakter Tour-Editor mit Zielbildleiste und Ladeanimation.
 - Neuer anklickbarer SVG-Figuren-Hotspot, der das dynamische Vorschaubild des Ziels trägt (Tour-Editor und öffentlicher Tour-Viewer).
 - Zielname als Tooltip und Barrierefreiheitsbeschriftung; bestehende Tour-Verbindungen bleiben unverändert.
@@ -387,14 +317,12 @@
 - Einstieg in die Tour-Verwaltung in der linken Seitenleiste unter Persönliche Einstellungen.
 
 ## 0.4.52 – Tour-Editor: Ladeanimation
-
 - Übernimmt den unscharfen Vorschauhintergrund, Spinner und animierten Ladebalken aus dem fertigen Panorama-Viewer.
 - Ladeanzeige verschwindet erst nach erfolgreichem Aufbau der 360°-Ansicht; bei Fehlern erscheint die bestehende Statusmeldung.
 - Da der Tour-Editor Bilder direkt per Image lädt, wird bewusst kein vorgetäuschter Prozentwert angezeigt.
 - Scroll-Layout, Touren-Navigation und restliche Oberfläche bleiben unverändert.
 
 ## 0.4.51 (Tour editor viewport layout)
-
 - Panorama scales to viewport height while reserving room for the target-thumbnail strip.
 - Target thumbnails are always shown for a tour with two or more panoramas, even before placing a hotspot.
 - Compact horizontal thumbnail scrolling and collapsible help text; single scrolling dialog remains the fallback.
@@ -410,39 +338,34 @@
 - Die seit 0.4.47 funktionierende scrollbare Dialogstruktur bleibt unverändert.
 
 ## 0.4.49 (Tour thumbnail card usability)
-
 - Größere Panorama-Karten mit direktem Öffnen über das Vorschaubild (Tastaturbedienung inklusive).
 - Entfernen-Schaltfläche oben rechts über dem Thumbnail; sichtbar bei Hover, Tastaturfokus und auf Touchgeräten.
 - Kartenränder für Verbindungspfeile angepasst; bisherige Scroll-Lösung beibehalten.
 
 ## 0.4.48 (Tour graph delete hit area)
-
 - Keep graph delete controls clickable when crossing thumbnail cards using a short hover grace period.
 - Raise delete controls above panorama cards and increase hit area to 32 px.
 - Preserve the 0.4.47 scrolling behavior unchanged.
 
 ## 0.4.47 (Tour graph centre & scrolling)
-
 - Verbindungs-Lösch-X bei Hover auf die geometrische Kurvenmitte gesetzt.
 - Panorama-Einstellungsdialog als einziger Scrollcontainer, sticky Titel, erreichbare Zielgalerie.
 - Scrollbarkeit des Tour-Hauptbereichs in Nextcloud verbessert.
 
 ## 0.4.46 – Tour-Graph und Theme-Kontrast (Testversion)
-
 - Pfeilspitzen vergrößert, Linien kontrastreicher und dicker.
 - Verbindungs-Löschknöpfe versetzt; am Desktop beim Zeigen auf die zugehörige Linie, mobil sichtbar.
 - Überschrift, Untertitel und Erfolgs-/Fehlermeldungen in einem themeabhängigen Content-Container.
 - Tour-Daten, Viewer, Hotspots und öffentliche Freigaben unverändert.
 
 ## 0.4.44 – Interaktive Tour-Übersicht (Testversion)
-
 - Panorama-Karten mit echten Vorschaubildern, Dateinamen, Öffnen und Entfernen.
 - Gebogene Richtungspfeile und direktes Löschen einzelner Verbindungen.
 - Doppelte Bild- und Verbindungsliste entfernt.
 - Zielvorschaubild übernimmt bei gesetztem Wechselpunkt sofort die Verbindung in den Entwurf.
 - Originaldateien werden beim Entfernen aus einer Tour nicht gelöscht.
 
-## 0.4.43 – 2026-11-19
+# 0.4.43 – 2026-11-19
 
 - Tour-Hotspot-Editor: Zielpanorama über anklickbare Vorschaubilder auswählen statt nur über Dropdown.
 - Sichtbare Zielbildgalerie nach Setzen eines Wechselpunktes; vorhandene Verbindungen und Speicherung bleiben unverändert.
@@ -450,7 +373,7 @@
 - Mausrad-Weiterleitung auf die Panorama-Fläche begrenzt, damit die Bedienelemente natürlich scrollbar bleiben.
 - Basierend ausschließlich auf Version 0.4.42; Wasserzeichen, Bildauswahl und öffentliche Freigaben unverändert.
 
-## 0.4.42 – 2026-11-19
+# 0.4.42 – 2026-11-19
 
 - Tour-Editor und Panoramaansicht deutlich vergrößert (nahezu bildschirmfüllender Dialog).
 - Fester Dialogkopf und unabhängig scrollbarerer Einstellungsbereich, einschließlich Mausrad-Weiterleitung vom Panorama zum Dialog; Strg + Mausrad bleibt Zoom.
@@ -458,7 +381,7 @@
 - Öffentlicher Tour-Viewer ebenfalls größer.
 - Bisherige Panorama-/Wasserzeichenfunktionen und Tour-Freigabe unverändert.
 
-## 0.4.41 – Öffentliche Tour-Testfreigabe und Scrollkorrektur
+# 0.4.41 – Öffentliche Tour-Testfreigabe und Scrollkorrektur
 
 - Öffentliche, zufällig erzeugte Tour-Links mit explizitem Aktivieren und Widerrufen.
 - Gäste sehen ausschließlich Bilder und Navigation der freigegebenen Tour; Bild-Endpunkte prüfen Token, Tour-Zugehörigkeit und aktuelle Lesbarkeit.
@@ -473,7 +396,7 @@
 - Panoramaansicht in der Höhe angepasst, damit die Schaltflächen auf Desktop und Smartphones erreichbar bleiben.
 - Öffentliche Tour-Links noch nicht freigeschaltet; Datei- und Berechtigungsprüfung wird dafür separat umgesetzt.
 
-## 0.4.39 – Tour-Editor Test
+# 0.4.39 – Tour-Editor Test
 
 - Editieren von Navigationspunkten direkt im 360°-Panorama (Yaw/Pitch).
 - Anklickbare Wechselpunkte öffnen verlinkte Panoramen im Tour-Editor.
@@ -483,7 +406,7 @@
 - Originaldateien und normale Nextcloud Files/Photos-Einzelansichten bleiben unverändert.
 - Öffentliche Tour-Freigaben sind weiterhin deaktiviert.
 
-## 0.4.38 – Tour-Editor Test
+# 0.4.38 – Tour-Editor Test
 
 - Dateiauswahl erhält eine eigene scrollbare Fläche mit feststehender Auswahlleiste.
 - Pano-Vorschaubilder im Editor werden sofort geladen (nicht lazy).
@@ -493,14 +416,12 @@
 - Der interaktive 360°-Hotspot-Editor ist weiterhin nicht Bestandteil dieser Teststufe.
 
 ## 0.4.37 – Tour-Editor Test
-
 - Neue Kachelansicht für Ordner und JPEG-Panoramen mit Nextcloud-Vorschaubildern.
 - Mehrfachauswahl über Checkboxen; gesammeltes Hinzufügen auch aus mehreren Ordnern.
 - Bereits hinzugefügte Panoramen haben eine anklickbare Vorschau und eine Schaltfläche „Vorschau öffnen“.
 - Bestehende Tourdaten und Panorama-Viewer nicht verändert.
 
 ## 0.4.36 (Tour-Test)
-
 - „Panorama hinzufügen“ zeigt die Dateiauswahl sichtbar an und scrollt sie in den Blickbereich.
 - Explizites Ein-/Ausblenden der Abschnitte auch bei abweichenden Nextcloud-Themes; Lade- und Fehlerhinweise im Dialog bleiben sichtbar.
 - Tourverwaltung und Panorama-Betrachter ansonsten unverändert.
@@ -511,7 +432,7 @@
 - Ordnerauswahl nutzt geprüfte Nextcloud-Ordner-IDs, analog zur Wasserzeichenverwaltung.
 - Bestehender Panorama-Viewer, Wasserzeichen, Tour-Erstellen und Tour-Löschen unverändert.
 
-## 0.4.34 – Tour-Verwaltung (erste Teststufe)
+# 0.4.34 – Tour-Verwaltung (erste Teststufe)
 
 - Eigene Nextcloud-App-Navigation „360° Touren“ für alle angemeldeten Benutzer.
 - Benutzerbezogene Tour-Entwürfe erstellen, benennen, bearbeiten und löschen.
@@ -874,3 +795,22 @@
 - Public navigation displays token-scoped cached small previews rather than filename-only controls.
 - Editable optional welcome text in the tour design tab, validated and stored with each tour.
 - Public landing displays welcome description as plain text.
+
+## 0.4.62.19 – Open Graph link previews
+- Metadata for title, description and optional start panorama on public tours.
+- Password-protected tours expose only generic social metadata; image route denies access.
+- Social preview choices in Darstellung: cover, neutral, off.
+- All social image requests check active share token and original image read permissions.\n
+### 0.4.62.80 – Isolated panorama derivative cache (experimental)
+- Cache 4096/8192 panorama JPEG derivatives in private appdata, independent of global Nextcloud preview limits.
+- Schedule background preparation for saved tours and upon opening existing authorized tours.
+- Detect Imagick dynamically, preserve server resource limits; retain normal Nextcloud preview/original fallback when unavailable.
+- Cache keyed by source identity and ETag; original files and public-share checks remain unchanged.
+
+## 0.4.62.139 – Startseitenbezogene Tour-Passwortfreigabe (Testversion)
+
+- Startseiten-Freigabe mit drei Regeln: Tour-Passwörter beibehalten (Standard), alle eingebundenen Touren freischalten, einzelne Touren freischalten.
+- Freigabe nur nach Anmeldung an einer passwortgeschützten Startseite; pro Browser-Sitzung und ausschließlich für den tatsächlich über diese Startseite eingebundenen Tour-Link.
+- Server prüft bei jeder Viewer-, Manifest-, Vorschau-, Bild-, Cache- und Wasserzeichen-Anfrage erneut Startseiten-Passwortsitzung, freigegebene Tour-Zuordnung, Modus und gültige Tour-Freigabe.
+- Tour-Links und vorhandene Tour-Passwörter werden nicht verändert. Passwortänderungen und widerrufene Startseiten- bzw. Tour-Freigaben beenden die entsprechende Berechtigung.
+- Sicherheitshinweis: Die Version ist für Funktionstests auf einer separaten Docker-Testinstallation gedacht, noch kein unabhängiges Security-Audit.

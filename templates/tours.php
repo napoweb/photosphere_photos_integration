@@ -341,7 +341,7 @@
           <div class="ppi-svg-color-swatches" aria-label="Voreingestellte Farben"><button type="button" data-pin-color="#1687bc" aria-label="Blau" title="Blau" style="--swatch:#1687bc"></button><button type="button" data-pin-color="#e54848" aria-label="Rot" title="Rot" style="--swatch:#e54848"></button><button type="button" data-pin-color="#32a36b" aria-label="Grün" title="Grün" style="--swatch:#32a36b"></button><button type="button" data-pin-color="#f09629" aria-label="Orange" title="Orange" style="--swatch:#f09629"></button><button type="button" data-pin-color="#ffffff" aria-label="Weiß" title="Weiß" style="--swatch:#ffffff"></button><button type="button" data-pin-color="#111111" aria-label="Schwarz" title="Schwarz" style="--swatch:#111111"></button></div>
           <p class="ppi-design-color-note">Nur für SVG-Pins</p>
         </div>
-        <div class="ppi-design-mini"><label for="ppi-design-style">Hotspot-Design</label><div class="ppi-design-mini-image ppi-design-hotspot-preview"><img id="ppi-design-style-preview" alt="Vorschau des ausgewählten Hotspot-Designs"><span id="ppi-design-pin-preview" role="img" aria-label="Vorschau des ausgewählten SVG-Pins" hidden></span><svg id="ppi-design-classic-preview" viewBox="0 0 90 66" aria-label="Klassisches Wechselpunkt-Männchen"><path d="M 13 8 Q 20 28 33 31 L 40 39 M 77 8 Q 68 27 56 31 L 50 39 M 40 39 Q 32 49 31 66 M 50 39 Q 59 49 60 66" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="6 4"/><ellipse cx="45" cy="24" rx="10" ry="13" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="6 3"/></svg></div><select id="ppi-design-style" aria-label="Hotspot-Design auswählen"><option value="classic">Klassisches Männchen</option><option value="blue">Blauer 360°-Guide – Zielbild bei Hover</option><option value="map-pin">Map-Pin – mit Zielpanorama</option><option value="label-pin">Label-Pin – mit Zielpanorama</option><option value="outline-pin">Kontur-Pin – mit Zielpanorama</option></select></div>
+        <div class="ppi-design-mini"><label for="ppi-design-style">Hotspot-Design</label><div class="ppi-design-mini-image ppi-design-hotspot-preview"><img id="ppi-design-style-preview" alt="Vorschau des ausgewählten Hotspot-Designs"><span id="ppi-design-pin-preview" role="img" aria-label="Vorschau des ausgewählten SVG-Pins" hidden></span><svg id="ppi-design-classic-preview" viewBox="0 0 90 66" aria-label="Klassisches Wechselpunkt-Männchen"><path d="M 13 8 Q 20 28 33 31 L 40 39 M 77 8 Q 68 27 56 31 L 50 39 M 40 39 Q 32 49 31 66 M 50 39 Q 59 49 60 66" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="6 4"/><ellipse cx="45" cy="24" rx="10" ry="13" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="6 3"/></svg></div><select id="ppi-design-style" aria-label="Hotspot-Design auswählen"><option value="classic">Klassisches Männchen</option><option value="blue">Blauer 360°-Guide – Zielbild bei Hover</option><option value="map-pin">Map-Pin – mit Zielpanorama</option><option value="label-pin">Label-Pin – mit Zielpanorama</option><option value="outline-pin">Kontur-Pin – mit Zielpanorama</option><option value="gps-pin">GPS-Pin – mit Zielpanorama</option><option value="you-pin">Standort-Pin – mit Zielpanorama</option></select></div>
       </div>
       <div class="ppi-design-layout">
         <div class="ppi-design-group" aria-label="Ansicht und Bedienung">
@@ -1214,34 +1214,34 @@
 
 
 /* 0.4.62.27: label-pin uses the same preview and keyboard/touch behavior as other pin designs. */
-.ppi-preview-sphere .ppi-hotspot-label-pin,#ppi-public-sphere .ppi-hotspot-label-pin{width:96px!important;height:116px!important}
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin),#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin){width:96px!important;height:116px!important}
 .ppi-preview-sphere .ppi-hotspot-outline-pin,#ppi-public-sphere .ppi-hotspot-outline-pin{width:96px!important;height:116px!important}
-.ppi-hotspot-label-pin .ppi-hotspot-figure,.ppi-hotspot-label-pin .ppi-hotspot-blue-figure{display:none!important}
+:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-figure,:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-blue-figure{display:none!important}
 .ppi-hotspot-outline-pin .ppi-hotspot-figure,.ppi-hotspot-outline-pin .ppi-hotspot-blue-figure{display:none!important}
-.ppi-hotspot-label-pin .ppi-hotspot-pin-figure{display:block!important;position:absolute;bottom:0;left:50%;width:76px!important;height:100px!important;max-width:none!important;transform:translateX(-50%);object-fit:contain;pointer-events:none;background:#fffef2;border-radius:13px;padding:5px;box-sizing:border-box;filter:drop-shadow(0 3px 5px #000a)}
+:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure{display:block!important;position:absolute;bottom:0;left:50%;width:76px!important;height:100px!important;max-width:none!important;transform:translateX(-50%);object-fit:contain;pointer-events:none;background:#fffef2;border-radius:13px;padding:5px;box-sizing:border-box;filter:drop-shadow(0 3px 5px #000a)}
 .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{display:block!important;position:absolute;bottom:0;left:50%;width:76px!important;height:100px!important;max-width:none!important;transform:translateX(-50%);object-fit:contain;pointer-events:none;background:#fffef2;border-radius:13px;padding:5px;box-sizing:border-box;filter:drop-shadow(0 3px 5px #000a)}
-.ppi-hotspot-label-pin .ppi-hotspot-photo{position:absolute!important;z-index:5;left:calc(50% + 31px);top:0;width:112px;height:69px;opacity:0;visibility:hidden;transform:translate(-7px,0) scale(.95) rotate(0);transition:opacity .2s ease,transform .2s ease,visibility .2s;border:2px solid #fff;background:#142b43;pointer-events:auto}
+:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo{position:absolute!important;z-index:5;left:calc(50% + 31px);top:0;width:112px;height:69px;opacity:0;visibility:hidden;transform:translate(-7px,0) scale(.95) rotate(0);transition:opacity .2s ease,transform .2s ease,visibility .2s;border:2px solid #fff;background:#142b43;pointer-events:auto}
 .ppi-hotspot-outline-pin .ppi-hotspot-photo{position:absolute!important;z-index:5;left:calc(50% + 31px);top:0;width:112px;height:69px;opacity:0;visibility:hidden;transform:translate(-7px,0) scale(.95) rotate(0);transition:opacity .2s ease,transform .2s ease,visibility .2s;border:2px solid #fff;background:#142b43;pointer-events:auto}
-.ppi-hotspot-label-pin::after{content:"";position:absolute;left:65px;top:0;width:69px;height:93px;pointer-events:auto;background:transparent}
+:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin)::after{content:"";position:absolute;left:65px;top:0;width:69px;height:93px;pointer-events:auto;background:transparent}
 .ppi-hotspot-outline-pin::after{content:"";position:absolute;left:65px;top:0;width:69px;height:93px;pointer-events:auto;background:transparent}
-.ppi-hotspot-label-pin:hover .ppi-hotspot-photo,.ppi-hotspot-label-pin:focus-visible .ppi-hotspot-photo{opacity:1;visibility:visible;transform:translate(0,0) scale(1)}
+:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin):hover .ppi-hotspot-photo,:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin):focus-visible .ppi-hotspot-photo{opacity:1;visibility:visible;transform:translate(0,0) scale(1)}
 .ppi-hotspot-outline-pin:hover .ppi-hotspot-photo,.ppi-hotspot-outline-pin:focus-visible .ppi-hotspot-photo{opacity:1;visibility:visible;transform:translate(0,0) scale(1)}
-@media(hover:none){.ppi-hotspot-label-pin .ppi-hotspot-photo{opacity:1;visibility:visible;transform:none}}
+@media(hover:none){:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo{opacity:1;visibility:visible;transform:none}}
 @media(hover:none){.ppi-hotspot-outline-pin .ppi-hotspot-photo{opacity:1;visibility:visible;transform:none}}
-@media(prefers-reduced-motion:reduce){.ppi-hotspot-label-pin .ppi-hotspot-photo{transition:none}}
+@media(prefers-reduced-motion:reduce){:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo{transition:none}}
 @media(prefers-reduced-motion:reduce){.ppi-hotspot-outline-pin .ppi-hotspot-photo{transition:none}}
 
 
 /* 0.4.62.29: SVG pins retain genuine transparency in editor (including the button underneath). */
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot.ppi-hotspot-map-pin,
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot.ppi-hotspot-chat-pin,
-#ppi-tours-app .ppi-preview-sphere .ppi-hotspot.ppi-hotspot-label-pin,
+#ppi-tours-app .ppi-preview-sphere .ppi-hotspot:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin),
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot.ppi-hotspot-outline-pin{
   background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
 }
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-chat-pin .ppi-hotspot-pin-figure,
-#ppi-tours-app .ppi-preview-window .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-tours-app .ppi-preview-window :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{
   background:transparent!important;border:0!important;border-radius:0!important;padding:0!important;
 }
@@ -1256,7 +1256,7 @@
 #ppi-tours-app #ppi-design-pin-preview[hidden]{display:none!important}
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-chat-pin .ppi-hotspot-pin-figure,
-#ppi-tours-app .ppi-preview-window .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-tours-app .ppi-preview-window :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{background:var(--ppi-svg-pin-color,#1687bc)!important;padding:0!important;border:0!important;border-radius:0!important;-webkit-mask-position:center;-webkit-mask-size:contain;-webkit-mask-repeat:no-repeat;mask-position:center;mask-size:contain;mask-repeat:no-repeat}
 
 /* 0.4.62.32: On touch devices show a destination thumbnail only after the
@@ -1278,23 +1278,23 @@
     transform:translate(0,0) scale(1)!important;
   }
   /* The classic stick figure should not reserve an invisible image slot. */
-  .ppi-preview-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(.ppi-hotspot-label-pin):not(.ppi-hotspot-outline-pin) .ppi-hotspot-photo,
-  #ppi-public-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(.ppi-hotspot-label-pin):not(.ppi-hotspot-outline-pin) .ppi-hotspot-photo {
+  .ppi-preview-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin)):not(.ppi-hotspot-outline-pin) .ppi-hotspot-photo,
+  #ppi-public-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin)):not(.ppi-hotspot-outline-pin) .ppi-hotspot-photo {
     position:absolute!important;
     left:calc(50% + 30px);
     top:0;
     z-index:5;
     transition:opacity .2s ease,visibility .2s,transform .2s ease;
   }
-  .ppi-preview-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(.ppi-hotspot-label-pin):not(.ppi-hotspot-outline-pin) .ppi-hotspot-figure,
-  #ppi-public-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(.ppi-hotspot-label-pin):not(.ppi-hotspot-outline-pin) .ppi-hotspot-figure {margin-top:20px;}
+  .ppi-preview-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin)):not(.ppi-hotspot-outline-pin) .ppi-hotspot-figure,
+  #ppi-public-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin)):not(.ppi-hotspot-outline-pin) .ppi-hotspot-figure {margin-top:20px;}
 }
 
 /* 0.4.62.35: subtle contour shadow for SVG pin masks only.
    No rectangular background or shadow on the preview thumbnail. */
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-chat-pin .ppi-hotspot-pin-figure,
-#ppi-tours-app .ppi-preview-window .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-tours-app .ppi-preview-window :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{
   filter:drop-shadow(0 3px 3px rgba(0,0,0,.48))!important;
 }
@@ -1305,7 +1305,7 @@
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-pin-shadow{display:none!important;}
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-map-pin .ppi-hotspot-pin-shadow,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-chat-pin .ppi-hotspot-pin-shadow,
-#ppi-tours-app .ppi-preview-window .ppi-hotspot-label-pin .ppi-hotspot-pin-shadow,
+#ppi-tours-app .ppi-preview-window :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-shadow,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-outline-pin .ppi-hotspot-pin-shadow{
   display:block!important;
   position:absolute;left:50%;bottom:0;
@@ -1320,7 +1320,7 @@
 }
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-map-pin .ppi-hotspot-pin-shadow::before,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-chat-pin .ppi-hotspot-pin-shadow::before,
-#ppi-tours-app .ppi-preview-window .ppi-hotspot-label-pin .ppi-hotspot-pin-shadow::before,
+#ppi-tours-app .ppi-preview-window :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-shadow::before,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-outline-pin .ppi-hotspot-pin-shadow::before{
   content:"";position:absolute;inset:0;
   background:rgba(0,0,0,.8);
@@ -1331,7 +1331,7 @@
 }
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-chat-pin .ppi-hotspot-pin-figure,
-#ppi-tours-app .ppi-preview-window .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-tours-app .ppi-preview-window :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{
   z-index:1;filter:none!important;
 }
@@ -1344,10 +1344,10 @@
   display:none!important;
 }
 .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-mini,
-.ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini,
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini,
 .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-mini,
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-mini,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-mini{
   display:block!important;position:absolute;z-index:2;pointer-events:none;
   left:50%;bottom:0;width:76px;height:100px;
@@ -1363,8 +1363,8 @@
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-mini img{
   left:29%;top:18%;width:42%;height:34%;border-radius:50%;
 }
-.ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini img,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini img{
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini img,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini img{
   left:23%;top:15%;width:54%;height:42%;border-radius:8px;
 }
 .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-mini img,
@@ -1374,10 +1374,10 @@
 /* Override older hover and touch-auto-show styles. Only an explicit click
    opens the SVG's enlarged preview; it grows from the centre of the pin. */
 .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-.ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
 .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo,
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo{
   position:absolute!important;left:50%!important;top:-92px!important;
   width:185px!important;height:111px!important;box-sizing:border-box!important;
@@ -1389,40 +1389,65 @@
   transition:transform .46s cubic-bezier(.22,1,.36,1),opacity .2s ease,visibility .2s!important;
 }
 .ppi-preview-sphere .ppi-hotspot-map-pin.ppi-hotspot-preview-open .ppi-hotspot-photo,
-.ppi-preview-sphere .ppi-hotspot-label-pin.ppi-hotspot-preview-open .ppi-hotspot-photo,
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin).ppi-hotspot-preview-open .ppi-hotspot-photo,
 .ppi-preview-sphere .ppi-hotspot-outline-pin.ppi-hotspot-preview-open .ppi-hotspot-photo,
 #ppi-public-sphere .ppi-hotspot-map-pin.ppi-hotspot-preview-open .ppi-hotspot-photo,
-#ppi-public-sphere .ppi-hotspot-label-pin.ppi-hotspot-preview-open .ppi-hotspot-photo,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin).ppi-hotspot-preview-open .ppi-hotspot-photo,
 #ppi-public-sphere .ppi-hotspot-outline-pin.ppi-hotspot-preview-open .ppi-hotspot-photo{
   opacity:1!important;visibility:visible!important;pointer-events:auto!important;
   transform:translate(-50%,-7px) scale(1)!important;
 }
 @media(prefers-reduced-motion:reduce){
   .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-  .ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+  .ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
   .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo,
   #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-  #ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+  #ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
   #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo{
     transition:none!important;
   }
 }
 
+
+/* Photo Sphere 0.4.64 – two additional transparent SVG pins (SVG Repo). */
+.ppi-preview-sphere .ppi-hotspot-gps-pin .ppi-hotspot-pin-mini img,
+#ppi-public-sphere .ppi-hotspot-gps-pin .ppi-hotspot-pin-mini img{
+  left:23%!important;
+  top:18%!important;
+  width:54%!important;
+  height:42%!important;
+  border-radius:50%!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  clip-path:circle(49% at 50% 50%)!important;
+}
+.ppi-preview-sphere .ppi-hotspot-you-pin .ppi-hotspot-pin-mini img,
+#ppi-public-sphere .ppi-hotspot-you-pin .ppi-hotspot-pin-mini img{
+  left:29%!important;
+  top:17%!important;
+  width:42%!important;
+  height:32%!important;
+  border-radius:50%!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  clip-path:circle(49% at 50% 50%)!important;
+}
+
 /* 0.4.62.44: Layer the inset panorama beneath the pin's colored outline,
    preserving the hollow SVG opening, shadow and shared hop animation. */
 .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
-.ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{
   z-index:3!important;
 }
 .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-mini,
-.ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini,
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini,
 .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-mini,
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-mini,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-mini{
   z-index:2!important;
 }
@@ -1431,10 +1456,10 @@
    Touch/coarse-pointer devices retain the approved 2px border. */
 @media (hover: hover) and (pointer: fine) {
   .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-  .ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+  .ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
   .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo,
   #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-  #ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+  #ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
   #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo {
     border-width:3px!important;
   }
@@ -1447,7 +1472,7 @@
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot .ppi-hotspot-figure[hidden],
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot .ppi-hotspot-blue-figure[hidden],
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot-map-pin > .ppi-hotspot-figure,
-#ppi-tours-app .ppi-preview-sphere .ppi-hotspot-label-pin > .ppi-hotspot-figure,
+#ppi-tours-app .ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) > .ppi-hotspot-figure,
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot-outline-pin > .ppi-hotspot-figure{
   display:none!important;
 }
@@ -1456,10 +1481,10 @@
    repeat on either mask layer produces the upper arch again below the tip.
    Scope the override to the editor only; the public tour is unchanged. */
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot-map-pin > .ppi-hotspot-pin-figure,
-#ppi-tours-app .ppi-preview-sphere .ppi-hotspot-label-pin > .ppi-hotspot-pin-figure,
+#ppi-tours-app .ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) > .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot-outline-pin > .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot-map-pin > .ppi-hotspot-pin-shadow::before,
-#ppi-tours-app .ppi-preview-sphere .ppi-hotspot-label-pin > .ppi-hotspot-pin-shadow::before,
+#ppi-tours-app .ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) > .ppi-hotspot-pin-shadow::before,
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot-outline-pin > .ppi-hotspot-pin-shadow::before {
   -webkit-mask-repeat:no-repeat!important;
   mask-repeat:no-repeat!important;
@@ -1473,10 +1498,10 @@
    prevents tiling under the pin and aligns the inset destination preview.
    Kept in CSS as well as JS for immediately correct initial paint. */
 #ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
-#ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure {
   -webkit-mask-repeat:no-repeat!important;
   mask-repeat:no-repeat!important;
@@ -2552,10 +2577,117 @@
 #ppi-tours-app .ppi-startpage-bg-dialog .ppi-startpage-bg-files button{
  cursor:pointer;text-align:left;
 }
+
+/* Photo Sphere 0.4.64: stable background-image picker tiles. */
+#ppi-tours-app .ppi-startpage-bg-dialog .ppi-startpage-bg-files .ppi-bg-image-option{
+ min-width:0!important;
+ min-height:122px!important;
+ display:flex!important;
+ flex-direction:column!important;
+ gap:7px!important;
+ padding:7px!important;
+ overflow:hidden!important;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-preview{
+ width:100%;
+ aspect-ratio:16/9;
+ flex:0 0 auto;
+ min-height:75px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ position:relative;
+ overflow:hidden;
+ border-radius:6px;
+ background:var(--color-background-dark);
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-preview img{
+ display:block;
+ width:100%!important;
+ height:100%!important;
+ position:absolute;
+ inset:0;
+ object-fit:cover!important;
+ border-radius:6px;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-thumb-fallback{
+ display:none;
+ padding:8px;
+ font-size:11px;
+ line-height:1.35;
+ text-align:center;
+ color:var(--color-text-maxcontrast);
+ overflow-wrap:anywhere;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-thumb-failed img{
+ display:none!important;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-thumb-failed .ppi-bg-thumb-fallback{
+ display:block;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-image-name{
+ display:-webkit-box;
+ -webkit-line-clamp:2;
+ -webkit-box-orient:vertical;
+ overflow:hidden;
+ overflow-wrap:anywhere;
+ line-height:1.35;
+ font-size:12px;
+ font-weight:500;
+ min-width:0;
+ width:100%;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-folder-option{
+ min-height:48px;
+ align-items:flex-start;
+ justify-content:center;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-load-more,
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-limit-warning{
+ grid-column:1/-1;
+ width:100%;
+}
+
 @media(max-width:520px){
  #ppi-tours-app #ppi-start-page-bg-browser.ppi-startpage-bg-overlay{padding:9px!important}
  #ppi-tours-app .ppi-startpage-bg-dialog{padding:12px!important;max-height:88vh!important}
 }
+/* Photo Sphere 0.4.64: virtualized background-image gallery. */
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-virtual-gallery{
+ position:relative;
+ grid-column:1/-1;
+ width:100%;
+ min-width:0;
+ padding:0;
+ margin:0;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-virtual-window{
+ position:absolute;
+ top:0;
+ left:0;
+ right:0;
+ display:grid;
+ grid-template-columns:repeat(auto-fill,minmax(min(100%,135px),1fr));
+ grid-auto-rows:148px;
+ gap:7px;
+ align-content:start;
+}
+#ppi-tours-app .ppi-startpage-bg-dialog
+.ppi-startpage-bg-files .ppi-bg-virtual-window .ppi-bg-image-option{
+ height:148px!important;
+ min-height:0!important;
+ max-height:148px!important;
+ box-sizing:border-box!important;
+ overflow:hidden!important;
+}
+#ppi-tours-app .ppi-bg-virtual-window .ppi-bg-preview{
+ min-height:0;
+ flex-shrink:0;
+}
+#ppi-tours-app .ppi-bg-virtual-window .ppi-bg-image-name{
+ min-height:0;
+}
+
 /* Exactly the same text sizing for both upper create actions. */
 #ppi-tours-app .ppi-tour-intro-header #ppi-tour-create,
 #ppi-tours-app .ppi-tour-intro-header #ppi-start-page-create{
@@ -2848,11 +2980,17 @@
   border-color:#448f68!important;color:#246e43!important;
 }
 /* Background of the complete card around the thumbnail; no extra outline. */
+/* PPI 0.4.64: Startpanorama mit weichem Tuerkisverlauf */
+/* PPI 0.4.64: Weiche Startpanorama-Hervorhebung ohne Kontur */
+/* PPI 0.4.64: Dezente Startpanorama-Hervorhebung */
 #ppi-tours-app .ppi-tour-graph-card.ppi-tour-start-selected,
 #ppi-tours-app .ppi-mobile-pano.ppi-tour-start-selected{
-  /* PPI TOUR STARTPANORAMA SANDFARBE V1 2026-11-24 */
-  background-color:#F0F0F0!important;
-  border:1px solid var(--color-border)!important;
+  background:#F0F0F0!important;
+
+  box-shadow:0 5px 16px rgba(0,0,0,.18)!important;
+
+  border:none!important;
+  outline:none!important;
 }
 #ppi-tours-app .ppi-tour-graph-card .ppi-tour-card-delete.ppi-tour-start-check,
 #ppi-tours-app .ppi-mobile-pano .ppi-tour-card-delete.ppi-tour-start-check{

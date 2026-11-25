@@ -1993,7 +1993,7 @@ final class TourController extends Controller {
                 if ($startId === false || ($startId !== 0 && !isset($verified[(string)$startId])) ||
                     $startYaw === false || $startYaw < -180 || $startYaw > 180 ||
                     !in_array($size, ['xsmall','small','medium','large','xlarge'], true) ||
-                    !in_array($style, ['classic','blue','map-pin','label-pin','outline-pin'], true) ||
+                    !in_array($style, ['classic','blue','map-pin','label-pin','outline-pin','gps-pin','you-pin'], true) ||
                     !preg_match('/^#[0-9a-fA-F]{6}$/D', $svgPinColor) ||
                     !in_array($socialMode, ['cover','neutral','off'], true)) {
                     return $this->error('Ungültige Startansicht oder Hotspot-Größe');

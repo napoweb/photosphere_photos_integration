@@ -90,7 +90,7 @@ function makeTourSphere(root, url, getLinks, navigate, onPoint, report, getThumb
   // A double hop is a one-shot attention cue only for the four SVG pin designs.
   // Animate the pin glyph (not the hotspot button or thumbnail), preserving
   // its screen coordinates, opacity fading and click/touch handling.
-  const pinDesigns=new Set(['map-pin','label-pin','outline-pin']);
+  const pinDesigns=new Set(['map-pin','label-pin','outline-pin','gps-pin','you-pin']);
   const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || false;
   function maybeHopPin(button, pinFigure, style, loc){
     if(!pinDesigns.has(style)||!pinFigure||reducedMotion){
@@ -302,12 +302,14 @@ function makeTourSphere(root, url, getLinks, navigate, onPoint, report, getThumb
       button.classList.remove('ppi-hotspot-chat-pin');
       button.classList.toggle('ppi-hotspot-label-pin', hotspotStyle==='label-pin');
       button.classList.toggle('ppi-hotspot-outline-pin', hotspotStyle==='outline-pin');
+      button.classList.toggle('ppi-hotspot-gps-pin', hotspotStyle==='gps-pin');
+      button.classList.toggle('ppi-hotspot-you-pin', hotspotStyle==='you-pin');
       // Keep inactive guide artwork OUT of the rendered DOM, rather than
       // relying on CSS/hidden attributes. Nextcloud's editor styles can
       // override SVG display and leave the classical guide's lower arcs
       // visible underneath image-filled pin designs. Preserve nodes so that
       // switching back to the classic or blue design works without reload.
-      const isSvgPin=hotspotStyle==='map-pin'||hotspotStyle==='label-pin'||hotspotStyle==='outline-pin';
+      const isSvgPin=pinDesigns.has(hotspotStyle);
       if(!button._ppiClassicFigure)button._ppiClassicFigure=button.querySelector('.ppi-hotspot-figure');
       if(!button._ppiBlueFigure)button._ppiBlueFigure=button.querySelector('.ppi-hotspot-blue-figure');
       const classicFigure=button._ppiClassicFigure;
@@ -329,8 +331,8 @@ function makeTourSphere(root, url, getLinks, navigate, onPoint, report, getThumb
         }
       }
       const pinFigure=button.querySelector('.ppi-hotspot-pin-figure');
-      if(pinFigure&&(hotspotStyle==='map-pin'||hotspotStyle==='label-pin'||hotspotStyle==='outline-pin')){
-        const file=hotspotStyle==='label-pin'?'hotspot-label-pin.svg':hotspotStyle==='outline-pin'?'hotspot-outline-pin.svg':'hotspot-map-pin.svg';
+      if(pinFigure&&pinDesigns.has(hotspotStyle)){
+        const file=({ 'label-pin':'hotspot-label-pin.svg', 'outline-pin':'hotspot-outline-pin.svg', 'gps-pin':'hotspot-gps-pin.svg', 'you-pin':'hotspot-you-pin.svg' })[hotspotStyle] || 'hotspot-map-pin.svg';
         const path=window.OC?.filePath ? window.OC.filePath('photosphere_photos_integration','img',file) : '/custom_apps/photosphere_photos_integration/img/'+file;
         if(pinFigure.dataset.maskUrl!==path){
           pinFigure.dataset.maskUrl=path;

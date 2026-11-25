@@ -22,14 +22,39 @@ $dividerColor = $light($headerBg) ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.60)';
 <?php if ($invalid): ?>
  <?php $ppiShareKind = 'startpage'; include __DIR__ . '/public-share-unavailable.php'; ?>
 <?php elseif ($locked): ?>
- <section class="ppi-public-start-message"><h1>Passwortgeschützte Startseite</h1>
- <p>Bitte gib das Passwort der Startseite ein.</p>
- <?php if (!empty($_['passwordError'])): ?><p role="alert">Passwort nicht korrekt.</p><?php endif; ?>
- <form action="<?php p($_['unlockUrl'] ?? ''); ?>" method="post">
-  <label for="ppi-startpage-password">Passwort</label>
-  <input id="ppi-startpage-password" autofocus name="password" type="password" required autocomplete="current-password" maxlength="128">
-  <button type="submit">Startseite öffnen</button>
- </form></section>
+ <section id="ppi-public-unavailable"
+          class="ppi-public-password-state"
+          aria-labelledby="ppi-password-title">
+  <div class="ppi-public-password-stack">
+
+   <div class="ppi-public-unavailable-card">
+    <img class="ppi-public-brand-logo"
+     src="<?php p(\OC::$server->get(\OCP\IURLGenerator::class)->linkToRoute('theming.Theming.getImage', ['key' => 'logo'])); ?>"
+     alt="Nextcloud-Logo">
+    <span class="ppi-public-unavailable-kicker">360°-STARTSEITE</span>
+    <h1 id="ppi-password-title">Passwortgeschützte Startseite</h1>
+    <p>Bitte gib das Passwort der Startseite ein.</p>
+
+    <?php if (!empty($_['passwordError'])): ?>
+     <p class="ppi-public-password-error" role="alert">
+      Passwort nicht korrekt.
+     </p>
+    <?php endif; ?>
+
+    <form action="<?php p($_['unlockUrl'] ?? ''); ?>" method="post">
+     <label for="ppi-startpage-password">Passwort</label>
+     <input id="ppi-startpage-password"
+            autofocus
+            name="password"
+            type="password"
+            required
+            autocomplete="current-password"
+            maxlength="128">
+     <button type="submit">Startseite öffnen</button>
+    </form>
+   </div>
+  </div>
+ </section>
 <?php else: ?>
  <div class="ppi-public-start-inner">
   <header class="ppi-public-start-header">
@@ -580,102 +605,104 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
 
 <?php include __DIR__ . '/public-share-unavailable.css.php'; ?>
 
-/* PPI STARTPAGE PASSWORD DESIGN FIX */
 
-#ppi-public-startpage:has(.ppi-public-start-message) {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+
+/* Nextcloud-Theming-Logo an der bisherigen Symbolposition. */
+#ppi-public-startpage .ppi-public-brand-logo{
+ display:block;
+ width:auto;
+ max-width:min(100%,180px);
+ height:58px;
+ object-fit:contain;
+ margin:0 auto 8px;
+}
+/* 0.4.64: Shared public error/password appearance. */
+#ppi-public-startpage:has(> .ppi-public-password-state){
+ padding:0!important;
+ background:#08121b!important;
+ overflow:hidden!important;
 }
 
-#ppi-public-startpage .ppi-public-start-message {
-    width: min(100%, 480px) !important;
-    max-width: 480px !important;
-    margin: auto !important;
-    padding: clamp(22px, 4vw, 36px) !important;
-    text-align: center !important;
-    background: #142536 !important;
-    border: 1px solid #536274 !important;
-    border-radius: 16px !important;
-    box-shadow: 0 12px 32px rgba(0,0,0,.28) !important;
+#ppi-public-startpage .ppi-public-password-stack{
+ width:min(100%,540px);
+ display:flex;
+ flex-direction:column;
+ align-items:center;
+ gap:22px;
 }
 
-#ppi-public-startpage .ppi-public-start-message h1 {
-    margin: 0 0 12px !important;
-    font-size: clamp(21px, 3vw, 27px) !important;
-    line-height: 1.3 !important;
-    color: #fff !important;
+#ppi-public-startpage .ppi-public-nextcloud-logo{
+ display:block;
+ width:130px;
+ max-height:70px;
+ object-fit:contain;
+ filter:brightness(0) invert(1);
 }
 
-#ppi-public-startpage .ppi-public-start-message p {
-    margin: 0 0 22px !important;
-    color: #d5dfeb !important;
-    line-height: 1.5 !important;
+#ppi-public-startpage .ppi-public-password-stack
+.ppi-public-unavailable-card{
+ width:100%;
 }
 
-#ppi-public-startpage .ppi-public-start-message form {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 12px !important;
-    width: 100% !important;
-    margin: 0 !important;
+#ppi-public-startpage .ppi-public-password-stack form{
+ display:flex;
+ flex-direction:column;
+ gap:12px;
+ margin:24px 0 0;
+ text-align:left;
 }
 
-#ppi-public-startpage .ppi-public-start-message label {
-    display: block !important;
-    width: 100% !important;
-    margin: 0 !important;
-    text-align: left !important;
-    color: #fff !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
+#ppi-public-startpage .ppi-public-password-stack label{
+ color:#d5e3ed;
+ font:600 14px/1.4 system-ui,sans-serif;
 }
 
-#ppi-public-startpage #ppi-startpage-password {
-    display: block !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    max-width: none !important;
-    height: 44px !important;
-    box-sizing: border-box !important;
-    margin: 0 !important;
-    padding: 10px 12px !important;
-    border: 1px solid #9baebe !important;
-    border-radius: 8px !important;
-    background: #fff !important;
-    color: #172536 !important;
-    font-size: 16px !important;
+#ppi-public-startpage .ppi-public-password-stack input{
+ width:100%;
+ height:46px;
+ min-width:0;
+ padding:10px 12px;
+ border:1px solid #9baebe;
+ border-radius:8px;
+ background:#fff;
+ color:#172536;
+ font:16px system-ui,sans-serif;
 }
 
-#ppi-public-startpage #ppi-startpage-password:focus {
-    border-color: #62b8ee !important;
-    outline: 2px solid #62b8ee !important;
-    outline-offset: 1px !important;
+#ppi-public-startpage .ppi-public-password-stack input:focus{
+ outline:2px solid #8dc8ef;
+ outline-offset:2px;
 }
 
-#ppi-public-startpage .ppi-public-start-message button[type="submit"] {
-    display: block !important;
-    width: 100% !important;
-    min-height: 44px !important;
-    margin: 4px 0 0 !important;
-    padding: 11px 15px !important;
-    border: 0 !important;
-    border-radius: 8px !important;
-    background: #e1edf5 !important;
-    color: #102b43 !important;
-    font-weight: 700 !important;
-    cursor: pointer !important;
+#ppi-public-startpage .ppi-public-password-stack button{
+ width:100%;
+ min-height:46px;
+ margin-top:4px;
+ border:0;
+ border-radius:8px;
+ background:#e1edf5;
+ color:#102b43;
+ font:700 15px system-ui,sans-serif;
+ cursor:pointer;
 }
 
-#ppi-public-startpage .ppi-public-start-message button[type="submit"]:hover {
-    background: #c8ddeb !important;
+#ppi-public-startpage .ppi-public-password-stack button:hover{
+ background:#c8ddeb;
 }
 
-@media (max-width: 480px) {
-    #ppi-public-startpage .ppi-public-start-message {
-        padding: 22px !important;
-    }
+#ppi-public-startpage .ppi-public-password-stack
+.ppi-public-password-error{
+ margin:14px 0 0;
+ color:#ffd6d6;
+}
+
+@media(max-width:480px){
+ #ppi-public-startpage .ppi-public-password-stack{
+  gap:16px;
+ }
+ #ppi-public-startpage .ppi-public-nextcloud-logo{
+  width:110px;
+ }
 }
 
 </style>
