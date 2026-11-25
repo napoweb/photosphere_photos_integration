@@ -1,5 +1,6 @@
 ## 0.4.62.140 (Release-Kandidat, noch nicht veröffentlicht – 24.11.2026)
 - Ablaufdatum für Tour- und Startseiten-Freigaben: Sperrung ab 00:00 Uhr am gewählten Datum in der Nextcloud-Zeitzone des Freigabebesitzers (inkl. UTC-/Sommerzeit-Fallback); einheitliche Statusanzeige und Mindestdaten in den Editoren. Docker-Soforttest und 20 Zeitzonen-Grenztests bestanden.
+- Freigabeverwaltung: Bei bereits abgelaufenen Tour- und Startseiten-Links wird die Aktivieren-/Deaktivieren-Aktion ausgeblendet; Bearbeitung, Passwort- und Token-Verwaltung sowie Widerruf bleiben verfügbar. Die Aktion erscheint nach Speichern eines neuen gültigen Ablaufdatums wieder.
 - 360°-Touren: Zusätzliche Freigabelinks können ihre Tokens jetzt einzeln erneuern. Alte URLs und Besuchersitzungen verlieren sofort den Zugriff; Passwörter, Ablaufdaten, Hauptfreigaben und andere Links bleiben erhalten. Sicherheitstest 7 bestanden.
 - Stand der Docker-Testversion 0.4.62.139 in eine lokale GitHub-Release-Arbeitskopie übernommen.
 - Startseiten: zusätzliche, voneinander unabhängige Freigabelinks mit Bezeichnung, Ablaufdatum, Passwort und Token-Verwaltung.

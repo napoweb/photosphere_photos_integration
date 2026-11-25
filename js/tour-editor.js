@@ -1080,9 +1080,11 @@
         if(confirm('Passwortschutz für diesen Link entfernen?'))return extraAction(link.id,'removePassword');
       }));}
       card.append(passwordFields);
-      card.append(tourAction(link.disabled?'Link aktivieren':'Link deaktivieren',()=>{
-        if(link.disabled || confirm('Diesen Link vorübergehend deaktivieren?'))return extraAction(link.id,link.disabled?'enable':'disable');
-      }));
+      if (!shareExpiredOn(link.expiresOn, active)) {
+        card.append(tourAction(link.disabled?'Link aktivieren':'Link deaktivieren',()=>{
+          if(link.disabled || confirm('Diesen Link vorübergehend deaktivieren?'))return extraAction(link.id,link.disabled?'enable':'disable');
+        }));
+      }
       card.append(tourAction('Token erneuern',()=>{
         if(confirm('Token für diesen Freigabelink erneuern? Der bisherige Link und seine Bild-URLs werden sofort ungültig. Passwort und Einstellungen bleiben erhalten.')){
           return extraAction(link.id,'rotate');
@@ -1121,7 +1123,7 @@
     const token = active?.publicToken || null;
     byId('ppi-share-state').textContent = token ? (shareExpiredOn(active?.shareExpiresOn, active) ? 'Abgelaufen' : 'Freigegeben') : 'Nicht freigegeben';
     byId('ppi-share-enable').hidden = Boolean(token);
-    byId('ppi-share-disable').hidden = !token;
+    byId('ppi-share-disable').hidden = !token || shareExpiredOn(active?.shareExpiresOn, active);
     byId('ppi-share-link-wrap').hidden = !token;
     byId('ppi-share-expiry-save').hidden = !token;
     const protectedShare = Boolean(active?.sharePasswordProtected);
@@ -2723,7 +2725,7 @@
       : 'Kein aktiver Freigabelink';
     byId('ppi-start-page-share-url').value = startPagePublicUrl(page);
     byId('ppi-start-page-share-enable').textContent = shared ? 'Freigabeeinstellungen speichern' : 'Freigabelink erstellen';
-    byId('ppi-start-page-share-disable').hidden = !shared;
+    byId('ppi-start-page-share-disable').hidden = !shared || shareExpiredOn(page?.shareExpiresOn, page);
     byId('ppi-start-page-share-remove-password').hidden = !shared || !page.passwordProtected;
     byId('ppi-start-page-share-copy').disabled = !shared;
     byId('ppi-start-page-share-open').disabled = !shared;
@@ -2945,7 +2947,7 @@
       addAction(link.passwordProtected ? 'Passwort ändern' : 'Passwort setzen', 'password', passwordFields);
       if (link.passwordProtected) addAction('Passwort entfernen', 'removePassword', passwordFields);
       card.append(passwordFields);
-      addAction(link.disabled ? 'Link aktivieren' : 'Link deaktivieren', link.disabled ? 'enable' : 'disable', actions);
+      if (!expired) addAction(link.disabled ? 'Link aktivieren' : 'Link deaktivieren', link.disabled ? 'enable' : 'disable', actions);
       addAction('Diesen Link widerrufen', 'revoke', actions);
       // Die Startseiten können ihre einzelnen Link-Tokens zusätzlich erneuern.
       addAction('Token erneuern', 'rotate', actions);
