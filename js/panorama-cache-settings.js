@@ -180,8 +180,8 @@
                 const visibility = row.visibility || 'unknown';
                 const hasOwnTour = visibility === 'own';
                 const accessibleSource = row.sourceAvailable === true;
-                // ID/name may come from the user's own tour or from an
-                // original actually readable through their current mounts.
+                // Display a cache file ID only if the source is currently readable
+                // through the admin's mount tree or their own saved tour.
                 cell(tr, (hasOwnTour || accessibleSource) && row.id != null ? row.id : '–');
                 const filename = accessibleSource && row.name
                     ? row.name

@@ -5,6 +5,22 @@ declare(strict_types=1);
 return [
     'routes' => [
         ['name' => 'tour#index', 'url' => '/tours', 'verb' => 'GET'],
+        ['name' => 'tour#listStartPagePresets', 'url' => '/tours/startpages/presets', 'verb' => 'GET'],
+        ['name' => 'tour#saveStartPagePreset', 'url' => '/tours/startpages/presets', 'verb' => 'POST'],
+        ['name' => 'tour#deleteStartPagePreset', 'url' => '/tours/startpages/presets/{id}', 'verb' => 'DELETE'],
+        ['name' => 'tour#listStartPages', 'url' => '/tours/startpages', 'verb' => 'GET'],
+        ['name' => 'tour#createStartPage', 'url' => '/tours/startpages', 'verb' => 'POST'],
+        ['name' => 'tour#saveStartPage', 'url' => '/tours/startpages/{id}', 'verb' => 'POST'],
+        ['name' => 'tour#deleteStartPage', 'url' => '/tours/startpages/{id}', 'verb' => 'DELETE'],
+        ['name' => 'tour#duplicateStartPage', 'url' => '/tours/startpages/{id}/duplicate', 'verb' => 'POST'],
+        // PPI STARTPAGE MULTISHARE V1 2026-11-24
+        ['name' => 'tour#shareStartPage', 'url' => '/tours/startpages/{id}/share', 'verb' => 'POST'],
+        ['name' => 'tour#rotateStartPageToken', 'url' => '/tours/startpages/{id}/share/rotate', 'verb' => 'POST'],
+        ['name' => 'tour#createStartPageShareLink', 'url' => '/tours/startpages/{id}/share/links', 'verb' => 'POST'],
+        ['name' => 'tour#updateStartPageShareLink', 'url' => '/tours/startpages/{id}/share/links/{linkId}', 'verb' => 'POST'],
+        ['name' => 'tour#publicStartPageUnlock', 'url' => '/startpage/{token}/unlock', 'verb' => 'POST'],
+        ['name' => 'tour#publicStartPageBackground', 'url' => '/startpage/{token}/background', 'verb' => 'GET'],
+        ['name' => 'tour#publicStartPage', 'url' => '/startpage/{token}', 'verb' => 'GET'],
         ['name' => 'tour#listTours', 'url' => '/tours/api', 'verb' => 'GET'],
         ['name' => 'tour#create', 'url' => '/tours/api', 'verb' => 'POST'],
         ['name' => 'tour#save', 'url' => '/tours/api/{id}', 'verb' => 'POST'],

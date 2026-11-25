@@ -1,47 +1,42 @@
-## 0.4.62.110 – Cache-Statistik: zugängliche Originaldateien erkennen
-- Die Cache-Statistik löst Datei-ID und aktuellen Dateinamen ausschließlich über den eigenen lesbaren Nextcloud-Mountbaum des angemeldeten Administrators auf; dies funktioniert auch bei vorgemerkten Panoramen ohne Tourreferenz.
-- Dateien ohne aktuellen Lesezugriff bleiben anonym. Fremde Tournamen werden nicht angezeigt; alte Namen aus eigenen Touren werden als solche gekennzeichnet, wenn das Original nicht mehr erreichbar ist.
-- Der unklare Hinweis „Besitzer nicht ermittelbar“ wurde durch „Original nicht erreichbar oder kein Zugriff“ ersetzt.
-- Unverändert: Cache-Bereinigung, Sieben-Tage-Schutzfrist, Cache-Marker, Berechtigungen öffentlicher Touren, Treffer- und Größenfilter.
+## 0.4.62.138 (Testversion)
+- Gemeinsame, responsive Fehlerdarstellung für ungültige, abgelaufene und deaktivierte öffentliche Tour- und Startseiten-Links.
+- Statuscodes und öffentliche Zugriffsprüfungen unverändert; keine Änderung an Tour-Passwortfreigaben.
 
-## 0.4.62.109 – Tag-Auswahl: Hover- und Aktivfarbe
-- Such-/Tag-Leiste und Tag-Feld werden bei Maus-Hover oder Tastaturfokus mit #222222 hervorgehoben.
-- Sobald ein konkreter Nextcloud-Tag ausgewählt ist, bleibt #222222 auch nach dem Verlassen des Feldes erhalten.
-- Ohne aktive Auswahl gilt weiterhin #7D7D7D; keine zusätzlichen Fokusrahmen.
-- Bestehende Dateiname-/Tag-Suche und sämtliche Panorama-Filter bleiben unverändert.
+## 0.4.62.137
+- Im Startseiten-Reiter „Vorlagen“ werden Standard- und eigene Vorlagen links als klickbare Miniaturkarten mit dezentem Schatten angezeigt.
+- Die bestehende Live-Vorschau wird rechts im Vorlagen-Reiter wiederverwendet; Auswahl aktualisiert das Design nur ungespeichert.
+- Responsive Anordnung für schmale Bildschirme.
 
-## 0.4.62.108 – Suchbereiche getrennt
-- Die kombinierte Suche „Dateiname + Tags“ entfällt; der Suchschalter bietet nur „Dateiname“ und „Tags“.
-- Standard und „Filter zurücksetzen“ suchen jetzt ausschließlich nach Dateinamen.
-- Im Modus „Tags“ bleiben die Eingabe eines Tag-Namens und die Auswahlliste sichtbarer Nextcloud-Tags erhalten.
-- Layout und Farben der Such-/Tag-Leiste aus 0.4.62.107 sowie die übrigen Filter bleiben unverändert.
+## 0.4.62.136 – Vorlagen als Reiter im Startseiten-Editor
 
-## 0.4.62.107 – Tag-Auswahl: Position und Farben
-- Kombiniertes Suchfeld um 4 CSS-Pixel angehoben, damit es mit den übrigen Filtern bündig ist.
-- Unausgewählte Suche/Tag-Auswahl mit #7D7D7D, ausgewählter Tag und Fokusrahmen mit #222222.
-- Kein zusätzlicher Innen- oder Fokusrahmen; Tag-Farben aktualisieren bei Auswahl, Wechsel des Suchmodus und Zurücksetzen.
-- Filterfunktion, Trefferzählung, Tag-Berechtigungen und Dateigrößengrenzen unverändert.
+- Vorlagenverwaltung als Reiter 3 direkt hinter „Touren wählen“; Layout und Freigabe sind Reiter 4 und 5.
+- Kein separater Vorlagenpunkt in der oberen Hauptnavigation.
+- Laden einer Vorlage wirkt nur auf die gerade bearbeitete Startseite und wechselt zur Layout-Vorschau.
+- Aktualisieren einer eigenen Vorlage übernimmt die aktuellen Layout-Felder.
+- „Vorlage speichern“ bleibt oberhalb der Live-Vorschau im Layout-Reiter.
 
-## 0.4.62.106 – Suche, Tag-Auswahl und Größenbeschriftung
-- Erster Dateigrößenfilter wird als „< 20 MB“ angezeigt; die unveränderte Serverlogik filtert strikt unter 20 MiB.
-- Suchfeld und Suchmodus-Dropdown bündig zu den übrigen Filtern, ohne doppelten Fokusrahmen.
-- In Suchmodus „Tags“ erscheint eine zweite Auswahlliste mit den für den angemeldeten Nutzer sichtbaren kollaborativen Nextcloud-Tags.
-- Exakt ausgewählte Tags werden anhand ihrer Nextcloud-Tag-ID gefiltert, weiterhin kombinierbar mit Text-, Datums-, Größen- und Tourstatusfiltern.
-- Abfrage und Auswahl respektieren die Sichtbarkeitsrechte des angemeldeten Nextcloud-Nutzers.
+## 0.4.62.135 – Zentrale Startseiten-Vorlagenverwaltung
 
-## 0.4.62.105 – Kumulative Dateigrößenfilter
-- Tour-Auswahl: Unter 20 MB, Über 20 MB, Über 30 MB, Über 40 MB, Über 50 MB.
-- Größer-als-Filter sind kumulativ, jeweils mit strikt überschrittener Grenze (MB = 1024 × 1024 Byte).
-- Trefferzählung und übrige Tourfunktionen unverändert.
+- Neuer Hauptmenüpunkt „Vorlagen“ neben „360°-Touren“ und „Startseiten“.
+- Auswahl, Zuordnung und Verwaltung aller Startseiten-Designvorlagen in einer eigenen Übersicht.
+- „Vorlage speichern“ nur im Layout-Tab direkt über der Live-Vorschau.
+- Mitgelieferte Designs lassen sich als persönliche Vorlagen kopieren und dann ändern, exportieren oder wieder importieren.
+- Beim Laden wird die Zielstartseite im Layout-Editor geöffnet; erst „Änderungen speichern“ schreibt das Design in die Startseite.
+- Texte, Tourzuordnungen und Freigabeeinstellungen bleiben unangetastet.
+- Beinhaltet die Menü-Ausblendekorrektur und die reduzierten inneren Vorschaubild-Schatten.
 
-## 0.4.62.104 – Dateigrößenfilter angepasst
-- Erster Größenfilter: Unter 20 MB (auch Dateien unter 10 MB).
-- Übrige Größenbereiche unverändert.
+## 0.4.62.133 (Docker test – Menüsteuerung)
+- Hide the top-level 360° Touren / Startseiten switch while editing a tour or choosing panoramas.
+- Restore the switch when returning to the tour overview; keep Startseiten behavior unchanged.
+- No changes to tour/share data, cache, permissions or background jobs.
+- Local test build is unsigned; a signed release requires re-signing by the app publisher.
 
-## 0.4.62.103 – Dateigrößenfilter im Tour-Editor
-- Dateigrößenfilter: 10–20 MB, 20–35 MB, 35–55 MB und über 55 MB.
-- Grenzwerte ohne Überlappung: 20 MB gehören zum zweiten Bereich, 35 MB zum dritten und 55 MB zum dritten Bereich. Dateien unter 10 MB bleiben unter „Beliebige Größe“ sichtbar.
-- Die Panorama-Trefferstatistik aus 0.4.62.102 bleibt unverändert.
+## 0.4.62.132 (Integration Beta – Docker test only)
+- Merge permission-scoped Nextcloud tag selection from the productive 0.4.62.110 package into the 0.4.62.131 tour editor, preserving the newer start-page tools.
+- Restore filename-or-tag picker mode and selected tag-ID filtering with user-visible tag validation.
+- Restore cumulative JPEG size filters: under 20 MB and over 20/30/40/50 MB, and panorama counts.
+- Restore secure app-cache statistics: show source name and file ID only when resolvable through the administrator's own readable Nextcloud mounts or own tour references.
+- Leave background-job deletion rules and seven-day safety grace unchanged. Run server PHP lint, JS syntax check, tag-rights tests, and Docker testcloud integration tests before any production use.
 
 ## 0.4.62.92
 - Refresh App Store metadata to describe the 360-degree tour editor, hotspots, public sharing, responsive viewer and app-owned panorama cache.
@@ -805,3 +800,11 @@
 - Schedule background preparation for saved tours and upon opening existing authorized tours.
 - Detect Imagick dynamically, preserve server resource limits; retain normal Nextcloud preview/original fallback when unavailable.
 - Cache keyed by source identity and ETag; original files and public-share checks remain unchanged.
+
+## 0.4.62.139 – Startseitenbezogene Tour-Passwortfreigabe (Testversion)
+
+- Startseiten-Freigabe mit drei Regeln: Tour-Passwörter beibehalten (Standard), alle eingebundenen Touren freischalten, einzelne Touren freischalten.
+- Freigabe nur nach Anmeldung an einer passwortgeschützten Startseite; pro Browser-Sitzung und ausschließlich für den tatsächlich über diese Startseite eingebundenen Tour-Link.
+- Server prüft bei jeder Viewer-, Manifest-, Vorschau-, Bild-, Cache- und Wasserzeichen-Anfrage erneut Startseiten-Passwortsitzung, freigegebene Tour-Zuordnung, Modus und gültige Tour-Freigabe.
+- Tour-Links und vorhandene Tour-Passwörter werden nicht verändert. Passwortänderungen und widerrufene Startseiten- bzw. Tour-Freigaben beenden die entsprechende Berechtigung.
+- Sicherheitshinweis: Die Version ist für Funktionstests auf einer separaten Docker-Testinstallation gedacht, noch kein unabhängiges Security-Audit.

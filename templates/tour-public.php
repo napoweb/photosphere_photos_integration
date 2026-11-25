@@ -2,15 +2,7 @@
       data-image-url="<?php p($_['imageUrl'] ?? ''); ?>" data-optimized-image-url="<?php p($_['optimizedImageUrl'] ?? ''); ?>" data-watermark-url="<?php p($_['watermarkUrl'] ?? ''); ?>"
       data-watermark-options="<?php p($_['watermarkOptions'] ?? '{}'); ?>" data-thumb-url="<?php p($_['thumbUrl'] ?? ''); ?>" data-invalid="<?php p(!empty($_['invalid']) ? '1' : '0'); ?>">
   <?php if (!empty($_['invalid'])): ?>
-  <section id="ppi-public-unavailable" role="alert" aria-labelledby="ppi-public-unavailable-title">
-    <div class="ppi-public-unavailable-card">
-      <div class="ppi-public-unavailable-icon" aria-hidden="true">◎</div>
-      <span class="ppi-public-unavailable-kicker">360°-TOUR</span>
-      <h1 id="ppi-public-unavailable-title">Diese 360°-Tour ist nicht mehr verfügbar</h1>
-      <p>Dieser Freigabelink ist ungültig, wurde erneuert oder ist abgelaufen.</p>
-      <p>Bitte fordere beim Besitzer der Tour einen neuen Freigabelink an.</p>
-    </div>
-  </section>
+  <?php $ppiShareKind = 'tour'; include __DIR__ . '/public-share-unavailable.php'; ?>
   <?php endif; ?>
   <?php if (!empty($_['passwordRequired'])): ?>
   <section id="ppi-public-unavailable" aria-labelledby="ppi-public-password-title">
@@ -22,7 +14,7 @@
       <?php if (!empty($_['passwordError'])): ?><p role="alert">Das Passwort ist nicht korrekt. Bitte versuche es erneut.</p><?php endif; ?>
       <form method="post" action="<?php p($_['unlockUrl']); ?>" class="ppi-tour-password-form">
         <label for="ppi-tour-public-password">Freigabepasswort</label>
-        <input id="ppi-tour-public-password" name="password" type="password" required autocomplete="current-password" maxlength="128" />
+        <input id="ppi-tour-public-password" autofocus name="password" type="password" required autocomplete="current-password" maxlength="128" />
         <button type="submit">Tour entsperren</button>
       </form>
     </div>
@@ -71,17 +63,7 @@
   html:has(#ppi-public-tour),body:has(#ppi-public-tour){margin:0!important;overflow:hidden!important}
   #content:has(#ppi-public-tour),#content-vue:has(#ppi-public-tour),#app-content:has(#ppi-public-tour){height:100dvh!important;min-height:0!important;overflow:hidden!important}
   #ppi-public-tour{--ppi-hotspot-scale:1;position:fixed;inset:0;z-index:11000;width:100vw;height:100dvh;max-width:none!important;margin:0!important;padding:0!important;background:#08121b;color:#fff;font:15px system-ui,sans-serif;box-sizing:border-box;overflow:hidden}
-  #ppi-public-unavailable{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-    box-sizing:border-box;padding:clamp(20px,5vw,48px);overflow:auto;z-index:20;
-    background:radial-gradient(circle at 50% 30%,#17364d 0%,#0b2030 46%,#08121b 100%)}
-  #ppi-public-unavailable .ppi-public-unavailable-card{width:min(100%,540px);box-sizing:border-box;
-    padding:clamp(25px,5vw,48px);text-align:center;border:1px solid rgba(255,255,255,.2);
-    background:rgba(8,20,32,.75);border-radius:20px;box-shadow:0 18px 60px rgba(0,0,0,.25)}
-  #ppi-public-unavailable .ppi-public-unavailable-icon{font-size:48px;line-height:1.2;color:#cce6fa;margin-bottom:8px}
-  #ppi-public-unavailable .ppi-public-unavailable-kicker{font-size:12px;font-weight:750;letter-spacing:.18em;color:#a7cae1}
-  #ppi-public-unavailable h1{font:750 clamp(23px,4.5vw,32px)/1.25 system-ui,sans-serif;
-    color:#fff;margin:14px 0 18px}
-  #ppi-public-unavailable p{font:400 15px/1.65 system-ui,sans-serif;color:#d5e3ed;margin:0 0 12px}
+  <?php include __DIR__ . '/public-share-unavailable.css.php'; ?>
   #ppi-public-tour:fullscreen{width:100%;height:100%;background:#08121b}
   #ppi-public-tour [hidden]{display:none!important}
   #ppi-public-tour[data-hotspot-size="xsmall"]{--ppi-hotspot-scale:.72}

@@ -286,7 +286,7 @@
     <p id="ppi-panorama-cache-feedback" role="status" aria-live="polite"></p>
     <div style="margin-top:20px;padding-top:14px;border-top:1px solid var(--color-border, #ccc);" id="ppi-panorama-cache-statistics">
       <h3>Cache-Statistik der 360°-Touren</h3>
-      <p class="ppi-note">Nur App-eigene optimierte Vorschaubilder. Die Bereinigung berücksichtigt Tourreferenzen aller Benutzer. Die Statistik zeigt Datei-IDs und Dateinamen aus deinen eigenen Touren oder aus Originaldateien, auf die du aktuell über deine Nextcloud-Dateien zugreifen darfst. Fremde Tournamen bleiben verborgen. Nicht erreichbare oder nicht freigegebene Originaldateien werden anonym dargestellt, sofern sie nicht in einer eigenen Tour erfasst sind. Die Statistik verändert oder löscht keine Dateien.</p>
+      <p class="ppi-note">Nur App-eigene optimierte Vorschaubilder. Die Bereinigung berücksichtigt Tourreferenzen aller Benutzer. In der Anzeige bleiben Dateinamen, Tournamen und Datei-IDs anderer Benutzer geschützt. Datei-IDs und Namen werden für Originale angezeigt, auf die der angemeldete Administrator aktuell über seine Nextcloud-Dateiansicht zugreifen darf. Nicht zugängliche Cache-Dateien bleiben anonym. Die Statistik verändert oder löscht keine Dateien.</p>
       <p><button type="button" id="ppi-panorama-cache-stats-refresh">Statistik aktualisieren</button></p>
       <p id="ppi-panorama-cache-stats-feedback" role="status" aria-live="polite">Statistik wird geladen …</p>
       <div id="ppi-panorama-cache-stats-content" hidden>

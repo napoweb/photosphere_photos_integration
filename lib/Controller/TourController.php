@@ -47,6 +47,7 @@ final class TourController extends Controller {
     private const MAX_EXTRA_SHARES = 12;
     private const SHARE_INDEX_PREFIX = 'tourpub_';
     private const PICKER_PANORAMA_ONLY = 'picker_panorama_only';
+    private const STARTPAGE_INDEX_PREFIX = 'startpub_';
 
     public function __construct(
         IRequest $request,
@@ -154,6 +155,7 @@ final class TourController extends Controller {
     /** Never include a password hash in a response, even for the tour owner. */
     private function publicRecord(array $tour): array {
         $tour['sharePasswordProtected'] = !empty($tour['sharePasswordHash']);
+        $tour['shareExpiryTimezone'] = $this->shareExpiryZone($this->userId() ?? '')->getName();
         unset($tour['sharePasswordHash']);
         if (isset($tour['shareLinks']) && is_array($tour['shareLinks'])) {
             $tour['shareLinks'] = array_map(static function (array $link): array {
@@ -173,14 +175,685 @@ final class TourController extends Controller {
         return is_string($actual) && hash_equals($expected, $actual);
     }
 
+    /** A start-page grant is a session capability, never a query parameter or permanent tour unlock.
+     * Every use rechecks start-page validity, its password session, the selected tour and
+     * the exact live tour-share token (including revocation/expiry via publicTour()).
+     */
+    private function startPageTourGranted(string $token, array $found): bool {
+        if (empty($found['tour']['sharePasswordHash'])) { return false; }
+        $grant = $this->session->get('ppi_startpage_tour_grant_' . hash('sha256', $token));
+        if (!is_string($grant) || !preg_match('/^[a-f0-9]{48}$/D', $grant)) { return false; }
+        $start = $this->findPublicStartPage($grant);
+        if ($start === null || $start['owner'] !== $found['owner'] ||
+            empty($start['page']['sharePasswordHash']) ||
+            !$this->startPageUnlocked($grant, $start['page'])) { return false; }
+        $page = $start['page'];
+        $mode = $page['tourPasswordMode'] ?? 'keep';
+        $tourId = (string)$found['tour']['id'];
+        if (!in_array($tourId, $page['tourIds'] ?? [], true) ||
+            !($mode === 'all' || ($mode === 'selected' &&
+                in_array($tourId, $page['tourPasswordSelected'] ?? [], true)))) { return false; }
+        // Do not extend a start-page grant to a different independent share link.
+        $ownerTours = $this->records($start['owner']);
+        foreach ($ownerTours as $tour) {
+            if (($tour['id'] ?? null) !== $tourId) { continue; }
+            return $this->startPagePreferredTourToken($start['owner'], $tour) === $token;
+        }
+        return false;
+    }
+
+    /** Pick only a currently valid share token, using the same order as the start page. */
+    private function startPagePreferredTourToken(string $owner, array $tour): ?string {
+        $tokens = [];
+        if (!empty($tour['publicToken'])) { $tokens[] = $tour['publicToken']; }
+        foreach ($tour['shareLinks'] ?? [] as $link) {
+            if (is_array($link) && !empty($link['token'])) { $tokens[] = $link['token']; }
+        }
+        foreach ($tokens as $candidate) {
+            if (!is_string($candidate)) { continue; }
+            $resolved = $this->publicTour($candidate);
+            if ($resolved !== null && ($resolved['owner'] ?? null) === $owner && ($resolved['tour']['id'] ?? null) === ($tour['id'] ?? null)) {
+                return $candidate;
+            }
+        }
+        return null;
+    }
+
     private function authorizedTour(string $token): ?array {
         $found = $this->publicTour($token);
-        if ($found === null || !$this->unlocked($token, $found['tour'])) { return null; }
+        if ($found === null || (!$this->unlocked($token, $found['tour']) &&
+            !$this->startPageTourGranted($token, $found))) { return null; }
         return $found;
     }
 
     private function error(string $message, int $status = 400): JSONResponse {
         return new JSONResponse(['success' => false, 'message' => $message], $status);
+    }
+
+
+    /** Private per-user start pages. Public endpoints and access grants are deliberately absent in phase 1. */
+    private function startPageRecords(string $uid): array {
+        $raw = json_decode($this->config->getUserValue($uid, self::APP_ID, 'tour_start_pages', '[]'), true);
+        if (!is_array($raw)) { return []; }
+        return array_values(array_filter($raw, static fn($page) => is_array($page) && isset($page['id']) && is_string($page['id'])));
+    }
+
+    /** Owner endpoints never include password hashes. */
+    private function startPagePublicRecord(array $page): array {
+        $page['passwordProtected'] = !empty($page['sharePasswordHash']);
+        $page['shareExpiryTimezone'] = $this->shareExpiryZone($this->userId() ?? '')->getName();
+        unset($page['sharePasswordHash']);
+        // PPI STARTPAGE MULTISHARE V1 2026-11-24: never leak hashes.
+        if (isset($page['shareLinks']) && is_array($page['shareLinks'])) {
+            $page['shareLinks'] = array_values(array_map(static function (array $link): array {
+                $link['passwordProtected'] = !empty($link['passwordHash']);
+                unset($link['passwordHash']);
+                return $link;
+            }, array_filter($page['shareLinks'], 'is_array')));
+        }
+        return $page;
+    }
+
+    private function startPageIndexKey(string $token): string {
+        // oc_appconfig.configkey supports at most 64 chars on supported Nextcloud databases.
+        // Prefix (9) + truncated SHA-256 (40) matches the established tour share index.
+        return self::STARTPAGE_INDEX_PREFIX . substr(hash('sha256', $token), 0, 40);
+    }
+
+    /** PPI STARTPAGE MULTISHARE V1 2026-11-24.
+     * Resolve only indexed and currently active tokens. Independent shares get their
+     * own hash and expiry; neither a revoked share nor another share's session grants access.
+     */
+    private function findPublicStartPage(string $token): ?array {
+        if (!preg_match('/^[a-f0-9]{48}$/D', $token)) { return null; }
+        $index = json_decode($this->config->getAppValue(self::APP_ID, $this->startPageIndexKey($token), ''), true);
+        if (!is_array($index) || !isset($index['uid'], $index['id']) ||
+            !is_string($index['uid']) || !is_string($index['id'])) { return null; }
+        foreach ($this->startPageRecords($index['uid']) as $page) {
+            if (!hash_equals((string)$page['id'], $index['id'])) { continue; }
+            if (isset($page['publicToken']) && is_string($page['publicToken']) &&
+                hash_equals($page['publicToken'], $token)) {
+                if (!empty($page['shareExpiresOn']) && $this->shareExpiryReached($page['shareExpiresOn'], $index['uid'])) { return null; }
+                return ['owner' => $index['uid'], 'page' => $page];
+            }
+            foreach ($page['shareLinks'] ?? [] as $link) {
+                if (!is_array($link) || !isset($link['token']) || !is_string($link['token']) ||
+                    !hash_equals($link['token'], $token)) { continue; }
+                if (!empty($link['disabled']) || (!empty($link['expiresOn']) && $this->shareExpiryReached($link['expiresOn'], $index['uid']))) { return null; }
+                // Sharing policies and selected tours are page-wide; credentials are link-specific.
+                if (empty($link['passwordHash'])) { unset($page['sharePasswordHash']); }
+                else { $page['sharePasswordHash'] = $link['passwordHash']; }
+                $page['shareExpiresOn'] = $link['expiresOn'] ?? '';
+                return ['owner' => $index['uid'], 'page' => $page];
+            }
+            return null;
+        }
+        return null;
+    }
+
+    private function startPageUnlocked(string $token, array $page): bool {
+        if (empty($page['sharePasswordHash'])) { return true; }
+        $actual = $this->session->get('ppi_startpage_unlock_' . hash('sha256', $token));
+        $expected = hash('sha256', $token . '|' . $page['sharePasswordHash']);
+        return is_string($actual) && hash_equals($actual, $expected);
+    }
+
+    private function persistStartPages(string $uid, array $pages): void {
+        $this->config->setUserValue($uid, self::APP_ID, 'tour_start_pages',
+            json_encode(array_values($pages), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+    }
+
+    #[NoAdminRequired]
+    public function listStartPages(): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        return new JSONResponse(['success' => true, 'pages' => array_map(fn($p) => $this->startPagePublicRecord($p), $this->startPageRecords($uid))]);
+    }
+
+    /** Personal, design-only presets. No sharing credentials or tour references. */
+    private const PRESET_FIELDS = ['layout', 'designEffect', 'tileColumns', 'headingColor',
+        'descriptionColor', 'backgroundColor', 'headerBackgroundColor', 'backgroundFileId'];
+
+    private function startPagePresets(string $uid): array {
+        $raw = json_decode($this->config->getUserValue($uid, self::APP_ID, 'startpage_design_presets', '[]'), true);
+        return is_array($raw) ? array_values(array_filter($raw, static fn($p) =>
+            is_array($p) && is_string($p['id'] ?? null) && is_string($p['name'] ?? null)
+            && is_array($p['design'] ?? null))) : [];
+    }
+
+    private function validPresetDesign(mixed $raw, string $uid): ?array {
+        if (!is_array($raw)) { return null; }
+        $design = [];
+        foreach (self::PRESET_FIELDS as $field) {
+            if (!array_key_exists($field, $raw)) { return null; }
+            $design[$field] = $raw[$field];
+        }
+        if (!in_array($design['layout'], ['hero','split','gallery'], true)
+            || !in_array($design['designEffect'], ['subtle','glass','glossy'], true)
+            || !in_array($design['tileColumns'], ['auto','2','3','4','5'], true)) { return null; }
+        foreach (['headingColor','descriptionColor','backgroundColor','headerBackgroundColor'] as $color) {
+            if (!is_string($design[$color]) || !preg_match('/^#[0-9a-fA-F]{6}$/D', $design[$color])) { return null; }
+        }
+        $id = filter_var($design['backgroundFileId'], FILTER_VALIDATE_INT);
+        if ($id === false || $id < 0 || ($id > 0 && $this->image($uid, $id) === null)) { return null; }
+        $design['backgroundFileId'] = $id;
+        return $design;
+    }
+
+    #[NoAdminRequired]
+    public function listStartPagePresets(): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        return new JSONResponse(['success' => true, 'presets' => $this->startPagePresets($uid)]);
+    }
+
+    #[NoAdminRequired]
+    public function saveStartPagePreset(): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $name = trim((string)$this->request->getParam('name', ''));
+        $id = (string)$this->request->getParam('id', '');
+        $raw = (string)$this->request->getParam('design', '');
+        if ($name === '' || mb_strlen($name) > 80 || strlen($raw) > 4096) {
+            return $this->error('Ungültiger Preset-Name oder zu große Vorlage');
+        }
+        $design = $this->validPresetDesign(json_decode($raw, true), $uid);
+        if ($design === null) { return $this->error('Ungültiges Design oder Hintergrundbild nicht verfügbar', 400); }
+        $presets = $this->startPagePresets($uid);
+        if ($id !== '') {
+            foreach ($presets as &$preset) {
+                if ($preset['id'] !== $id) { continue; }
+                $preset['name'] = $name;
+                $preset['design'] = $design;
+                $preset['modified'] = gmdate('c');
+                $this->config->setUserValue($uid, self::APP_ID, 'startpage_design_presets', json_encode($presets, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+                return new JSONResponse(['success' => true, 'preset' => $preset]);
+            }
+            return $this->error('Preset nicht gefunden', 404);
+        }
+        if (count($presets) >= 30) { return $this->error('Maximal 30 eigene Presets'); }
+        $preset = ['id' => bin2hex(random_bytes(12)), 'name' => $name, 'design' => $design, 'modified' => gmdate('c')];
+        $presets[] = $preset;
+        $this->config->setUserValue($uid, self::APP_ID, 'startpage_design_presets', json_encode($presets, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        return new JSONResponse(['success' => true, 'preset' => $preset]);
+    }
+
+    #[NoAdminRequired]
+    public function deleteStartPagePreset(string $id): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $presets = $this->startPagePresets($uid);
+        $remaining = array_values(array_filter($presets, static fn($preset) => $preset['id'] !== $id));
+        if (count($presets) === count($remaining)) { return $this->error('Preset nicht gefunden', 404); }
+        $this->config->setUserValue($uid, self::APP_ID, 'startpage_design_presets', json_encode($remaining, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        return new JSONResponse(['success' => true]);
+    }
+
+    #[NoAdminRequired]
+    public function createStartPage(): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $name = trim((string)$this->request->getParam('name', ''));
+        if ($name === '' || mb_strlen($name) > 100) { return $this->error('Name: 1 bis 100 Zeichen'); }
+        $pages = $this->startPageRecords($uid);
+        if (count($pages) >= 30) { return $this->error('Maximal 30 Startseiten pro Benutzer'); }
+        $page = ['id' => bin2hex(random_bytes(12)), 'name' => $name,
+            'headline' => $name, 'description' => '', 'layout' => 'hero',
+            'headingColor' => '#ffffff', 'descriptionColor' => '#ffffff', 'backgroundColor' => '#000000',
+            'headerBackgroundColor' => '#000000',
+            'designEffect' => 'subtle',
+            'backgroundFileId' => 0, 'tileColumns' => 'auto',
+            'tourIds' => [], 'created' => gmdate('c'), 'modified' => gmdate('c')];
+        $pages[] = $page;
+        $this->persistStartPages($uid, $pages);
+        return new JSONResponse(['success' => true, 'page' => $this->startPagePublicRecord($page)]);
+    }
+
+    #[NoAdminRequired]
+    public function saveStartPage(string $id): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $name = trim((string)$this->request->getParam('name', ''));
+        $headline = trim((string)$this->request->getParam('headline', ''));
+        $description = trim((string)$this->request->getParam('description', ''));
+        $layout = (string)$this->request->getParam('layout', 'hero');
+        $headingColor = (string)$this->request->getParam('headingColor', '#ffffff');
+        $descriptionColor = (string)$this->request->getParam('descriptionColor', '#ffffff');
+        $designEffect = (string)$this->request->getParam('designEffect', 'subtle');
+        $backgroundColor = (string)$this->request->getParam('backgroundColor', '#000000');
+        $headerBackgroundColor = (string)$this->request->getParam('headerBackgroundColor', $backgroundColor);
+        $backgroundFileIdRaw = $this->request->getParam('backgroundFileId', '0');
+        $backgroundFileId = filter_var($backgroundFileIdRaw, FILTER_VALIDATE_INT);
+        $tileColumns = (string)$this->request->getParam('tileColumns', 'auto');
+        if ($name === '' || mb_strlen($name) > 100 || mb_strlen($headline) > 120 ||
+            mb_strlen($description) > 1000 || !in_array($layout, ['hero', 'split', 'gallery'], true) ||
+            !preg_match('/^#[0-9a-fA-F]{6}$/D', $headingColor) ||
+            !preg_match('/^#[0-9a-fA-F]{6}$/D', $descriptionColor) ||
+            !in_array($designEffect, ['subtle', 'glass', 'glossy'], true) ||
+            !preg_match('/^#[0-9a-fA-F]{6}$/D', $backgroundColor) ||
+            !preg_match('/^#[0-9a-fA-F]{6}$/D', $headerBackgroundColor) ||
+            $backgroundFileId === false || $backgroundFileId < 0 ||
+            !in_array($tileColumns, ['auto', '2', '3', '4', '5'], true)) {
+            return $this->error('Ungültige Startseiten-Einstellungen');
+        }
+        $requested = json_decode((string)$this->request->getParam('tourIds', '[]'), true);
+        if (!is_array($requested) || count($requested) > 30 || !array_is_list($requested)) {
+            return $this->error('Ungültige Tour-Auswahl');
+        }
+        $ownedIds = array_column($this->records($uid), 'id');
+        $tourIds = [];
+        foreach ($requested as $tourId) {
+            if (!is_string($tourId) || !in_array($tourId, $ownedIds, true)) {
+                return $this->error('Mindestens eine Tour ist nicht verfügbar', 403);
+            }
+            if (!in_array($tourId, $tourIds, true)) { $tourIds[] = $tourId; }
+        }
+        if ($backgroundFileId > 0 && $this->image($uid, $backgroundFileId) === null) {
+            return $this->error('Hintergrundbild nicht verfügbar oder keine Leseberechtigung', 403);
+        }
+        $pages = $this->startPageRecords($uid);
+        foreach ($pages as &$page) {
+            if ($page['id'] !== $id) { continue; }
+            $page['name'] = $name;
+            $page['headline'] = $headline;
+            $page['description'] = $description;
+            $page['layout'] = $layout;
+            $page['headingColor'] = $headingColor;
+            $page['descriptionColor'] = $descriptionColor;
+            $page['designEffect'] = $designEffect;
+            $page['backgroundColor'] = $backgroundColor;
+            $page['headerBackgroundColor'] = $headerBackgroundColor;
+            $page['backgroundFileId'] = $backgroundFileId;
+            $page['tileColumns'] = $tileColumns;
+            $page['tourIds'] = $tourIds;
+            $page['modified'] = gmdate('c');
+            $this->persistStartPages($uid, $pages);
+            return new JSONResponse(['success' => true, 'page' => $this->startPagePublicRecord($page)]);
+        }
+        unset($page);
+        return $this->error('Startseite nicht gefunden', 404);
+    }
+
+    #[NoAdminRequired]
+    public function duplicateStartPage(string $id): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $pages = $this->startPageRecords($uid);
+        if (count($pages) >= 30) { return $this->error('Maximal 30 Startseiten pro Benutzer'); }
+        foreach ($pages as $page) {
+            if ($page['id'] !== $id) { continue; }
+            $copy = $page;
+            $copy['id'] = bin2hex(random_bytes(12));
+            $copy['name'] = mb_substr($page['name'], 0, 92) . ' (Kopie)';
+            $copy['created'] = gmdate('c');
+            $copy['modified'] = gmdate('c');
+            // Deliberately exclude any future access tokens, passwords and public state.
+            unset($copy['publicToken'], $copy['sharePasswordHash'], $copy['passwordProtected'], $copy['shareLinks'], $copy['shareExpiresOn']);
+            $copy['tourPasswordMode'] = 'keep';
+            $copy['tourPasswordSelected'] = [];
+            $pages[] = $copy;
+            $this->persistStartPages($uid, $pages);
+            return new JSONResponse(['success' => true, 'page' => $this->startPagePublicRecord($copy)]);
+        }
+        return $this->error('Startseite nicht gefunden', 404);
+    }
+
+    #[NoAdminRequired]
+    public function deleteStartPage(string $id): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $pages = $this->startPageRecords($uid);
+        $remaining = array_values(array_filter($pages, static fn($page) => $page['id'] !== $id));
+        if (count($remaining) === count($pages)) { return $this->error('Startseite nicht gefunden', 404); }
+        foreach ($pages as $oldPage) {
+            if ($oldPage['id'] === $id) {
+                if (!empty($oldPage['publicToken'])) {
+                    $this->config->deleteAppValue(self::APP_ID, $this->startPageIndexKey($oldPage['publicToken']));
+                }
+                foreach ($oldPage['shareLinks'] ?? [] as $link) {
+                    if (is_array($link) && !empty($link['token'])) {
+                        $this->config->deleteAppValue(self::APP_ID, $this->startPageIndexKey($link['token']));
+                    }
+                }
+            }
+        }
+        $this->persistStartPages($uid, $remaining);
+        return new JSONResponse(['success' => true]);
+    }
+
+
+    /**
+     * Owner-controlled public start-page share.
+     * Every included tour continues to require its own existing valid public link.
+     */
+    #[NoAdminRequired]
+    public function shareStartPage(string $id): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $enabled = (string)$this->request->getParam('enabled', '0') === '1';
+        $expiry = $this->request->getParam('expiresOn', '');
+        if (!is_string($expiry) || ($expiry !== '' &&
+            (!preg_match('/^\d{4}-\d{2}-\d{2}$/D', $expiry) ||
+             !($date = \DateTimeImmutable::createFromFormat('!Y-m-d', $expiry, new \DateTimeZone('UTC'))) ||
+             $date->format('Y-m-d') !== $expiry || $this->shareExpiryReached($expiry, $uid)))) {
+            return $this->error('Ungültiges Ablaufdatum');
+        }
+        $password = $this->request->getParam('password', '');
+        $passwordAction = (string)$this->request->getParam('passwordAction', '');
+        if (!is_string($password) || strlen($password) > 512 || !in_array($passwordAction, ['', 'remove'], true)) {
+            return $this->error('Ungültige Passwort-Aktion');
+        }
+        if ($enabled && $password !== '' && ($error = $this->validateSharePassword($password)) !== null) {
+            return $error;
+        }
+        $modeRaw = $this->request->getParam('tourPasswordMode', null);
+        if ($modeRaw !== null && (!is_string($modeRaw) ||
+            !in_array($modeRaw, ['keep', 'all', 'selected'], true))) {
+            return $this->error('Ungültige Tour-Passwortregel');
+        }
+        $selectedRaw = $this->request->getParam('tourPasswordSelected', null);
+        $selected = null;
+        if ($selectedRaw !== null) {
+            $selected = is_string($selectedRaw) ? json_decode($selectedRaw, true) : $selectedRaw;
+            if (!is_array($selected) || !array_is_list($selected) || count($selected) > 30 ||
+                count($selected) !== count(array_unique(array_filter($selected, 'is_string'))) ||
+                count(array_filter($selected, 'is_string')) !== count($selected)) {
+                return $this->error('Ungültige Tour-Auswahl für die Passwortregel');
+            }
+        }
+        // PPI PROTECTED TOUR TILE VISIBILITY 2026-11-24
+        $showProtectedRaw = $this->request->getParam('showPasswordProtectedTours', null);
+        if ($showProtectedRaw !== null && !in_array($showProtectedRaw, ['0', '1', 0, 1, false, true], true)) {
+            return $this->error('Ungültige Sichtbarkeitseinstellung');
+        }
+        $pages = $this->startPageRecords($uid);
+        foreach ($pages as &$page) {
+            if ($page['id'] !== $id) { continue; }
+            $effectiveMode = $modeRaw ?? ($page['tourPasswordMode'] ?? 'keep');
+            $effectiveSelected = $selected ?? ($page['tourPasswordSelected'] ?? []);
+            if (!is_array($effectiveSelected) || !is_array($page['tourIds'] ?? null)) {
+                return $this->error('Ungültige Tour-Konfiguration');
+            }
+            foreach ($effectiveSelected as $tourId) {
+                if (!in_array($tourId, $page['tourIds'], true)) {
+                    return $this->error('Nur eingebundene Touren dürfen ausgewählt werden');
+                }
+            }
+            $willHavePassword = $enabled && $passwordAction !== 'remove' &&
+                ($password !== '' || !empty($page['sharePasswordHash']));
+            if ($enabled && $effectiveMode !== 'keep' && !$willHavePassword) {
+                return $this->error('Zum Freischalten von Touren muss die Startseite passwortgeschützt sein');
+            }
+            $oldToken = $page['publicToken'] ?? null;
+            if (!$enabled) {
+                unset($page['publicToken']);
+                if (is_string($oldToken)) {
+                    $this->config->deleteAppValue(self::APP_ID, $this->startPageIndexKey($oldToken));
+                }
+            } else {
+                if (empty($page['publicToken'])) {
+                    $page['publicToken'] = bin2hex(random_bytes(24));
+                }
+                if ($passwordAction === 'remove') { unset($page['sharePasswordHash']); }
+                elseif ($password !== '') { $page['sharePasswordHash'] = password_hash($password, PASSWORD_DEFAULT); }
+                if ($expiry === '') { unset($page['shareExpiresOn']); }
+                else { $page['shareExpiresOn'] = $expiry; }
+                $this->config->setAppValue(self::APP_ID, $this->startPageIndexKey($page['publicToken']),
+                    json_encode(['uid' => $uid, 'id' => $id]));
+            }
+            if ($showProtectedRaw !== null) {
+                $page['showPasswordProtectedTours'] = (string)$showProtectedRaw === '1';
+            }
+            if ($enabled) {
+                $page['tourPasswordMode'] = $effectiveMode;
+                $page['tourPasswordSelected'] = $effectiveMode === 'selected' ? $effectiveSelected : [];
+            } elseif (empty($page['shareLinks'])) {
+                $page['tourPasswordMode'] = 'keep';
+                $page['tourPasswordSelected'] = [];
+            } // Keep policies when secondary links remain active.
+            $page['modified'] = gmdate('c');
+            $this->persistStartPages($uid, $pages);
+            return new JSONResponse(['success' => true, 'page' => $this->startPagePublicRecord($page)]);
+        }
+        unset($page);
+        return $this->error('Startseite nicht gefunden', 404);
+    }
+
+    /** PPI STARTPAGE MULTISHARE V1 2026-11-24 – rotate main link only. */
+    #[NoAdminRequired]
+    public function rotateStartPageToken(string $id): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $pages = $this->startPageRecords($uid);
+        foreach ($pages as &$page) {
+            if ($page['id'] !== $id) { continue; }
+            if (empty($page['publicToken'])) { return $this->error('Hauptlink ist nicht aktiv', 409); }
+            $old = $page['publicToken'];
+            $new = bin2hex(random_bytes(24));
+            $page['publicToken'] = $new;
+            $page['modified'] = gmdate('c');
+            // Store new index and record before revoking old index; no recycled tokens.
+            $this->config->setAppValue(self::APP_ID, $this->startPageIndexKey($new), json_encode(['uid'=>$uid,'id'=>$id]));
+            $this->persistStartPages($uid, $pages);
+            $this->config->deleteAppValue(self::APP_ID, $this->startPageIndexKey($old));
+            return new JSONResponse(['success'=>true,'page'=>$this->startPagePublicRecord($page)]);
+        }
+        return $this->error('Startseite nicht gefunden', 404);
+    }
+
+    /** Secondary start-page shares are independent of main-link activation. */
+    #[NoAdminRequired]
+    public function createStartPageShareLink(string $id): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $name = trim((string)$this->request->getParam('name', ''));
+        $expiry = $this->validateShareExpiry($this->request->getParam('expiresOn', ''));
+        $password = $this->request->getParam('password', '');
+        if ($name === '' || mb_strlen($name) > 60 || $expiry === null || !is_string($password)) {
+            return $this->error('Ungültige Bezeichnung, Ablaufdatum oder Passwort');
+        }
+        if ($password !== '' && ($error = $this->validateSharePassword($password)) !== null) { return $error; }
+        $pages = $this->startPageRecords($uid);
+        foreach ($pages as &$page) {
+            if ($page['id'] !== $id) { continue; }
+            $links = $page['shareLinks'] ?? [];
+            if (!is_array($links) || count($links) >= 12) { return $this->error('Maximal 12 zusätzliche Links pro Startseite'); }
+            $token = bin2hex(random_bytes(24));
+            $link = ['id'=>bin2hex(random_bytes(8)), 'token'=>$token, 'name'=>$name,
+                'expiresOn'=>$expiry, 'created'=>gmdate('c')];
+            if ($password !== '') { $link['passwordHash'] = password_hash($password, PASSWORD_DEFAULT); }
+            $links[] = $link;
+            $page['shareLinks'] = $links;
+            $page['modified'] = gmdate('c');
+            $this->config->setAppValue(self::APP_ID, $this->startPageIndexKey($token), json_encode(['uid'=>$uid,'id'=>$id]));
+            $this->persistStartPages($uid, $pages);
+            return new JSONResponse(['success'=>true,'page'=>$this->startPagePublicRecord($page)]);
+        }
+        return $this->error('Startseite nicht gefunden', 404);
+    }
+
+    #[NoAdminRequired]
+    public function updateStartPageShareLink(string $id, string $linkId): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $action = (string)$this->request->getParam('action', '');
+        if (!in_array($action, ['settings','password','removePassword','disable','enable','revoke','rotate'], true)) {
+            return $this->error('Ungültige Aktion');
+        }
+        $name = null; $expiry = null; $password = null;
+        if ($action === 'settings') {
+            $name = trim((string)$this->request->getParam('name',''));
+            $expiry = $this->validateShareExpiry($this->request->getParam('expiresOn',''));
+            if ($name === '' || mb_strlen($name) > 60 || $expiry === null) { return $this->error('Ungültige Link-Einstellungen'); }
+        }
+        if ($action === 'password') {
+            $password = $this->request->getParam('password','');
+            if (!is_string($password)) { return $this->error('Ungültiges Passwort'); }
+            if (($error = $this->validateSharePassword($password)) !== null) { return $error; }
+        }
+        $pages = $this->startPageRecords($uid);
+        foreach ($pages as &$page) {
+            if ($page['id'] !== $id) { continue; }
+            foreach ($page['shareLinks'] ?? [] as $i => $link) {
+                if (!is_array($link) || ($link['id'] ?? '') !== $linkId) { continue; }
+                if ($action === 'enable' && !empty($link['expiresOn']) && $this->shareExpiryReached($link['expiresOn'], $uid)) {
+                    return $this->error('Vor dem Aktivieren das Ablaufdatum anpassen');
+                }
+                $oldToken = (string)$link['token'];
+                if ($action === 'revoke') {
+                    array_splice($page['shareLinks'], $i, 1);
+                } else {
+                    if ($action === 'settings') { $link['name']=$name; $link['expiresOn']=$expiry; }
+                    if ($action === 'password') { $link['passwordHash']=password_hash($password, PASSWORD_DEFAULT); }
+                    if ($action === 'removePassword') { unset($link['passwordHash']); }
+                    if ($action === 'disable') { $link['disabled']=true; }
+                    if ($action === 'enable') { unset($link['disabled']); }
+                    if ($action === 'rotate') {
+                        $link['token']=bin2hex(random_bytes(24));
+                        $this->config->setAppValue(self::APP_ID, $this->startPageIndexKey($link['token']), json_encode(['uid'=>$uid,'id'=>$id]));
+                    }
+                    $page['shareLinks'][$i] = $link;
+                }
+                $page['modified'] = gmdate('c');
+                $this->persistStartPages($uid, $pages);
+                if ($action === 'revoke' || $action === 'rotate') {
+                    $this->config->deleteAppValue(self::APP_ID, $this->startPageIndexKey($oldToken));
+                }
+                return new JSONResponse(['success'=>true,'page'=>$this->startPagePublicRecord($page)]);
+            }
+            return $this->error('Freigabelink nicht gefunden', 404);
+        }
+        return $this->error('Startseite nicht gefunden', 404);
+    }
+
+    #[PublicPage]
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
+    public function publicStartPageUnlock(string $token): Response {
+        $path = $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.publicStartPage', ['token' => $token]);
+        $found = $this->findPublicStartPage($token);
+        if ($found === null || empty($found['page']['sharePasswordHash'])) {
+            return new RedirectResponse($path, 303);
+        }
+        $ip = $this->request->getRemoteAddress();
+        $action = 'photosphere_startpage_password';
+        $this->throttler->sleepDelayOrThrowOnMax($ip, $action);
+        $password = $this->request->getParam('password', '');
+        $key = 'ppi_startpage_unlock_' . hash('sha256', $token);
+        if (is_string($password) && strlen($password) <= 512 &&
+            password_verify($password, $found['page']['sharePasswordHash'])) {
+            $this->session->set($key, hash('sha256', $token . '|' . $found['page']['sharePasswordHash']));
+            $this->session->remove('ppi_startpage_error_' . hash('sha256', $token));
+        } else {
+            $this->throttler->registerAttempt($action, $ip);
+            $this->session->set('ppi_startpage_error_' . hash('sha256', $token), true);
+        }
+        return new RedirectResponse($path, 303);
+    }
+
+    #[PublicPage]
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
+    public function publicStartPageBackground(string $token): Response {
+        $found = $this->findPublicStartPage($token);
+        if ($found === null || !$this->startPageUnlocked($token, $found['page'])) {
+            return $this->error('Bild nicht verfügbar', 404);
+        }
+        $id = (int)($found['page']['backgroundFileId'] ?? 0);
+        if ($id <= 0) { return $this->error('Bild nicht verfügbar', 404); }
+        try {
+            $home = $this->rootFolder->getUserFolder($found['owner']);
+            foreach ($home->getById($id) as $file) {
+                if (!$file instanceof File || !$file->isReadable() || $file->getMimetype() !== 'image/jpeg') { continue; }
+                if (!is_string($home->getRelativePath($file->getPath()))) { continue; }
+                $preview = $this->previewManager->getPreview($file, 1600, 900, true);
+                $response = new FileDisplayResponse($preview, 200, ['Content-Type' => $preview->getMimeType()]);
+                $response->addHeader('Cache-Control', 'private, no-store');
+                $response->addHeader('X-Content-Type-Options', 'nosniff');
+                return $response;
+            }
+        } catch (\Throwable $e) { /* No original-image fallback and no internal paths exposed. */ }
+        return $this->error('Bild nicht verfügbar', 404);
+    }
+
+    #[PublicPage]
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
+    public function publicStartPage(string $token): Response {
+        $found = $this->findPublicStartPage($token);
+        if ($found === null) {
+            $response = new TemplateResponse(self::APP_ID, 'startpage-public', ['invalid' => true], 'guest');
+            $response->setStatus(404);
+            $response->addHeader('Cache-Control', 'no-store');
+            return $response;
+        }
+        if (!$this->startPageUnlocked($token, $found['page'])) {
+            $errorKey = 'ppi_startpage_error_' . hash('sha256', $token);
+            $badPassword = (bool)$this->session->get($errorKey);
+            $this->session->remove($errorKey);
+            $response = new TemplateResponse(self::APP_ID, 'startpage-public', [
+                'passwordRequired' => true,
+                'passwordError' => $badPassword,
+                'unlockUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.publicStartPageUnlock', ['token' => $token]),
+            ], 'guest');
+            $response->addHeader('Cache-Control', 'no-store');
+            return $response;
+        }
+        $page = $found['page'];
+        $availableTours = [];
+        foreach ($this->records($found['owner']) as $tour) {
+            if (!in_array($tour['id'], $page['tourIds'] ?? [], true)) { continue; }
+            $candidateTokens = [];
+            if (!empty($tour['publicToken'])) { $candidateTokens[] = $tour['publicToken']; }
+            foreach ($tour['shareLinks'] ?? [] as $link) {
+                if (is_array($link) && !empty($link['token'])) { $candidateTokens[] = $link['token']; }
+            }
+            foreach ($candidateTokens as $tourToken) {
+                $resolved = $this->publicTour($tourToken);
+                if ($resolved === null || $resolved['owner'] !== $found['owner'] ||
+                    $resolved['tour']['id'] !== $tour['id']) { continue; }
+                $tourData = $resolved['tour'];
+                $imageId = (int)($tourData['display']['startImageId'] ?? 0);
+                $ids = array_values(array_filter(array_map(static fn($v) => (int)($v['id'] ?? 0), $tourData['images'] ?? [])));
+                if (!in_array($imageId, $ids, true)) { $imageId = (int)($ids[0] ?? 0); }
+                $locked = !empty($tourData['sharePasswordHash']);
+                $mode = $page['tourPasswordMode'] ?? 'keep';
+                if ($locked && !empty($page['sharePasswordHash']) &&
+                    ($mode === 'all' || ($mode === 'selected' &&
+                        in_array($tour['id'], $page['tourPasswordSelected'] ?? [], true)))) {
+                    // This grant is bound to this browser session and exact tour token.
+                    // Authorization on every subsequent tour/image request revalidates it.
+                    $this->session->set('ppi_startpage_tour_grant_' . hash('sha256', $tourToken), $token);
+                }
+                $pageGranted = $locked && $this->startPageTourGranted($tourToken, $resolved);
+                // PPI PROTECTED TOUR TILE VISIBILITY 2026-11-24
+                // Filter only tile visibility; individual tour authorization is unchanged.
+                if ($locked && !$pageGranted && ($page['showPasswordProtectedTours'] ?? true) === false) {
+                    continue;
+                }
+                $availableTours[$tour['id']] = [
+                    'name' => mb_substr((string)$tour['name'], 0, 100),
+                    'description' => mb_substr(trim(preg_replace('/\s+/u', ' ', (string)($tourData['display']['introText'] ?? '')) ?? ''), 0, 135),
+                    'url' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.publicView', ['token' => $tourToken]),
+                    'image' => (!$locked || $pageGranted) && $imageId > 0 && $this->image($found['owner'], $imageId) !== null
+                        ? $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.publicThumbnail',
+                            ['token' => $tourToken, 'fileId' => $imageId]) : '',
+                    'locked' => $locked && !$pageGranted,
+                ];
+                break;
+            }
+        }
+        $ordered = [];
+        foreach ($page['tourIds'] ?? [] as $tourId) {
+            if (isset($availableTours[$tourId])) { $ordered[] = $availableTours[$tourId]; }
+        }
+        $response = new TemplateResponse(self::APP_ID, 'startpage-public', [
+            'page' => $page, 'tours' => $ordered,
+            'backgroundUrl' => (int)($page['backgroundFileId'] ?? 0) > 0
+                ? $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.publicStartPageBackground', ['token' => $token]) : '',
+        ], 'guest');
+        $response->addHeader('Cache-Control', 'no-store');
+        return $response;
     }
 
     #[NoAdminRequired]
@@ -189,6 +862,7 @@ final class TourController extends Controller {
         Util::addScript(self::APP_ID, 'tour-sphere');
         Util::addScript(self::APP_ID, 'tour-editor');
         return new TemplateResponse(self::APP_ID, 'tours', [
+            'startPagesUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.listStartPages'),
             'apiUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.listTours'),
             'pickerPreferencesUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.savePickerPreferences'),
             'pickerPanoramaOnly' => ($this->userId() !== null && $this->config->getUserValue($this->userId(), self::APP_ID, self::PICKER_PANORAMA_ONLY, '0') === '1'),
@@ -499,8 +1173,7 @@ final class TourController extends Controller {
             $nonPanoramasExcluded = 0;
             $totalPanoramas = 0;
             $filteredPanoramas = 0;
-            // Count recognized panoramas BEFORE applying search/date/size conditions.
-            // This provides a stable denominator across all picker filters.
+            // Count recognized panoramas before applying search/date/size conditions.
             // Bound recursive traversal to keep large/external mounts responsive.
             // Only list readable nodes from the signed-in user's accessible tree.
             while ($pending !== [] && $scanned < 3000) {
@@ -541,7 +1214,6 @@ final class TourController extends Controller {
                     $mtime = (int)$node->getMtime();
                     $bytes = (int)$node->getSize();
                     if ($threshold > 0 && $mtime < $threshold) { continue; }
-                    // Thresholds are intentionally cumulative; "over" means strictly greater.
                     if ($size === 'lt20' && $bytes >= $mb20) { continue; }
                     if ($size === 'gt20' && $bytes <= $mb20) { continue; }
                     if ($size === 'gt30' && $bytes <= $mb30) { continue; }
@@ -610,7 +1282,7 @@ final class TourController extends Controller {
             if (isset($tour['publicToken']) && is_string($tour['publicToken'])
                 && hash_equals($tour['publicToken'], $token)) {
                 $expiry = $tour['shareExpiresOn'] ?? null;
-                if (is_string($expiry) && $expiry !== '' && gmdate('Y-m-d') > $expiry) { return null; }
+                if (is_string($expiry) && $expiry !== '' && $this->shareExpiryReached($expiry, $entry['uid'])) { return null; }
                 return ['owner' => $entry['uid'], 'tour' => $tour];
             }
             // Per-link credentials must never inherit the legacy link's password or expiry.
@@ -618,7 +1290,7 @@ final class TourController extends Controller {
                 if (!is_array($link) || !isset($link['token']) || !is_string($link['token'])
                     || !hash_equals($link['token'], $token) || !empty($link['disabled'])) { continue; }
                 $expiry = $link['expiresOn'] ?? null;
-                if (is_string($expiry) && $expiry !== '' && gmdate('Y-m-d') > $expiry) { return null; }
+                if (is_string($expiry) && $expiry !== '' && $this->shareExpiryReached($expiry, $entry['uid'])) { return null; }
                 $selected = $tour;
                 $selected['publicToken'] = $link['token'];
                 $selected['sharePasswordHash'] = $link['passwordHash'] ?? null;
@@ -641,7 +1313,7 @@ final class TourController extends Controller {
             if (!is_string($expiryRequest) || ($expiryRequest !== '' &&
                 (!preg_match('/^\d{4}-\d{2}-\d{2}$/D', $expiryRequest) ||
                 !($date = \DateTimeImmutable::createFromFormat('!Y-m-d', $expiryRequest, new \DateTimeZone('UTC'))) ||
-                $date->format('Y-m-d') !== $expiryRequest || $expiryRequest < gmdate('Y-m-d')))) {
+                $date->format('Y-m-d') !== $expiryRequest || $this->shareExpiryReached($expiryRequest, $uid)))) {
                 return $this->error('Ungültiges Ablaufdatum (heute oder später erforderlich)');
             }
             $expiry = $expiryRequest;
@@ -729,10 +1401,33 @@ final class TourController extends Controller {
         return null;
     }
 
+    /** Expiry means 00:00 at the start of the chosen date in the owner's timezone.
+     * Core user preference and Nextcloud default_timezone are used; never visitor timezone.
+     */
+    private function shareExpiryZone(string $owner): \DateTimeZone {
+        $personal = $owner !== '' ? $this->config->getUserValue($owner, 'core', 'timezone', '') : '';
+        $default = $this->config->getSystemValueString('default_timezone', 'UTC');
+        foreach ([$personal, $default, 'UTC'] as $zoneName) {
+            if (!is_string($zoneName) || $zoneName === '') { continue; }
+            try { return new \DateTimeZone($zoneName); }
+            catch (\Throwable $e) { /* Nextcloud fallback */ }
+        }
+        return new \DateTimeZone('UTC');
+    }
+
+    private function shareExpiryReached(string $expiry, string $owner): bool {
+        if ($expiry === '') { return false; }
+        $zone = $this->shareExpiryZone($owner);
+        $midnight = \DateTimeImmutable::createFromFormat('!Y-m-d', $expiry, $zone);
+        // Invalid stored expiry must never grant public access.
+        if ($midnight === false || $midnight->format('Y-m-d') !== $expiry) { return true; }
+        return new \DateTimeImmutable('now', $zone) >= $midnight;
+    }
+
     private function validateShareExpiry(mixed $raw): ?string {
         if (!is_string($raw) || $raw === '') { return $raw === '' ? '' : null; }
         $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $raw, new \DateTimeZone('UTC'));
-        return ($date && $date->format('Y-m-d') === $raw && $raw >= gmdate('Y-m-d')) ? $raw : null;
+        return ($date && $date->format('Y-m-d') === $raw && !$this->shareExpiryReached($raw, $this->userId() ?? '')) ? $raw : null;
     }
 
     /** Additional links are stored inside the user's tour; only this owner can manage them. */
@@ -780,7 +1475,7 @@ final class TourController extends Controller {
         $uid = $this->userId();
         if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
         $action = (string)$this->request->getParam('action', '');
-        if (!in_array($action, ['settings', 'password', 'removePassword', 'disable', 'enable', 'revoke'], true)) {
+        if (!in_array($action, ['settings', 'password', 'removePassword', 'disable', 'enable', 'revoke', 'rotate'], true)) {
             return $this->error('Ungültige Aktion');
         }
         $expiry = null;
@@ -816,7 +1511,7 @@ final class TourController extends Controller {
                     if ($action === 'removePassword') { unset($link['passwordHash']); }
                     if ($action === 'disable') { $link['disabled'] = true; }
                     if ($action === 'enable') {
-                        if (!empty($link['expiresOn']) && $link['expiresOn'] < gmdate('Y-m-d')) {
+                        if (!empty($link['expiresOn']) && $this->shareExpiryReached($link['expiresOn'], $uid)) {
                             return $this->error('Vor dem Aktivieren bitte das Ablaufdatum aktualisieren');
                         }
                         foreach ($tour['images'] ?? [] as $item) {
@@ -826,8 +1521,44 @@ final class TourController extends Controller {
                         }
                         unset($link['disabled']);
                     }
+                    if ($action === 'rotate') {
+                        $oldToken = (string)($link['token'] ?? '');
+                        if (!preg_match('/^[a-f0-9]{48}$/D', $oldToken)) {
+                            return $this->error('Ungültiges bisheriges Freigabe-Token', 409);
+                        }
+
+                        // Eigenständiges, kryptografisch sicheres Token.
+                        // Niemals einen bestehenden Freigabeindex überschreiben.
+                        do {
+                            $newToken = bin2hex(random_bytes(24));
+                        } while ($this->config->getAppValue(
+                            self::APP_ID,
+                            $this->shareIndexKey($newToken),
+                            ''
+                        ) !== '');
+
+                        // Zuerst neuen Index vorbereiten.
+                        $this->config->setAppValue(
+                            self::APP_ID,
+                            $this->shareIndexKey($newToken),
+                            json_encode(['uid' => $uid, 'id' => $id])
+                        );
+
+                        // Nur den Token dieses Zusatzlinks ersetzen.
+                        // Passwort, Name, Ablaufdatum und Status bleiben erhalten.
+                        $link['token'] = $newToken;
+                    }
+
                     $tour['modified'] = gmdate('c');
                     $this->persist($uid, $tours);
+
+                    if ($action === 'rotate') {
+                        // Alter Link und alte Besuchersitzungen werden ungültig.
+                        $this->config->deleteAppValue(
+                            self::APP_ID,
+                            $this->shareIndexKey($oldToken)
+                        );
+                    }
                 }
                 return new JSONResponse(['success' => true, 'tour' => $this->publicRecord($tour)]);
             }
@@ -1013,7 +1744,8 @@ final class TourController extends Controller {
                 $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.publicView', ['token' => $token])
             ));
         }
-        if (!empty($found['tour']['sharePasswordHash']) && !$this->unlocked($token, $found['tour'])) {
+        if (!empty($found['tour']['sharePasswordHash']) && !$this->unlocked($token, $found['tour']) &&
+            !$this->startPageTourGranted($token, $found)) {
             $errorKey = 'ppi_tour_error_' . hash('sha256', $token);
             $passwordError = (bool)$this->session->get($errorKey);
             $this->session->remove($errorKey);

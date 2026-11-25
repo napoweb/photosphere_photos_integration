@@ -1,15 +1,42 @@
-/* Photo Sphere Tour Editor – tour picker default-status build 0.4.62.96. */
+/* Photo Sphere Tour Editor – navigation visibility fix 0.4.62.133. */
 (() => {
   'use strict';
   const root = document.getElementById('ppi-tours-app');
   if (!root) return;
   // Diagnostic marker: verifies that the browser loaded the matching script.
-  root.dataset.tourEditorBuild = '0.4.62.106-tag-picker';
+  root.dataset.tourEditorBuild = '0.4.62.133-navigation-fix';
   const byId = id => document.getElementById(id);
   const api = root.dataset.apiUrl;
   const filesApi = root.dataset.filesUrl;
   const imageApi = root.dataset.imageUrl;
   const publicRoute = root.dataset.publicRoute || '';
+  // Match the server's midnight rule using the owner's Nextcloud timezone.
+  // The API supplies the resolved timezone, including its configured fallback.
+  function shareExpiryToday(record) {
+    const zone = record?.shareExpiryTimezone || 'UTC';
+    let formatter;
+    try {
+      formatter = new Intl.DateTimeFormat('en-US-u-ca-gregory', {
+        timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit'
+      });
+    } catch (_) {
+      formatter = new Intl.DateTimeFormat('en-US-u-ca-gregory', {
+        timeZone: 'UTC', year: 'numeric', month: '2-digit', day: '2-digit'
+      });
+    }
+    const parts = Object.fromEntries(formatter.formatToParts(new Date())
+      .filter(part => ['year', 'month', 'day'].includes(part.type))
+      .map(part => [part.type, part.value]));
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  }
+  function shareExpiredOn(expiry, record) {
+    return Boolean(expiry && expiry <= shareExpiryToday(record));
+  }
+  function earliestShareExpiry(record) {
+    const [year, month, day] = shareExpiryToday(record).split('-').map(Number);
+    // UTC arithmetic is for calendar-day increment only; the server handles actual timezone midnight.
+    return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
+  }
   let tourWatermarks = [];
   async function loadTourWatermarks() {
     try {
@@ -24,6 +51,14 @@
     const route = window.OC?.generateUrl ? window.OC.generateUrl('/core/preview') : '/index.php/core/preview';
     return `${route}?fileId=${encodeURIComponent(id)}&x=${x}&y=${y}&a=true&forceIcon=false`;
   };
+  // All cover thumbnails follow the panorama selected under Tour > Darstellung.
+  // Fall back only when the saved start image is absent from the tour.
+  function tourCoverImage(tour) {
+    const images = Array.isArray(tour?.images) ? tour.images : [];
+    const startId = Number(tour?.display?.startImageId);
+    return images.find(item => Number(item.id) === startId && startId > 0)
+      || images[0] || null;
+  }
   function imageThumb(id, width=320, height=180) {
     const img = node('img'); img.loading = 'eager'; img.decoding = 'async';
     img.src = previewUrl(id,width,height);
@@ -325,6 +360,118 @@
   byId('ppi-picker-add-selected').addEventListener('click',addSelected);
 
   const clone = obj => JSON.parse(JSON.stringify(obj));
+  /* PPI TOUR SAFE AUTOSAVE 2026-11-24 */
+  // Only graph & non-text display controls: name, intro and sharing remain manual.
+  let ppiTourAutoId = null;
+  let ppiTourAutoLast = '';
+  let ppiTourAutoTimer = null;
+  let ppiTourAutoBusy = false;
+  let ppiTourAutoManual = false;
+  let ppiTourAutoFailed = false;
+  const ppiTourAutoStatus = [];
+  for (const id of ['ppi-tour-save']) {
+    const button=byId(id);
+    if (!button) continue;
+    const status=document.createElement('span');
+    status.className='ppi-tour-autosave-status';
+    status.style.cssText='margin-inline:10px;font-size:12px;white-space:normal;';
+    status.setAttribute('role','status');
+    button.insertAdjacentElement('afterend',status);
+    ppiTourAutoStatus.push(status);
+  }
+  function ppiTourAutoMessage(text,failed=false) {
+    // Reattach the existing indicator if an editor render relocated its header.
+    if (typeof ppiSyncTourAutoStatusToVisibleTab === 'function') ppiSyncTourAutoStatusToVisibleTab();
+    for (const status of ppiTourAutoStatus) {
+      status.textContent=text;
+      status.style.color=failed?'#b3261e':'';
+    }
+  }
+  function ppiTourAutoDisplay() {
+    // Hidden design tab: preserve stored design. Text is NEVER read from the form.
+    const d=currentDesign();
+    if (byId('ppi-step-design').hidden) return d;
+    return {...d,
+      startImageId:Number(byId('ppi-design-start').value)||0,
+      startYaw:Number(byId('ppi-design-yaw').value)||0,
+      socialPreviewMode:byId('ppi-design-social').value,
+      hotspotSize:sizeSteps[Number(byId('ppi-design-size').value)]||'medium',
+      hotspotStyle:byId('ppi-design-style').value,
+      svgPinColor:byId('ppi-design-pin-color').value,
+      showTitle:byId('ppi-design-title').checked,
+      showNavigation:byId('ppi-design-nav').checked,
+      showFullscreen:byId('ppi-design-fullscreen').checked,
+      watermarkEnabled:byId('ppi-design-watermark-enabled').checked,
+      watermarkId:byId('ppi-design-watermark-id').value,
+      introText: d.introText || ''};
+  }
+  function ppiTourAutoValues() {
+    if (!active) return null;
+    return {name:active.name,images:clone(active.images),links:clone(active.links),display:ppiTourAutoDisplay()};
+  }
+  const ppiTourAutoSignature=data=>JSON.stringify(data);
+  function ppiTourAutoReset() {
+    if (ppiTourAutoTimer !== null) clearTimeout(ppiTourAutoTimer);
+    ppiTourAutoTimer=null;
+    ppiTourAutoId=active?String(active.id):null;
+    ppiTourAutoLast=active?ppiTourAutoSignature(ppiTourAutoValues()):'';
+    ppiTourAutoFailed=false;
+    ppiTourAutoMessage(active ? 'Gespeichert ✓' : '');
+  }
+  function ppiTourAutoSchedule() {
+    if (!active || !ppiTourAutoId || String(active.id)!==ppiTourAutoId || ppiTourAutoManual) return;
+    if (ppiTourAutoSignature(ppiTourAutoValues())===ppiTourAutoLast) return;
+    if (ppiTourAutoTimer!==null) clearTimeout(ppiTourAutoTimer);
+    ppiTourAutoTimer=setTimeout(()=>{ppiTourAutoTimer=null;void ppiTourAutoFlush();},500);
+    ppiTourAutoMessage('Speichere …');
+  }
+  async function ppiTourAutoFlush() {
+    if (ppiTourAutoBusy || ppiTourAutoManual || !active || String(active.id)!==ppiTourAutoId) return;
+    const values=ppiTourAutoValues();
+    const signature=ppiTourAutoSignature(values);
+    if (signature===ppiTourAutoLast) return;
+    const id=ppiTourAutoId;
+    ppiTourAutoBusy=true;
+    try {
+      const result=await request(`${api}/${encodeURIComponent(id)}`,'POST',{
+        name:values.name,images:JSON.stringify(values.images),
+        links:JSON.stringify(values.links),display:JSON.stringify(values.display)
+      });
+      if (!result?.tour) throw new Error('Server hat keine gespeicherte Tour zurückgegeben.');
+      if (active && String(active.id)===id) {
+        ppiTourAutoLast=signature;
+        ppiTourAutoFailed=false;
+        // Do not replace active: user might have clicked again during request.
+        if (ppiTourAutoSignature(ppiTourAutoValues()) === signature) {
+          active.display={...active.display,...values.display};
+        }
+        ppiTourAutoMessage('Gespeichert ✓');
+      }
+    } catch(error) {
+      ppiTourAutoFailed=true;
+      if (active && String(active.id)===id)
+        ppiTourAutoMessage('Nicht gespeichert: '+error.message,true);
+    } finally {
+      ppiTourAutoBusy=false;
+      if (!ppiTourAutoFailed && active && String(active.id)===id &&
+          ppiTourAutoSignature(ppiTourAutoValues())!==ppiTourAutoLast) ppiTourAutoSchedule();
+    }
+  }
+  async function ppiTourAutoWait() {
+    if (ppiTourAutoTimer!==null) {clearTimeout(ppiTourAutoTimer);ppiTourAutoTimer=null;}
+    while(ppiTourAutoBusy) await new Promise(resolve=>setTimeout(resolve,40));
+  }
+  // Discrete design controls & ranges; no textarea/password/token inputs.
+  root.addEventListener('change',event=>{
+    if (event.target?.closest('#ppi-step-design') && event.target.id!=='ppi-design-intro') ppiTourAutoSchedule();
+  });
+  root.addEventListener('input',event=>{
+    if (['ppi-design-yaw','ppi-design-size','ppi-design-pin-color'].includes(event.target?.id)) ppiTourAutoSchedule();
+  });
+  // Preset color buttons change the value programmatically; they need a trigger.
+  /* PPI SVG COLOR AUTOSAVE ORDER V3 2026-11-24 */
+  // Palette autosave is deliberately triggered AFTER the chosen color has been assigned.
+
   function node(tag, label, className) {
     const el = document.createElement(tag);
     if (label !== undefined) el.textContent = label;
@@ -387,7 +534,7 @@
     for (const tour of tours) {
       const tile=node('article',undefined,'ppi-overview-tile');
       if (tour.images?.length) {
-        const preview=imageThumb(tour.images[0].id,640,300);
+        const preview=imageThumb(tourCoverImage(tour).id,640,300);
         preview.className='ppi-overview-thumb';preview.alt='Tour-Vorschaubild: '+tour.name;
         tile.append(preview);
       } else tile.append(node('div','🌐','ppi-overview-placeholder'));
@@ -408,7 +555,23 @@
       body.append(actions);tile.append(body);container.append(tile);
     }
   }
+  /* PPI TOUR PICKER INNER SCROLL FIX V2 2026-11-24 */
   function show(view) {
+    const picker = byId('ppi-tour-picker');
+    // V1 set a min-height on the picker itself. CSS min-height beats max-height
+    // and disables the intended inner scroll. Keep the picker unconstrained
+    // except for its existing CSS max-height + overflow-y:auto.
+    picker.style.removeProperty('min-height');
+    if (view === 'picker') {
+      // Reserve the previous editor's page height on the OUTER app container,
+      // so hiding the graph does not clamp Nextcloud's scroll position.
+      // The picker itself stays viewport-height-limited and internally scrolls.
+      const appHeight = root.getBoundingClientRect().height;
+      if (appHeight > 0) root.style.minHeight = Math.ceil(appHeight) + 'px';
+    } else {
+      // Restore natural height when leaving the picker.
+      root.style.removeProperty('min-height');
+    }
     for (const [name, id] of [['overview', 'ppi-tour-overview'], ['editor', 'ppi-tour-editor'], ['picker', 'ppi-tour-picker']]) {
       const element = byId(id);
       // Some Nextcloud themes override the browser's [hidden] rendering.
@@ -417,16 +580,75 @@
       element.style.display = name === view ? 'block' : 'none';
     }
     byId('ppi-tour-create').hidden = view !== 'overview';
-    if (view === 'picker') {
-      const dialog = byId('ppi-tour-picker');
-      // The Add button may be below the fold. Reveal the picker immediately.
-      requestAnimationFrame(() => {
-        if (!dialog.hidden) {
-          dialog.scrollIntoView({block: 'start', behavior: 'instant'});
-          // Do not focus the picker wrapper: this can steal focus from the search input.
-        }
-      });
-    }
+    // The top-level navigation belongs to the overview, not to tour editing
+    // or panorama selection. Match the existing Startseiten editor behavior.
+    byId('ppi-overview-switch').hidden = view !== 'overview';
+    // Do not call scrollIntoView for the picker: retain the user's viewport.
+  }
+  /* PPI TOUR AUTOSAVE STATUS POSITION V1 2026-11-24 */
+  /* PPI TOUR AUTOSAVE TAB FIX V3 2026-11-24 */
+  // A single status node. Place it directly in the appropriate tab header.
+  // Test that the target is present and connected before moving the node.
+  function ppiPlaceTourAutoStatus(step) {
+    const status = ppiTourAutoStatus[0];
+    if (!status || !status.isConnected) return;
+    const panel = byId('ppi-step-' + step);
+    if (!panel || panel.hidden) return;
+
+    if (step === 'edit') {
+      const add = byId('ppi-tour-add');
+      const row = add?.parentElement;
+      if (!row || !panel.contains(row) || !row.querySelector('h2')) return;
+      if (status.parentElement !== row || status.nextElementSibling !== add) {
+        row.insertBefore(status, add);
+      }
+    } else if (step === 'design' || step === 'share') {
+      const heading = panel.querySelector(':scope > h2, :scope > .ppi-tour-autosave-heading-row > h2');
+      if (!heading) return;
+      let row = heading.parentElement;
+      if (!row.classList.contains('ppi-tour-autosave-heading-row')) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'ppi-tour-autosave-heading-row';
+        wrapper.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;';
+        heading.before(wrapper);
+        wrapper.append(heading);
+        row = wrapper;
+      }
+      if (status.parentElement !== row || status !== row.lastElementChild) {
+        row.append(status);
+      }
+    } else return;
+    status.style.marginInline = '0';
+    status.style.marginLeft = 'auto';
+    status.style.fontSize = '12px';
+    status.style.whiteSpace = 'normal';
+    status.style.textAlign = 'right';
+    status.style.maxWidth = '100%';
+  }
+  /* PPI TOUR AUTOSAVE TAB VISIBILITY FIX V2 2026-11-24 */
+  // The autosave node exists once. Move it to the panel that is ACTUALLY visible.
+  // This also covers tab changes outside setSetupStep and delayed DOM updates.
+  function ppiSyncTourAutoStatusToVisibleTab() {
+    if (!ppiTourAutoStatus[0]) return;
+    const design = byId('ppi-step-design');
+    const share = byId('ppi-step-share');
+    const edit = byId('ppi-step-edit');
+    if (!design || !share || !edit) return;
+    const step = !design.hidden ? 'design' : (!share.hidden ? 'share' : (!edit.hidden ? 'edit' : null));
+    if (!step) return;
+    ppiPlaceTourAutoStatus(step);
+  }
+  // React to any source of panel visibility changes without observing DOM children:
+  // moving the status itself cannot trigger a feedback loop.
+  const ppiTourStatusPanels = ['ppi-step-edit','ppi-step-design','ppi-step-share']
+    .map(byId).filter(Boolean);
+  const ppiTourStatusVisibilityObserver = new MutationObserver(() => {
+    ppiSyncTourAutoStatusToVisibleTab();
+  });
+  for (const panel of ppiTourStatusPanels) {
+    ppiTourStatusVisibilityObserver.observe(panel, {
+      attributes: true, attributeFilter: ['hidden']
+    });
   }
   function setSetupStep(step) {
     const share=step==='share',design=step==='design';
@@ -446,6 +668,9 @@
       else tab.removeAttribute('aria-current');
     }
     if(share) updateShareUi();
+    ppiPlaceTourAutoStatus(step);
+    ppiSyncTourAutoStatusToVisibleTab();
+    requestAnimationFrame(ppiSyncTourAutoStatusToVisibleTab);
   }
   const sizeSteps=['xsmall','small','medium','large','xlarge'];
   const sizeNames=['Extra klein','Klein','Mittel','Groß','Extra groß'];
@@ -485,6 +710,134 @@
   }
   const designDefault = {watermarkEnabled:false,watermarkId:'none',startImageId:0,startYaw:0,showTitle:true,showNavigation:true,showFullscreen:true,hotspotSize:'medium',hotspotStyle:'classic',introText:'',socialPreviewMode:'cover',svgPinColor:'#1687bc'};
   function currentDesign(){return {...designDefault,...(active?.display||{})};}
+  /* PPI START PANORAMA CARD PICKER V1 2026-11-24 */
+  // One persisted property for both editing tabs; no separate data model.
+  let ppiStartPickMode = false;
+  /* PPI TOUR SCROLL POSITION FIX V1 2026-11-24 */
+  // Keep the scroll position of Nextcloud's content scroller AND the window.
+  // Rebuilding a panorama graph removes the focused card and can otherwise
+  // make Firefox scroll automatically. This does not touch the saved tour.
+  function ppiKeepTourScroll(run) {
+    const scrollers = [];
+    const seen = new Set();
+    const remember = element => {
+      if (!element || seen.has(element)) return;
+      seen.add(element);
+      scrollers.push({element, top:element.scrollTop, left:element.scrollLeft});
+    };
+    remember(byId('ppi-tour-graph'));
+    for (let element = root; element; element = element.parentElement) {
+      remember(element);
+    }
+    remember(document.scrollingElement);
+    const winLeft = window.scrollX;
+    const winTop = window.scrollY;
+    const restore = () => {
+      for (const item of scrollers) {
+        if (!item.element.isConnected) continue;
+        item.element.scrollTop = item.top;
+        item.element.scrollLeft = item.left;
+      }
+      window.scrollTo({left:winLeft, top:winTop, behavior:'instant'});
+    };
+    try {
+      return run();
+    } finally {
+      restore();
+      requestAnimationFrame(() => {
+        restore();
+        requestAnimationFrame(restore);
+      });
+    }
+  }
+  function ppiStartSelectedId() {
+    if (!active || !Array.isArray(active.images)) return 0;
+    const stored = Number(currentDesign().startImageId) || 0;
+    if (active.images.some(image => Number(image.id) === stored)) return stored;
+    return Number(active.images[0]?.id) || 0;
+  }
+  function ppiStartReconcileRemoved() {
+    if (!active) return;
+    const stored = Number(currentDesign().startImageId) || 0;
+    if (stored && !active.images.some(img => Number(img.id) === stored)) {
+      active.display = {...currentDesign(), startImageId: Number(active.images[0]?.id) || 0};
+    }
+  }
+  const ppiStartPickButton = document.createElement('button');
+  ppiStartPickButton.type = 'button';
+  ppiStartPickButton.id = 'ppi-tour-start-pick-mode';
+  ppiStartPickButton.textContent = '✓ Startpanorama auswählen';
+  ppiStartPickButton.title = 'Startpanorama direkt in den Panoramavorschauen auswählen';
+  const ppiStartAddButton = byId('ppi-tour-add');
+  ppiStartAddButton.style.marginLeft = 'auto';
+  ppiStartAddButton.insertAdjacentElement('afterend', ppiStartPickButton);
+  function ppiStartUpdatePickButton() {
+    ppiStartPickButton.textContent = ppiStartPickMode ? 'Auswahl abbrechen' : '✓ Startpanorama auswählen';
+    ppiStartPickButton.setAttribute('aria-pressed', String(ppiStartPickMode));
+    ppiStartPickButton.classList.toggle('ppi-tour-start-pick-active', ppiStartPickMode);
+    root.classList.toggle('ppi-tour-start-picking', ppiStartPickMode);
+  }
+  function ppiStartChoiceButton(img) {
+    const button = node('button', undefined, 'ppi-tour-card-delete ppi-tour-start-check');
+    button.type = 'button';
+    /* PPI START PANORAMA DESIGN V2 2026-11-24 */
+    const ns = 'http://www.w3.org/2000/svg';
+    const mark = document.createElementNS(ns, 'svg');
+    mark.classList.add('ppi-start-check-glyph');
+    mark.setAttribute('viewBox', '0 0 24 24');
+    mark.setAttribute('aria-hidden', 'true');
+    mark.setAttribute('focusable', 'false');
+    const tick = document.createElementNS(ns, 'path');
+    tick.setAttribute('d', 'M5 12l4.5 4.5L19 7');
+    tick.setAttribute('fill', 'none');
+    tick.setAttribute('stroke', 'currentColor');
+    tick.setAttribute('stroke-width', '2.8');
+    tick.setAttribute('stroke-linecap', 'round');
+    tick.setAttribute('stroke-linejoin', 'round');
+    mark.append(tick);
+    button.append(mark);
+    button.title = `Als Startpanorama festlegen: ${img.name}`;
+    button.setAttribute('aria-label', button.title);
+    button.addEventListener('click', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!active || !active.images.some(item => Number(item.id) === Number(img.id))) return;
+      active.display = {...currentDesign(), startImageId: Number(img.id)};
+      const select = byId('ppi-design-start');
+      if ([...select.options].some(option => Number(option.value) === Number(img.id))) {
+        select.value = String(img.id);
+      }
+      if (!byId('ppi-step-design').hidden) refreshDesignPreviews();
+      ppiKeepTourScroll(() => {
+        ppiStartPickMode = false;
+        ppiStartUpdatePickButton();
+        renderGraph();
+      });
+      ppiTourAutoSchedule();
+    });
+    return button;
+  }
+  ppiStartPickButton.addEventListener('click', () => {
+    if (!active?.images?.length) {
+      notify('Bitte zuerst mindestens ein Panorama zur Tour hinzufügen.', true);
+      return;
+    }
+    ppiKeepTourScroll(() => {
+      ppiStartPickMode = !ppiStartPickMode;
+      ppiStartUpdatePickButton();
+      if (!byId('ppi-step-edit').hidden) renderGraph();
+    });
+  });
+  // Changing the existing selector in tab 2 updates the very same value.
+  // The existing delegated change handler then persists it via tour autosave.
+  byId('ppi-design-start').addEventListener('change', () => {
+    if (!active) return;
+    const id = Number(byId('ppi-design-start').value);
+    if (!active.images.some(image => Number(image.id) === id)) return;
+    active.display = {...currentDesign(), startImageId: id};
+    if (!byId('ppi-step-edit').hidden) renderGraph();
+  });
+  ppiStartUpdatePickButton();
   function updateSocialPreviewStatus(){
     const indicator=byId('ppi-design-social-status');
     if(!indicator)return;
@@ -547,8 +900,43 @@
   });
   byId('ppi-design-watermark-id').addEventListener('change',refreshWatermarkThumbnail);
   byId('ppi-design-social').addEventListener('change',updateSocialPreviewStatus);
-  byId('ppi-design-pin-color').addEventListener('input',refreshDesignPreviews);
-  root.querySelectorAll('[data-pin-color]').forEach(button=>button.addEventListener('click',()=>{byId('ppi-design-pin-color').value=button.dataset.pinColor;refreshDesignPreviews();}));
+  // Native color picker: Firefox may dispatch input, change or both.
+  // Queue autosave only AFTER the input value is already updated.
+  for (const eventType of ['input', 'change']) {
+    byId('ppi-design-pin-color').addEventListener(eventType, () => {
+      refreshDesignPreviews();
+      ppiTourAutoSchedule();
+    });
+  }
+  /* PPI SVG COLOR SINGLE CLICK 2026-11-24 */
+  // Firefox may focus the fully transparent native color input on the first
+  // click instead of opening its picker. Let the visible preview receive the
+  // click and open the native picker directly while user activation is active.
+  // The input remains in the DOM for keyboard access, color changes and autosave.
+  {
+    const colorInput = byId('ppi-design-pin-color');
+    const colorPreview = colorInput.closest('.ppi-design-color-preview');
+    if (!colorPreview) throw new Error('SVG-Farbvorschau nicht gefunden.');
+    colorInput.style.pointerEvents = 'none';
+    colorPreview.addEventListener('click', () => {
+      try {
+        if (typeof colorInput.showPicker === 'function') {
+          colorInput.showPicker();
+        } else {
+          colorInput.click();
+        }
+      } catch (error) {
+        // Older browsers may reject showPicker: use the native click fallback.
+        colorInput.click();
+      }
+    });
+  }
+
+  root.querySelectorAll('[data-pin-color]').forEach(button=>button.addEventListener('click',()=>{
+    byId('ppi-design-pin-color').value=button.dataset.pinColor;
+    refreshDesignPreviews();
+    ppiTourAutoSchedule();
+  }));
   ['ppi-design-start','ppi-design-style','ppi-design-size'].forEach(id=>byId(id).addEventListener(id==='ppi-design-size'?'input':'change',refreshDesignPreviews));
   byId('ppi-design-yaw').addEventListener('input',()=>{byId('ppi-design-yaw-value').textContent=byId('ppi-design-yaw').value+'°';});
   // Lightweight description formatting: store only text, not user HTML.
@@ -644,6 +1032,8 @@
 
   byId('ppi-design-save').addEventListener('click',async()=>{
     if(!active)return;
+    ppiTourAutoManual=true;
+    await ppiTourAutoWait();
     try{
       if(descriptionField.value.trim().length>300){notify('Beschreibung: maximal 300 Zeichen. Bitte vorhandenen Text kürzen.',true);descriptionField.focus();return;}
       if(!byId('ppi-tour-name').value.trim()){notify('Bitte einen Namen für die Tour eingeben.',true);byId('ppi-tour-name').focus();return;}
@@ -653,11 +1043,12 @@
         watermarkEnabled:byId('ppi-design-watermark-enabled').checked,watermarkId:byId('ppi-design-watermark-id').value};
       const result=await request(`${api}/${encodeURIComponent(active.id)}`,'POST',{
         name:byId('ppi-tour-name').value,images:JSON.stringify(active.images),links:JSON.stringify(active.links),display:JSON.stringify(display)});
-      active=clone(result.tour);await refresh();render();notify('Darstellung erfolgreich gespeichert.');
+      active=clone(result.tour);await refresh();render();ppiTourAutoReset();notify('Darstellung erfolgreich gespeichert.');
     }catch(e){notify('Darstellung konnte nicht gespeichert werden: '+e.message,true);}
+    finally {ppiTourAutoManual=false;ppiTourAutoSchedule();}
   });
   root.querySelectorAll('.ppi-setup-tab:not(:disabled)').forEach(tab=>tab.addEventListener('click',()=>setSetupStep(tab.dataset.step)));
-  async function openTour(tour,step='edit') { active=clone(tour); await loadTourWatermarks(); show('editor'); render(); setSetupStep(step); }
+  async function openTour(tour,step='edit') { ppiStartPickMode=false;ppiStartUpdatePickButton();active=clone(tour); ppiTourAutoId=null; await loadTourWatermarks(); show('editor'); render(); setSetupStep(step); ppiTourAutoReset(); }
   function renderExtraShareLinks() {
     const list=byId('ppi-extra-list');
     list.replaceChildren();
@@ -666,7 +1057,7 @@
     for(const link of links){
       const card=node('article',undefined,'ppi-extra-entry');
       const header=node('strong',link.name);
-      const state=node('span',link.expiresOn&&link.expiresOn<new Date().toISOString().slice(0,10)?' · Abgelaufen':(link.disabled?' · Deaktiviert':(link.passwordProtected?' · Mit Passwort':' · Ohne Passwort')));
+      const state=node('span',shareExpiredOn(link.expiresOn, active)?' · Abgelaufen':(link.disabled?' · Deaktiviert':(link.passwordProtected?' · Mit Passwort':' · Ohne Passwort')));
       header.append(state);card.append(header);
       const url=tourPublicUrl({publicToken:link.token});
       const linkRow=node('div',undefined,'ppi-extra-link');
@@ -676,7 +1067,7 @@
       linkRow.append(urlInput,copy,open);card.append(linkRow);
       const fields=node('div',undefined,'ppi-extra-fields');
       const nameLabel=node('label','Bezeichnung');const name=node('input');name.value=link.name;name.maxLength=60;nameLabel.append(name);
-      const dateLabel=node('label','Ablaufdatum');const date=node('input');date.type='date';date.value=link.expiresOn||'';dateLabel.append(date);
+      const dateLabel=node('label','Ablaufdatum (00:00 Uhr)');const date=node('input');date.type='date';date.value=link.expiresOn||'';date.min=earliestShareExpiry(active);dateLabel.append(date);
       const save=tourAction('Änderungen speichern',()=>extraAction(link.id,'settings',{name:name.value,expiresOn:date.value}));
       fields.append(nameLabel,dateLabel,save);card.append(fields);
       const passwordFields=node('div',undefined,'ppi-extra-fields');
@@ -689,8 +1080,15 @@
         if(confirm('Passwortschutz für diesen Link entfernen?'))return extraAction(link.id,'removePassword');
       }));}
       card.append(passwordFields);
-      card.append(tourAction(link.disabled?'Link aktivieren':'Link deaktivieren',()=>{
-        if(link.disabled || confirm('Diesen Link vorübergehend deaktivieren?'))return extraAction(link.id,link.disabled?'enable':'disable');
+      if (!shareExpiredOn(link.expiresOn, active)) {
+        card.append(tourAction(link.disabled?'Link aktivieren':'Link deaktivieren',()=>{
+          if(link.disabled || confirm('Diesen Link vorübergehend deaktivieren?'))return extraAction(link.id,link.disabled?'enable':'disable');
+        }));
+      }
+      card.append(tourAction('Token erneuern',()=>{
+        if(confirm('Token für diesen Freigabelink erneuern? Der bisherige Link und seine Bild-URLs werden sofort ungültig. Passwort und Einstellungen bleiben erhalten.')){
+          return extraAction(link.id,'rotate');
+        }
       }));
       card.append(tourAction('Diesen Link widerrufen',()=>{
         if(confirm('Diesen Freigabelink endgültig widerrufen? Andere Links bleiben gültig.'))return extraAction(link.id,'revoke');
@@ -720,11 +1118,12 @@
   });
   function updateShareUi() {
     renderExtraShareLinks();
+    byId('ppi-extra-expiry').min = earliestShareExpiry(active);
     updateSocialPreviewStatus();
     const token = active?.publicToken || null;
-    byId('ppi-share-state').textContent = token ? (active?.shareExpiresOn && active.shareExpiresOn < new Date().toISOString().slice(0,10) ? 'Abgelaufen' : 'Freigegeben') : 'Nicht freigegeben';
+    byId('ppi-share-state').textContent = token ? (shareExpiredOn(active?.shareExpiresOn, active) ? 'Abgelaufen' : 'Freigegeben') : 'Nicht freigegeben';
     byId('ppi-share-enable').hidden = Boolean(token);
-    byId('ppi-share-disable').hidden = !token;
+    byId('ppi-share-disable').hidden = !token || shareExpiredOn(active?.shareExpiresOn, active);
     byId('ppi-share-link-wrap').hidden = !token;
     byId('ppi-share-expiry-save').hidden = !token;
     const protectedShare = Boolean(active?.sharePasswordProtected);
@@ -735,7 +1134,7 @@
     byId('ppi-share-custom-token').disabled = !token;
     byId('ppi-share-custom-token').value = token || '';
     byId('ppi-share-expiry').value = active?.shareExpiresOn || '';
-    byId('ppi-share-expiry').min = `${new Date().getFullYear()}-${String(new Date().getMonth()+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
+    byId('ppi-share-expiry').min = earliestShareExpiry(active);
     if (token) {
       byId('ppi-share-link').value = tourPublicUrl({publicToken:token});
     } else byId('ppi-share-link').value = '';
@@ -832,6 +1231,7 @@
     const names=new Map(active.images.map(i=>[Number(i.id),i.name]));
     active.images.forEach(img=>{
       const card=node('div',undefined,'ppi-mobile-pano');
+      card.classList.toggle('ppi-tour-start-selected', Number(img.id) === ppiStartSelectedId());
       const photo=node('button',undefined,'ppi-mobile-pano-photo');photo.type='button';photo.title=`Panorama öffnen: ${img.name}`;
       photo.append(imageThumb(img.id,420,240));photo.addEventListener('click',()=>previewImage(img));
       const title=node('div',img.name,'ppi-mobile-pano-title');
@@ -852,13 +1252,15 @@
       }
       const actions=node('div',undefined,'ppi-mobile-pano-actions');
       const open=node('button','360° öffnen');open.type='button';open.addEventListener('click',()=>previewImage(img));
-      const remove=node('button','Entfernen');remove.type='button';remove.addEventListener('click',()=>{
+      const remove=node('button','Entfernen');remove.type='button';remove.classList.add('ppi-mobile-pano-remove');remove.addEventListener('click',()=>{
         if(!confirm(`„${img.name}“ aus dieser Tour entfernen? Zugehörige Verbindungen werden ebenfalls gelöscht. Die Originaldatei bleibt erhalten.`))return;
         active.images=active.images.filter(x=>Number(x.id)!==Number(img.id));
         active.links=active.links.filter(x=>Number(x.from)!==Number(img.id)&&Number(x.to)!==Number(img.id));
         render();notify('Panorama entfernt (Entwurf). Bitte Änderungen speichern.');
       });
-      actions.append(open,remove);card.append(photo,title,linksBox,actions);list.append(card);
+      actions.append(open,remove);card.append(photo,title,linksBox,actions);
+      if (ppiStartPickMode) card.append(ppiStartChoiceButton(img));
+      list.append(card);
     });
     container.append(list);
   }
@@ -1200,6 +1602,7 @@
     active.images.forEach(img=>{
       const p=positions.get(String(img.id));
       const card=node('div',undefined,'ppi-tour-graph-card');
+      card.classList.toggle('ppi-tour-start-selected', Number(img.id) === ppiStartSelectedId());
       const imageId=String(img.id);
       card.addEventListener('mouseenter',()=>focusConnections(imageId));
       card.addEventListener('mouseleave',()=>focusConnections(null));
@@ -1224,12 +1627,15 @@
         active.links=active.links.filter(x=>Number(x.from)!==Number(img.id)&&Number(x.to)!==Number(img.id));
         render();notify('Panorama aus Tour entfernt (Entwurf). Bitte Änderungen speichern.');
       });
-      card.append(picture,name,remove);board.append(card);
+      card.append(picture,name,remove);
+      if (ppiStartPickMode) card.append(ppiStartChoiceButton(img));
+      board.append(card);
     });
     container.append(board);
   }
   function render() {
     if(!active)return;
+    ppiStartReconcileRemoved();
     // Keep the open panorama's available destinations synchronized after add/delete.
     if (!previewDialog.hidden && previewImageId && active.images.some(item => Number(item.id) === Number(previewImageId))) {
       updateAvailableTargets();
@@ -1241,6 +1647,7 @@
     // Saving display settings calls render() while this tab is hidden.
     // A hidden graph has clientWidth=0 and would overlap all panorama cards.
     if (!byId('ppi-step-edit').hidden) renderGraph();
+    ppiTourAutoSchedule();
   }
 
   let browseSerial = 0;
@@ -1288,8 +1695,7 @@
       quickView.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();previewImage(item);});
       card.append(checkbox,thumb,caption,quickView);imageBox.append(card);
     }
-    // Count only recognized 360° panoramas; ordinary JPEGs never affect this statistic.
-    // Server totals are measured before search, tags, date, size and tour-status filters.
+    // Count only recognized 360° panoramas, before and after the filters.
     const totalPanoramas=Number(pickerData.totalPanoramas);
     const filteredPanoramas=Number(pickerData.filteredPanoramas);
     const visiblePanoramas=images.filter(item=>item.isPanorama===true).length;
@@ -1302,8 +1708,6 @@
       resultsLabel.textContent=visiblePanoramas+' Treffer · '+hiddenPanoramas+
         ' Panoramen ausgeblendet · '+totalPanoramas+' insgesamt';
     } else {
-      // A capped or incomplete listing cannot yield an honest hidden count,
-      // particularly when the tour-status filter is applied client-side.
       resultsLabel.textContent=visiblePanoramas+' sichtbare Panoramen · Zählung unvollständig'+
         (Number.isFinite(totalPanoramas)?' · mindestens '+totalPanoramas+' erkannt':'');
     }
@@ -1399,7 +1803,6 @@
   };
   let pickerTagRequest=null;
   async function loadPickerTags() {
-    // Reload on each switch to Tags, so recently created tags can be selected.
     if (pickerTagRequest) return pickerTagRequest;
     const remembered=tagSelect.value;
     tagSelect.disabled=true;
@@ -1444,8 +1847,6 @@
   syncSearchModeLabel();
   tagSelect.addEventListener('change',()=>{
     updateTagAppearance();
-    // An explicitly chosen tag takes precedence over an earlier free-text query;
-    // users can add a supplementary text search afterwards if desired.
     if (tagSelect.value) searchInput.value='';
     searchEditing=false;
     ++browseSerial;
@@ -1518,11 +1919,1385 @@
         ? byId(id).selectedIndex=0 : byId(id).value='';
     }
     byId('ppi-picker-recursive').checked=false;
-    tagSelect.value='';
     syncSearchModeLabel();
     ++browseSerial;
     reapplyPicker();
   });
+
+  // Independent private Startseitenverwaltung (phase 1).
+  const startPagesApi = root.dataset.startPagesUrl;
+  let startPages = [], activeStartPage = null, managementMode = 'tours';
+  let savedStartPageSnapshot = '';
+  /* PPI STARTPAGE SAFE NON-TEXT AUTOSAVE 2026-11-24 */
+  let ppiAutoPageId = null;
+  let ppiAutoLast = '';
+  let ppiAutoTimer = null;
+  let ppiAutoBusy = false;
+  let ppiAutoManualBusy = false;
+  let ppiAutoError = false;
+  let ppiAutoStatus = null;
+  const ppiAutoDesignKeys = ['layout','headingColor','descriptionColor','designEffect',
+    'backgroundColor','headerBackgroundColor','backgroundFileId','tileColumns','tourIds'];
+  function ppiAutoPayload() {
+    const values = startPageFormValues();
+    const payload = {};
+    for (const key of ppiAutoDesignKeys) payload[key] = values[key];
+    return payload;
+  }
+  function ppiAutoSignature(values) { return JSON.stringify(values); }
+  /* PPI STARTPAGE AUTOSAVE STATUS POSITION 2026-11-24 */
+  // Move ONE status node between headings; never clone or create duplicates.
+  function ppiAutoPositionStatus(tab) {
+    if (!ppiAutoStatus) return;
+    const help = byId('ppi-start-page-editor').querySelector(
+      '.ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-share-help-disclosure');
+    const preview = byId('ppi-startpage-dirty');
+    if (tab === 'share') {
+      // The status is directly before the help button on the same heading row.
+      help.style.marginLeft = '0';
+      ppiAutoStatus.style.marginLeft = 'auto';
+      help.before(ppiAutoStatus);
+    } else {
+      help.style.marginLeft = '';
+      ppiAutoStatus.style.marginLeft = 'auto';
+      preview.after(ppiAutoStatus);
+    }
+  }
+  function ppiAutoUpdateDirtyNotice() {
+    const dirty = byId('ppi-startpage-dirty');
+    const changed = JSON.stringify(startPageFormValues()) !== savedStartPageSnapshot;
+    // Keep the warning for fields that require manual saving, but remove
+    // 'Gespeicherter Stand' from the preview heading as requested.
+    dirty.hidden = !changed;
+    dirty.textContent = changed ? '● Ungespeicherte Änderungen' : '';
+  }
+  function ppiAutoSetStatus(value, error=false) {
+    if (!ppiAutoStatus) {
+      ppiAutoStatus = document.createElement('span');
+      ppiAutoStatus.id = 'ppi-startpage-safe-autosave-status';
+      ppiAutoStatus.style.cssText = 'font-size:12px;white-space:normal;max-width:100%;';
+      ppiAutoStatus.setAttribute('role','status');
+      ppiAutoPositionStatus('start');
+    }
+    ppiAutoStatus.textContent = value;
+    ppiAutoStatus.style.color = error ? '#a83232' : '';
+  }
+  /* PPI STARTPAGE SHARE UNIFIED AUTOSAVE STATUS 2026-11-24 */
+  function ppiShareAutosaveStatus(message) {
+    // Display consistent wording for the same single top-of-page status node.
+    const text = message === 'Tour-Auswahl gespeichert ✓' ? 'Gespeichert ✓'
+      : message === 'Speichere Tour-Auswahl …' ? 'Speichern …' : message;
+    ppiAutoSetStatus(text, /^(Nicht gespeichert|Bitte )/.test(text));
+  }
+  function ppiAutoReset(page) {
+    if (ppiAutoTimer !== null) clearTimeout(ppiAutoTimer);
+    ppiAutoTimer = null;
+    ppiAutoPageId = page ? String(page.id) : null;
+    ppiAutoLast = page ? ppiAutoSignature(ppiAutoPayload()) : '';
+    ppiAutoError = false;
+    ppiAutoSetStatus(page ? 'Gespeichert ✓' : '');
+  }
+  function ppiAutoSchedule() {
+    if (!activeStartPage || String(activeStartPage.id) !== ppiAutoPageId || ppiAutoManualBusy) return;
+    if (ppiAutoSignature(ppiAutoPayload()) === ppiAutoLast) return;
+    if (ppiAutoTimer !== null) clearTimeout(ppiAutoTimer);
+    ppiAutoTimer = setTimeout(() => { ppiAutoTimer = null; void ppiAutoFlush(); }, 350);
+    ppiAutoSetStatus('Speichern …');
+  }
+  async function ppiAutoFlush() {
+    if (ppiAutoBusy || ppiAutoManualBusy || !activeStartPage ||
+        String(activeStartPage.id) !== ppiAutoPageId) return;
+    const pageId = ppiAutoPageId;
+    const values = ppiAutoPayload();
+    const signature = ppiAutoSignature(values);
+    if (signature === ppiAutoLast) return;
+    // SaveStartPage needs a complete request. Never pass unfinished text fields:
+    // use the last confirmed server values, not text currently being typed.
+    const text = {
+      name:activeStartPage.name,
+      headline:activeStartPage.headline || '',
+      description:activeStartPage.description || ''
+    };
+    ppiAutoBusy = true;
+    try {
+      const result = await request(startPagesApi+'/'+encodeURIComponent(pageId),'POST',{
+        ...text,...values,tourIds:JSON.stringify(values.tourIds)
+      });
+      ppiAutoLast = signature;
+      ppiAutoError = false;
+      if (String(activeStartPage?.id) === pageId) {
+        // Do not reset the editor, pending text input, or the share controls.
+        activeStartPage = {...activeStartPage,...result.page};
+        const saved = JSON.parse(savedStartPageSnapshot || '{}');
+        savedStartPageSnapshot = JSON.stringify({...saved,...values});
+        ppiAutoSetStatus('Gespeichert ✓');
+        ppiAutoUpdateDirtyNotice();
+        // The visible form may have changed during this request.
+        if (ppiAutoSignature(ppiAutoPayload()) !== signature) ppiAutoSchedule();
+      }
+    } catch (error) {
+      ppiAutoError = true;
+      if (String(activeStartPage?.id) === pageId)
+        ppiAutoSetStatus('Nicht gespeichert: '+error.message,true);
+      // No retry loop; the next user change will retry.
+    } finally {
+      ppiAutoBusy = false;
+      if (!ppiAutoError && String(activeStartPage?.id) === pageId &&
+          ppiAutoSignature(ppiAutoPayload()) !== ppiAutoLast) {
+        ppiAutoSchedule();
+      }
+    }
+  }
+  async function ppiAutoWaitForIdle() {
+    while (ppiAutoBusy) await new Promise(resolve => setTimeout(resolve,40));
+  }
+
+  const startPageFields = ['ppi-start-page-name','ppi-start-page-headline','ppi-start-page-description',
+    'ppi-start-page-layout','ppi-start-page-heading-color','ppi-start-page-description-color','ppi-start-page-background-color','ppi-start-page-header-color','ppi-start-page-tile-columns','ppi-start-page-effect'];
+  let startPageBackgroundFileId = 0, startPageBgFolderParentId = 0;
+  let startPageBgFolderId = 0, startPageBgRequestSerial = 0;
+  function tourShortDescription(tour) {
+    const raw = String(tour.display?.introText || '');
+    return raw.replace(/\[([^\]]+)\]\(https?:\/\/[^\s)]+\)/g, '$1')
+      .replace(/(?:^|\n)\s*(?:[-*]|\d+[.)])\s+/gm, ' ')
+      .replace(/\s+/g, ' ').trim().slice(0, 140);
+  }
+  function startPageFormValues() {
+    return {
+      name:byId('ppi-start-page-name').value,
+      headline:byId('ppi-start-page-headline').value,
+      description:byId('ppi-start-page-description').value,
+      layout:byId('ppi-start-page-layout').value,
+      headingColor:byId('ppi-start-page-heading-color').value,
+      descriptionColor:byId('ppi-start-page-description-color').value,
+      designEffect:byId('ppi-start-page-effect').value,
+      backgroundColor:byId('ppi-start-page-background-color').value,
+      headerBackgroundColor:byId('ppi-start-page-header-color').value,
+      backgroundFileId:startPageBackgroundFileId,
+      tileColumns:byId('ppi-start-page-tile-columns').value,
+      tourIds:[...byId('ppi-start-page-tours').querySelectorAll('input:checked')].map(input => input.value)
+    };
+  }
+  // Startpage presets are stored per user on the server (Nextcloud IConfig), never localStorage.
+  const designPresetFields = ['layout','designEffect','tileColumns','headingColor','descriptionColor',
+    'backgroundColor','headerBackgroundColor','backgroundFileId'];
+  const presetUrl = startPagesApi.replace(/\/?$/, '/presets');
+  let personalPresets = [];
+  const presetDefaults = [
+    {id:'builtin:classic',name:'Classic Blue',design:{layout:'hero',designEffect:'subtle',tileColumns:'auto',headingColor:'#ffffff',descriptionColor:'#f4f7fb',backgroundColor:'#183d59',headerBackgroundColor:'#183d59',backgroundFileId:0}},
+    {id:'builtin:dark',name:'Dark Modern',design:{layout:'split',designEffect:'glass',tileColumns:'3',headingColor:'#ffffff',descriptionColor:'#e8e8e8',backgroundColor:'#222222',headerBackgroundColor:'#353535',backgroundFileId:0}},
+    {id:'builtin:light',name:'Light Minimal',design:{layout:'gallery',designEffect:'subtle',tileColumns:'2',headingColor:'#292929',descriptionColor:'#444444',backgroundColor:'#f0eee8',headerBackgroundColor:'#f0eee8',backgroundFileId:0}},
+    {id:'builtin:nature',name:'Nature Green',design:{layout:'hero',designEffect:'glossy',tileColumns:'auto',headingColor:'#ffffff',descriptionColor:'#f5f5ed',backgroundColor:'#253c30',headerBackgroundColor:'#476a50',backgroundFileId:0}}
+  ];
+  const presetSelect = byId('ppi-startpage-preset-select');
+  const presetFeedback = byId('ppi-startpage-preset-feedback');
+  const presetManager = byId('ppi-startpage-preset-manager');
+  function presetNotice(message, error=false) {
+    presetFeedback.textContent = message;
+    presetFeedback.style.color = error ? 'var(--color-error)' : 'var(--color-text-maxcontrast)';
+  }
+  function designSnapshot() {
+    const values = startPageFormValues();
+    return Object.fromEntries(designPresetFields.map(key => [key, values[key]]));
+  }
+  function chosenPreset() {
+    return [...presetDefaults,...personalPresets].find(p => p.id === presetSelect.value);
+  }
+  function renderPresetChoices(selected = presetSelect.value) {
+    presetSelect.replaceChildren();
+    const makeGroup = (title, presets) => {
+      const group = document.createElement('optgroup');
+      group.label = title;
+      for (const preset of presets) {
+        const option = document.createElement('option');
+        option.value = preset.id; option.textContent = preset.name;
+        group.append(option);
+      }
+      presetSelect.append(group);
+    };
+    makeGroup('Mitgelieferte Vorlagen',presetDefaults);
+    if (personalPresets.length) makeGroup('Meine Vorlagen',personalPresets);
+    if ([...presetSelect.options].some(option => option.value === selected)) presetSelect.value = selected;
+  }
+  const presetCards = byId('ppi-startpage-preset-cards');
+  function renderPresetCards() {
+    presetCards.replaceChildren();
+    const selected = presetSelect.value;
+    const groups = [
+      ['Mitgelieferte Vorlagen', presetDefaults, 'Standardvorlage'],
+      ['Meine Vorlagen', personalPresets, 'Eigene Vorlage']
+    ];
+    for (const [title, items, type] of groups) {
+      if (!items.length) continue;
+      const group = node('div', undefined, 'ppi-preset-card-group');
+      group.append(node('h4', title, 'ppi-preset-card-group-title'));
+      for (const preset of items) {
+        const d = preset.design || {};
+        const card = node('button', undefined, 'ppi-preset-card');
+        card.type = 'button';
+        card.dataset.presetId = preset.id;
+        card.setAttribute('aria-pressed', String(preset.id === selected));
+        card.setAttribute('aria-label', preset.name + ' auswählen und in der Live-Vorschau anzeigen');
+        const scene = node('span', undefined, 'ppi-preset-card-scene');
+        scene.dataset.layout = d.layout || 'hero';
+        scene.dataset.effect = d.designEffect || 'subtle';
+        const color = (val, fallback) => /^#[a-f0-9]{6}$/i.test(val || '') ? val : fallback;
+        scene.style.setProperty('--preset-bg', color(d.backgroundColor,'#233b50'));
+        scene.style.setProperty('--preset-header',color(d.headerBackgroundColor,'#233b50'));
+        scene.style.setProperty('--preset-heading',color(d.headingColor,'#ffffff'));
+        scene.style.setProperty('--preset-description',color(d.descriptionColor,'#eeeeee'));
+        const colCount = Number(d.tileColumns);
+        scene.style.setProperty('--preset-cols',String(Number.isInteger(colCount) && colCount >= 1 && colCount <= 4 ? colCount : 3));
+        const fileId=Number(d.backgroundFileId);
+        if (Number.isSafeInteger(fileId) && fileId > 0) {
+          // Keep Nextcloud-backed preview images inside the current user's permissions.
+          scene.style.setProperty('--preset-image', 'url("' + previewUrl(fileId, 480, 280) + '")');
+        }
+        const hero = node('span', undefined, 'ppi-preset-card-hero');
+        hero.append(node('span', undefined, 'ppi-preset-card-titleline'),node('span',undefined,'ppi-preset-card-subline'));
+        scene.append(hero);
+        const tiles=node('span',undefined,'ppi-preset-card-tiles');
+        for (let i=0;i<3;i++) tiles.append(node('span',undefined,'ppi-preset-card-tile'));
+        scene.append(tiles);
+        card.append(scene,node('span',preset.name,'ppi-preset-card-name'),node('span',type,'ppi-preset-card-type'));
+        card.addEventListener('click',() => {
+          presetSelect.value=preset.id;
+          renderPresetCards();
+          if (!activeStartPage) return;
+          applyPresetDesign(preset.design);
+          presetNotice('„'+preset.name+'“ wird in der Live-Vorschau angezeigt. Erst „Änderungen speichern“ übernimmt das Design dauerhaft.');
+        });
+        group.append(card);
+      }
+      presetCards.append(group);
+    }
+  }
+  presetSelect.addEventListener('change',renderPresetCards);
+  async function refreshPresets(selected) {
+    const response = await request(presetUrl);
+    personalPresets = Array.isArray(response.presets) ? response.presets : [];
+    renderPresetChoices(selected);
+    renderPresetCards();
+  }
+  function applyPresetDesign(design) {
+    if (!design || !activeStartPage) return;
+    setStartPageLayout(design.layout);
+    setStartPageEffect(design.designEffect);
+    chooseTileLayout(design.tileColumns);
+    for (const [key,id] of [
+      ['headingColor','ppi-start-page-heading-color'],['descriptionColor','ppi-start-page-description-color'],
+      ['backgroundColor','ppi-start-page-background-color'],['headerBackgroundColor','ppi-start-page-header-color']
+    ]) {
+      if (/^#[0-9a-f]{6}$/i.test(design[key] || '')) byId(id).value = design[key];
+    }
+    startPageBackgroundFileId = Number.isSafeInteger(Number(design.backgroundFileId)) && Number(design.backgroundFileId) > 0
+      ? Number(design.backgroundFileId) : 0;
+    byId('ppi-start-page-bg-selected').textContent = startPageBackgroundFileId
+      ? 'Bild aus Nextcloud ausgewählt (Datei-ID ' + startPageBackgroundFileId + ')' : 'Kein Bild ausgewählt';
+    updateStartPagePreview();
+  }
+  byId('ppi-startpage-preset-load').addEventListener('click', () => {
+    const preset = chosenPreset();
+    if (!preset || !activeStartPage) { presetNotice('Bitte eine Vorlage auswählen.',true);return; }
+    applyPresetDesign(preset.design);
+    renderPresetCards();
+    presetNotice('Vorlage geladen. Erst „Änderungen speichern“ übernimmt das Design dauerhaft.');
+    notify('„'+preset.name+'“ in „'+activeStartPage.name+'“ geladen. Bitte Vorschau kontrollieren und speichern.');
+  });
+  byId('ppi-startpage-preset-copy').addEventListener('click',async () => {
+    const preset=chosenPreset();if(!preset)return;
+    const name=prompt('Name deiner eigenen Kopie:',preset.name+' – Kopie');
+    if(name===null)return;
+    try {
+      const result=await request(presetUrl,'POST',{name:name.trim(),design:JSON.stringify(preset.design)});
+      await refreshPresets(result.preset.id);
+      presetNotice('Eigene Kopie gespeichert. Sie kann umbenannt, geändert und exportiert werden.');
+    }catch(error){presetNotice(error.message,true);}
+  });
+  byId('ppi-startpage-preset-save').addEventListener('click', async () => {
+    if (!activeStartPage) return;
+    const name = prompt('Name für die neue Designvorlage (maximal 80 Zeichen):');
+    if (name === null) return;
+    try {
+      const result = await request(presetUrl,'POST',{name:name.trim(),design:JSON.stringify(designSnapshot())});
+      await refreshPresets(result.preset.id);
+      presetNotice('Designvorlage gespeichert.');
+    } catch(error) { presetNotice(error.message,true); }
+  });
+  function selectedPersonalPreset() {
+    const preset = personalPresets.find(item => item.id === presetSelect.value);
+    if (!preset) presetNotice('Bitte zuerst eine eigene Vorlage auswählen.',true);
+    return preset;
+  }
+  byId('ppi-startpage-preset-update').addEventListener('click',async () => {
+    const preset = selectedPersonalPreset();
+    if (!preset || !activeStartPage || !confirm('„'+preset.name+'“ mit den aktuellen Layout-Einstellungen überschreiben?')) return;
+    const design = designSnapshot();
+    try {
+      await request(presetUrl,'POST',{id:preset.id,name:preset.name,design:JSON.stringify(design)});
+      await refreshPresets(preset.id);presetNotice('Vorlage aktualisiert.');
+    } catch(error){presetNotice(error.message,true);}
+  });
+  byId('ppi-startpage-preset-rename').addEventListener('click',async () => {
+    const preset = selectedPersonalPreset(); if (!preset) return;
+    const name=prompt('Neuer Name:',preset.name); if (name===null) return;
+    try {
+      await request(presetUrl,'POST',{id:preset.id,name:name.trim(),design:JSON.stringify(preset.design)});
+      await refreshPresets(preset.id);presetNotice('Vorlage umbenannt.');
+    }catch(error){presetNotice(error.message,true);}
+  });
+  byId('ppi-startpage-preset-delete').addEventListener('click',async () => {
+    const preset=selectedPersonalPreset();
+    if (!preset || !confirm('Designvorlage „'+preset.name+'“ endgültig löschen? Startseiten bleiben erhalten.')) return;
+    try {
+      await request(presetUrl+'/'+encodeURIComponent(preset.id),'DELETE');
+      await refreshPresets('builtin:classic');presetNotice('Vorlage gelöscht.');
+    }catch(error){presetNotice(error.message,true);}
+  });
+  byId('ppi-startpage-preset-export').addEventListener('click', () => {
+    const preset=selectedPersonalPreset();if (!preset) return;
+    const blob=new Blob([JSON.stringify({format:'ppi-startpage-design-preset',version:1,name:preset.name,design:preset.design},null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');a.href=url;a.download='photo-sphere-preset.json';a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+  });
+  const presetFile=byId('ppi-startpage-preset-file');
+  byId('ppi-startpage-preset-import').addEventListener('click',()=>presetFile.click());
+  presetFile.addEventListener('change',async () => {
+    const file=presetFile.files?.[0];presetFile.value='';if(!file)return;
+    if(file.size>4096){presetNotice('JSON-Datei zu groß (maximal 4 KB).',true);return;}
+    try {
+      const parsed=JSON.parse(await file.text());
+      if(parsed.format!=='ppi-startpage-design-preset'||parsed.version!==1||typeof parsed.name!=='string'||!parsed.design)
+        throw new Error('Ungültiges Preset-Format');
+      const result=await request(presetUrl,'POST',{name:parsed.name,design:JSON.stringify(parsed.design)});
+      await refreshPresets(result.preset.id);presetNotice('Vorlage importiert.');
+    }catch(error){presetNotice(error.message,true);}
+  });
+  refreshPresets().catch(error=>presetNotice('Designvorlagen konnten nicht geladen werden: '+error.message,true));
+
+  function isLightStartPageColor(hex) {
+    const m = /^#([0-9a-f]{6})$/i.exec(hex || '');
+    if (!m) return true;
+    const c = [0,2,4].map(index => parseInt(m[1].slice(index,index+2),16)/255)
+      .map(v => v <= .04045 ? v/12.92 : Math.pow((v+.055)/1.055,2.4));
+    return .2126*c[0]+.7152*c[1]+.0722*c[2] >= .45;
+  }
+  const layoutModeButtons = [...root.querySelectorAll('[data-startpage-layout]')];
+  function setStartPageLayout(layout) {
+    if (!['hero','split','gallery'].includes(layout)) return;
+    byId('ppi-start-page-layout').value = layout;
+    for (const button of layoutModeButtons) {
+      button.setAttribute('aria-pressed',String(button.dataset.startpageLayout === layout));
+    }
+    updateStartPagePreview();
+  }
+  for (const button of layoutModeButtons) {
+    button.addEventListener('click',() => setStartPageLayout(button.dataset.startpageLayout));
+  }
+  const effectButtons = [...root.querySelectorAll('[data-startpage-effect]')];
+  function setStartPageEffect(effect) {
+    if (!['subtle','glass','glossy'].includes(effect)) return;
+    byId('ppi-start-page-effect').value = effect;
+    for (const button of effectButtons) {
+      button.setAttribute('aria-pressed',String(button.dataset.startpageEffect === effect));
+    }
+    updateStartPagePreview();
+  }
+  for (const button of effectButtons) {
+    button.addEventListener('click',() => setStartPageEffect(button.dataset.startpageEffect));
+  }
+  // Keep the description box aligned with the actual lower edge of the
+  // adjacent live preview. ResizeObserver tracks changing tile composition.
+  const startPageDescriptionField = byId('ppi-start-page-description');
+  const descriptionPreview = byId('ppi-startpage-preview');
+  let descriptionResizeQueued = false;
+  function syncDescriptionToPreview() {
+    if (!activeStartPage ||
+        byId('ppi-start-page-editor').hidden ||
+        byId('ppi-start-page-editor').querySelector('[data-startpage-panel="start"]').hidden) return;
+    if (window.matchMedia('(max-width:900px)').matches) {
+      startPageDescriptionField.style.removeProperty('--ppi-description-height');
+      return;
+    }
+    const top = startPageDescriptionField.getBoundingClientRect().top;
+    const bottom = descriptionPreview.getBoundingClientRect().bottom;
+    if (!Number.isFinite(top) || !Number.isFinite(bottom) || bottom <= top) return;
+    startPageDescriptionField.style.setProperty('--ppi-description-height',
+      Math.max(180, Math.round(bottom - top)) + 'px');
+  }
+  function queueDescriptionResize() {
+    if (descriptionResizeQueued) return;
+    descriptionResizeQueued = true;
+    window.requestAnimationFrame(() => {
+      descriptionResizeQueued = false;
+      syncDescriptionToPreview();
+    });
+  }
+  if (typeof ResizeObserver !== 'undefined') {
+    new ResizeObserver(queueDescriptionResize).observe(descriptionPreview);
+  }
+  window.addEventListener('resize', queueDescriptionResize);
+  function updateStartPagePreview() {
+    if (!activeStartPage) return;
+    const values = startPageFormValues();
+    const preview = byId('ppi-startpage-preview');
+    preview.dataset.layout = values.layout;
+    preview.dataset.effect = values.designEffect;
+    // The controls are presentation-only: never reset values when a picture hides a row.
+    // The image replaces the full-page color in hero mode and the header color
+    // in split mode; the lower tour area still needs its background color.
+    const hasBackgroundImage = Number(values.backgroundFileId) > 0;
+    // Only a picture-free split layout has a separate visible header color.
+    // A background picture covers the background color in hero/gallery mode,
+    // while split still uses that color for the tour area.
+    byId('ppi-start-page-header-color-row').hidden = values.layout !== 'split' || hasBackgroundImage;
+    byId('ppi-start-page-background-color-row').hidden = hasBackgroundImage && values.layout !== 'split';
+    const header = preview.querySelector('.ppi-startpage-preview-header');
+    const lightHeading = isLightStartPageColor(values.headingColor);
+    const lightDescription = isLightStartPageColor(values.descriptionColor);
+    // Opposing outline only; the cast shadow stays dark for either text color.
+    header.style.setProperty('--ppi-startpage-shadow','rgba(0,0,0,.40)');
+    header.style.setProperty('--ppi-startpage-stroke',lightHeading ? 'rgba(0,0,0,.50)' : 'rgba(255,255,255,.68)');
+    header.style.setProperty('--ppi-startpage-shadow-soft','rgba(0,0,0,.20)');
+    preview.style.setProperty('--ppi-startpage-divider',
+      isLightStartPageColor(values.backgroundColor) ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.60)');
+    preview.style.setProperty('--ppi-startpage-bg', values.backgroundColor);
+    preview.style.setProperty('--ppi-startpage-header-bg', values.headerBackgroundColor);
+    preview.style.setProperty('--ppi-startpage-heading', values.headingColor);
+    preview.style.setProperty('--ppi-startpage-description', values.descriptionColor);
+    preview.style.setProperty('--ppi-startpage-image', values.backgroundFileId ? 'url("' + previewUrl(values.backgroundFileId, 1920, 1080) + '")' : 'none');
+    byId('ppi-startpage-preview-title').textContent = values.headline || values.name || 'Meine 360°-Startseite';
+    byId('ppi-startpage-preview-description').textContent = values.description;
+    const grid = byId('ppi-startpage-preview-grid');
+    grid.replaceChildren();
+    grid.dataset.cols = values.tileColumns;
+    for (const id of values.tourIds) {
+      const tour = tours.find(item => item.id === id);
+      if (!tour) continue;
+      const tile = node('div', undefined, 'ppi-startpage-preview-tile');
+      if (tour.images?.length) {
+        const image = imageThumb(tourCoverImage(tour).id, 520, 293);
+        image.alt = 'Vorschau: ' + tour.name;
+        image.loading = 'lazy';
+        const media = node('div',undefined,'ppi-startpage-tile-media');
+        media.append(image);
+        tile.append(media);
+      } else {
+        const media = node('div',undefined,'ppi-startpage-tile-media');
+        media.append(node('div', '🌐', 'ppi-overview-placeholder'));
+        tile.append(media);
+      }
+      const copy = node('div',undefined,'ppi-startpage-tile-copy');
+      copy.append(node('strong', tour.name));
+      const description = tourShortDescription(tour);
+      copy.append(node('small', description || 'Keine Beschreibung hinterlegt'));
+      tile.append(copy);
+      grid.append(tile);
+    }
+    if (!grid.children.length) grid.append(node('p','Wähle unter „Touren wählen“ mindestens eine Tour aus.','ppi-startpage-preview-empty'));
+    ppiAutoUpdateDirtyNotice();
+    queueDescriptionResize();
+    ppiAutoSchedule();
+  }
+  const layoutPresetButtons = [...byId('ppi-start-page-tile-presets').querySelectorAll('[data-columns]')];
+  function chooseTileLayout(value) {
+    if (!['auto','2','3','4','5'].includes(value)) return;
+    byId('ppi-start-page-tile-columns').value = value;
+    for (const button of layoutPresetButtons) {
+      button.setAttribute('aria-pressed', String(button.dataset.columns === value));
+    }
+    updateStartPagePreview();
+  }
+  for (const button of layoutPresetButtons) {
+    button.addEventListener('click', () => chooseTileLayout(button.dataset.columns));
+  }
+  function showStartPageTab(tab) {
+    closeStartPageBackground();
+    const tabs = ['start','tours','presets','layout','share'];
+    if (!tabs.includes(tab)) return;
+    byId('ppi-start-page-editor').querySelectorAll('[data-startpage-tab]').forEach(button => {
+      if (button.dataset.startpageTab === tab) button.setAttribute('aria-current','step');
+      else button.removeAttribute('aria-current');
+    });
+    byId('ppi-start-page-editor').querySelectorAll('[data-startpage-panel]').forEach(section => {
+      section.hidden = section.dataset.startpagePanel !== tab;
+    });
+    const editor = byId('ppi-start-page-editor');
+    const workspace = editor.querySelector('.ppi-startpage-workspace');
+    const previewColumn = editor.querySelector('.ppi-startpage-preview-column');
+    const presetPreviewSlot = byId('ppi-preset-preview-slot');
+    // Move the *same* live-preview DOM, never clone it: no duplicated element IDs or stale data.
+    if (tab === 'presets') {
+      presetPreviewSlot.append(previewColumn);
+    } else {
+      workspace.append(previewColumn);
+    }
+    workspace.hidden = tab === 'presets';
+    if (tab === 'presets') {
+      refreshPresets().catch(error => presetNotice(error.message,true));
+      updateStartPagePreview();
+    }
+    // The share tab is a dedicated full-width form, not a visual design step.
+    workspace.classList.toggle('ppi-startpage-share-only', tab === 'share');
+    byId('ppi-start-page-editor').querySelector('.ppi-startpage-preview-column').hidden = tab === 'share';
+    ppiAutoPositionStatus(tab);
+    byId('ppi-start-page-editor').querySelector('.ppi-preset-preview-save').hidden = tab !== 'layout';
+    if (tab === 'start') queueDescriptionResize();
+  }
+  byId('ppi-start-page-editor').querySelectorAll('[data-startpage-tab]').forEach(button => {
+    button.addEventListener('click', () => showStartPageTab(button.dataset.startpageTab));
+  });
+  startPageFields.forEach(id => byId(id).addEventListener('input', updateStartPagePreview));
+  byId('ppi-start-page-tours').addEventListener('change', updateStartPagePreview);
+  const startPageBgOverlay = byId('ppi-start-page-bg-browser');
+  const startPageBgDialog = startPageBgOverlay.querySelector('.ppi-startpage-bg-dialog');
+  let startPageBgReturnFocus = null;
+  function closeStartPageBackground() {
+    if (startPageBgOverlay.hidden) return;
+    ++startPageBgRequestSerial;
+    startPageBgOverlay.hidden = true;
+    if (startPageBgReturnFocus?.isConnected) startPageBgReturnFocus.focus();
+    startPageBgReturnFocus = null;
+  }
+  function openStartPageBackground() {
+    if (!activeStartPage) return;
+    startPageBgReturnFocus = document.activeElement;
+    startPageBgOverlay.hidden = false;
+    startPageBgDialog.focus();
+    browseStartPageBackground(startPageBgFolderId);
+  }
+  byId('ppi-start-page-bg-close').addEventListener('click',closeStartPageBackground);
+  startPageBgOverlay.addEventListener('click',event=>{
+    if (event.target === startPageBgOverlay) closeStartPageBackground();
+  });
+  startPageBgOverlay.addEventListener('keydown',event=>{
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      closeStartPageBackground();
+    } else if (event.key === 'Tab') {
+      const focusable = [...startPageBgOverlay.querySelectorAll('button:not([disabled])')];
+      if (!focusable.length) return;
+      const first = focusable[0],last = focusable[focusable.length-1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();first.focus();
+      } else if (document.activeElement === startPageBgDialog) {
+        event.preventDefault();(event.shiftKey ? last : first).focus();
+      }
+    }
+  });
+  async function browseStartPageBackground(folderId = 0) {
+    const serial = ++startPageBgRequestSerial;
+    const results = byId('ppi-start-page-bg-files');
+    results.replaceChildren(node('p','Bilder werden geladen …'));
+    const params = new URLSearchParams({folderId:String(folderId),panoramaOnly:'0'});
+    try {
+      const result = await request(filesApi + '?' + params);
+      if (serial !== startPageBgRequestSerial) return;
+      startPageBgFolderId = result.isRoot ? 0 : Number(result.folderId);
+      startPageBgFolderParentId = Number(result.parentId) || 0;
+      byId('ppi-start-page-bg-path').textContent = result.path || '/';
+      byId('ppi-start-page-bg-up').disabled = !!result.isRoot;
+      results.replaceChildren();
+      const items = (result.items || []).filter(item => item.type === 'folder' || item.type === 'image').slice(0,160);
+      for (const item of items) {
+        const button = node('button',undefined);
+        button.type = 'button';
+        if (item.type === 'folder') {
+          button.append(node('span','📁 ' + item.name));
+          button.addEventListener('click',()=>browseStartPageBackground(item.id));
+        } else {
+          const image = imageThumb(item.id,260,146);
+          image.loading = 'lazy';
+          button.append(image,node('span',item.name));
+          button.addEventListener('click',()=>{
+            startPageBackgroundFileId = Number(item.id);
+            byId('ppi-start-page-bg-selected').textContent = 'Ausgewählt: ' + item.name;
+            closeStartPageBackground();
+            updateStartPagePreview();
+          });
+        }
+        results.append(button);
+      }
+      if (!items.length) results.append(node('p','Keine JPEG-Bilder in diesem Ordner.'));
+      if (result.truncated) results.append(node('p','Ergebnis begrenzt. Bitte einen Unterordner öffnen.'));
+    } catch (error) {
+      if (serial === startPageBgRequestSerial) results.replaceChildren(node('p','Bilder nicht verfügbar: '+error.message));
+    }
+  }
+  byId('ppi-start-page-bg-browse').addEventListener('click',openStartPageBackground);
+  byId('ppi-start-page-bg-up').addEventListener('click',()=>browseStartPageBackground(startPageBgFolderParentId));
+  byId('ppi-start-page-bg-remove').addEventListener('click',()=>{
+    startPageBackgroundFileId = 0;
+    byId('ppi-start-page-bg-selected').textContent = 'Kein Bild ausgewählt';
+    closeStartPageBackground();
+    updateStartPagePreview();
+  });
+  function startPagePublicUrl(page) {
+    if (!page?.publicToken) return '';
+    const path = '/apps/photosphere_photos_integration/startpage/' + encodeURIComponent(page.publicToken);
+    return new URL(window.OC?.generateUrl ? window.OC.generateUrl(path) : '/index.php'+path, location.origin).href;
+  }
+  function currentStartPageTourIds() {
+    return [...byId('ppi-start-page-tours').querySelectorAll('input[type="checkbox"]:checked')]
+      .map(el=>el.value);
+  }
+  function refreshStartPageTourPasswordSelection() {
+    const mode = byId('ppi-start-page-tour-password-mode').value;
+    // PPI DYNAMIC STARTPAGE PASSWORD DESCRIPTION 2026-11-24
+    const passwordDescriptions = {
+      keep: 'Jede Tour behält ihren eigenen Passwortschutz. Geschützte Touren verlangen beim Öffnen ihr eigenes Tour-Passwort. Direkte Tour-Links bleiben unverändert geschützt.',
+      all: 'Nach der Anmeldung an der passwortgeschützten Startseite können Besucher alle eingebundenen Touren ohne zusätzliche Tour-Passwörter öffnen. Direkte Tour-Links bleiben unabhängig geschützt.',
+      selected: 'Nach der Anmeldung an der passwortgeschützten Startseite werden nur die unten angehakten Touren ohne eigenes Tour-Passwort geöffnet. In der Auswahlliste erscheinen ausschließlich passwortgeschützte Touren. Touren ohne Passwort sind bereits öffentlich zugänglich und müssen nicht zusätzlich freigeschaltet werden. Nicht ausgewählte geschützte Touren benötigen weiterhin ihr eigenes Passwort – sofern sie auf der Startseite angezeigt werden.'
+    };
+    byId('ppi-start-page-tour-password-description').textContent = passwordDescriptions[mode] || passwordDescriptions.keep;
+    const selection = byId('ppi-start-page-tour-password-selection');
+    selection.hidden = mode !== 'selected';
+    const list = byId('ppi-start-page-tour-password-list');
+    const hadRenderedChoices = !!list.querySelector('input[type="checkbox"]');
+    const hadChoices = !!list.querySelector('input[type="checkbox"]');
+    const previous = new Set([...list.querySelectorAll('input:checked')].map(el=>el.value));
+    const stored = new Set(activeStartPage?.tourPasswordSelected || []);
+    list.replaceChildren();
+    for (const id of currentStartPageTourIds()) {
+      const tour = tours.find(item => item.id === id);
+      if (!tour) continue;
+      // PPI STARTPAGE PASSWORD-PROTECTED CHOICES ONLY 2026-11-24
+      // Nur Touren mit aktivem Hauptlink-Passwort brauchen eine Freigabeauswahl.
+      if (!tour.sharePasswordProtected) continue;
+      const row = node('label',undefined,'ppi-startpage-tour-password-choice');
+      const input = document.createElement('input');
+      input.type='checkbox'; input.value=id;
+      input.checked = hadRenderedChoices ? previous.has(id) : stored.has(id);
+      // Kompaktes Layout unabhängig von allgemeinen Formularregeln.
+      row.style.setProperty('display', 'flex', 'important');
+      row.style.setProperty('flex-direction', 'row', 'important');
+      row.style.setProperty('align-items', 'center', 'important');
+      row.style.setProperty('justify-content', 'flex-start', 'important');
+      row.style.setProperty('gap', '12px', 'important');
+      row.style.setProperty('padding', '10px 12px', 'important');
+      row.style.setProperty('margin', '3px 0', 'important');
+      row.style.setProperty('width', '100%', 'important');
+      row.style.setProperty('box-sizing', 'border-box', 'important');
+      row.style.setProperty('border-radius', '8px', 'important');
+      row.style.setProperty('cursor', 'pointer', 'important');
+
+      input.style.setProperty('width', '18px', 'important');
+      input.style.setProperty('min-width', '18px', 'important');
+      input.style.setProperty('max-width', '18px', 'important');
+      input.style.setProperty('height', '18px', 'important');
+      input.style.setProperty('min-height', '18px', 'important');
+      input.style.setProperty('flex', '0 0 18px', 'important');
+      input.style.setProperty('margin', '0', 'important');
+      input.style.setProperty('padding', '0', 'important');
+
+      const name = node('span',tour.name);
+      name.style.setProperty('flex', '1 1 auto', 'important');
+      name.style.setProperty('min-width', '0', 'important');
+      name.style.setProperty('overflow-wrap', 'anywhere', 'important');
+
+      const updateHighlight = () => {
+        row.style.setProperty(
+          'background',
+          input.checked ? 'rgba(35,115,170,.08)' : 'transparent',
+          'important'
+        );
+      };
+
+      input.addEventListener('change', updateHighlight);
+      row.append(input,name);
+      updateHighlight();
+      list.append(row);
+    }
+    if (!list.children.length) list.append(node('p',
+      currentStartPageTourIds().length
+        ? 'Keine passwortgeschützten Touren vorhanden. Touren ohne Passwort benötigen keine zusätzliche Freischaltung.'
+        : 'Bitte zuerst im Reiter „Touren wählen“ mindestens eine Tour auswählen.'));
+    const protectedPage = !!activeStartPage?.passwordProtected || !!byId('ppi-start-page-share-password').value;
+    byId('ppi-start-page-tour-password-notice').textContent = mode !== 'keep' && !protectedPage
+      ? 'Vor dem Aktivieren muss ein Startseiten-Passwort gesetzt werden.' : '';
+  }
+  byId('ppi-start-page-tour-password-mode').addEventListener('change',refreshStartPageTourPasswordSelection);
+  byId('ppi-start-page-share-password').addEventListener('input',refreshStartPageTourPasswordSelection);
+  byId('ppi-start-page-tours').addEventListener('change',refreshStartPageTourPasswordSelection);
+  /* PPI STARTPAGE SELECTION AUTOSAVE 2026-11-24 */
+  // Auto-save only one setting, with the *stored* expiry. Never submit password
+  // input or an unsaved expiry change while toggling tour checkboxes.
+  // The Tour-Passwortregel and selected-tour checkboxes share the same top status.
+  // Preserve the existing code paths by forwarding their status text; no extra node.
+  const startPageSelectionMessage = {
+    set textContent(message) { ppiShareAutosaveStatus(message); }
+  };
+  const oldSelectionMessage = byId('ppi-startpage-selection-save-status');
+  if (oldSelectionMessage) oldSelectionMessage.remove();
+  let selectionAutoSaveQueued = false;
+  let selectionAutoSavePromise = null;
+  const selectedTourIdsNow = () => [...byId('ppi-start-page-tour-password-list')
+    .querySelectorAll('input[type="checkbox"]:checked')].map(el => el.value);
+
+  async function flushStartPageSelection() {
+    if (selectionAutoSavePromise) return selectionAutoSavePromise;
+    selectionAutoSavePromise = (async () => {
+      while (selectionAutoSaveQueued) {
+        selectionAutoSaveQueued = false;
+        const page = activeStartPage;
+        if (!page?.publicToken || !page.passwordProtected) return;
+        const mode = byId('ppi-start-page-tour-password-mode').value;
+        if (!['keep','all','selected'].includes(mode)) return;
+        // Do not accidentally save/ignore an unfinished password change.
+        if (byId('ppi-start-page-share-password').value) {
+          startPageSelectionMessage.textContent = 'Bitte neues Passwort zuerst über „Passwort setzen / ändern“ speichern.';
+          return;
+        }
+        const pageId = page.id;
+        const selectedIds = mode === 'selected' ? selectedTourIdsNow() : [];
+        startPageSelectionMessage.textContent = 'Speichere Tour-Auswahl …';
+        try {
+          const result = await request(startPagesApi + '/' + encodeURIComponent(pageId) + '/share','POST',{
+            enabled:'1',
+            // Existing server endpoint resets expiry when missing; preserve its stored value.
+            expiresOn:page.shareExpiresOn || '',
+            tourPasswordMode:mode,
+            tourPasswordSelected:JSON.stringify(selectedIds)
+          });
+          if (!activeStartPage || activeStartPage.id !== pageId) return;
+          // Keep all other in-progress form fields untouched.
+          activeStartPage.tourPasswordMode = result.page?.tourPasswordMode || mode;
+          activeStartPage.tourPasswordSelected = [...(result.page?.tourPasswordSelected || selectedIds)];
+          if (!selectionAutoSaveQueued) {
+            startPageSelectionMessage.textContent = 'Tour-Auswahl gespeichert ✓';
+          }
+        } catch (error) {
+          if (activeStartPage?.id === pageId) {
+            startPageSelectionMessage.textContent = 'Nicht gespeichert: ' + error.message +
+              ' – bitte erneut auswählen oder oben speichern.';
+            notify('Tour-Auswahl konnte nicht automatisch gespeichert werden: '+error.message,true);
+          }
+          selectionAutoSaveQueued = false;
+          return;
+        }
+      }
+    })();
+    try { await selectionAutoSavePromise; }
+    finally { selectionAutoSavePromise = null; }
+  }
+  byId('ppi-start-page-tour-password-list').addEventListener('change',event => {
+    if (!event.target.matches('input[type="checkbox"]')) return;
+    if (!activeStartPage?.publicToken || !activeStartPage.passwordProtected) {
+      startPageSelectionMessage.textContent =
+        'Bitte zuerst einen aktiven Freigabelink mit Startseiten-Passwort erstellen.';
+      return;
+    }
+    selectionAutoSaveQueued = true;
+    void flushStartPageSelection();
+  });
+  /* PPI STARTPAGE AUTOSAVE INITIAL-MODE FIX 2026-11-24 */
+  byId('ppi-start-page-tour-password-mode').addEventListener('change', () => {
+    if (!activeStartPage?.publicToken || !activeStartPage.passwordProtected) {
+      startPageSelectionMessage.textContent =
+        'Bitte zuerst einen aktiven Freigabelink mit Startseiten-Passwort erstellen.';
+      return;
+    }
+    selectionAutoSaveQueued = true;
+    void flushStartPageSelection();
+  });
+
+  function refreshStartPageShareControls(page) {
+    refreshStartPageExtraLinks(page);
+    // PPI PROTECTED TOUR TILE VISIBILITY 2026-11-24
+    byId('ppi-start-page-show-locked-tours').checked = page?.showPasswordProtectedTours !== false;
+    byId('ppi-start-page-show-locked-status').textContent = '';
+    byId('ppi-start-page-show-locked-status').hidden = true;
+    // Shared status remains visible until the next save or page change.
+    const shared = !!page?.publicToken;
+    byId('ppi-start-page-share-expiry').value = page?.shareExpiresOn || '';
+    byId('ppi-start-page-share-expiry').min = earliestShareExpiry(page);
+    byId('ppi-startpage-extra-expiry').min = earliestShareExpiry(page);
+    byId('ppi-start-page-tour-password-mode').value = ['keep','all','selected'].includes(page?.tourPasswordMode) ? page.tourPasswordMode : 'keep';
+    byId('ppi-start-page-tour-password-list').replaceChildren();
+    refreshStartPageTourPasswordSelection();
+    byId('ppi-start-page-share-password').value = '';
+    byId('ppi-start-page-share-status').textContent = shared
+      ? (shareExpiredOn(page.shareExpiresOn, page) ? 'Abgelaufen' :
+        (page.passwordProtected ? 'Link aktiv · Passwortgeschützt' : 'Link aktiv · Ohne Passwort'))
+      : 'Kein aktiver Freigabelink';
+    byId('ppi-start-page-share-url').value = startPagePublicUrl(page);
+    byId('ppi-start-page-share-enable').textContent = shared ? 'Freigabeeinstellungen speichern' : 'Freigabelink erstellen';
+    byId('ppi-start-page-share-disable').hidden = !shared || shareExpiredOn(page?.shareExpiresOn, page);
+    byId('ppi-start-page-share-remove-password').hidden = !shared || !page.passwordProtected;
+    byId('ppi-start-page-share-copy').disabled = !shared;
+    byId('ppi-start-page-share-open').disabled = !shared;
+  }
+  // PPI PROTECTED TOUR TILE VISIBILITY 2026-11-24
+  let protectedVisibilitySaving = false;
+  byId('ppi-start-page-show-locked-tours').addEventListener('change', async () => {
+    const input = byId('ppi-start-page-show-locked-tours');
+    // Redirect visibility autosave to the same top status (no local message).
+    const status = { set textContent(message) { ppiShareAutosaveStatus(message); } };
+    if (protectedVisibilitySaving) return;
+    const page = activeStartPage;
+    if (!page?.publicToken) {
+      status.textContent = 'Diese Einstellung wird beim Erstellen des Freigabelinks übernommen.';
+      return;
+    }
+    protectedVisibilitySaving = true;
+    input.disabled = true;
+    status.textContent = 'Speichere …';
+    const desired = input.checked;
+    try {
+      // Do not race an in-flight selection save; preserve existing expiry on the server.
+      if (typeof selectionAutoSavePromise !== 'undefined' && selectionAutoSavePromise) {
+        await selectionAutoSavePromise;
+      }
+      const result = await request(startPagesApi + '/' + encodeURIComponent(page.id) + '/share','POST',{
+        enabled:'1',expiresOn:page.shareExpiresOn || '',
+        showPasswordProtectedTours:desired ? '1' : '0'
+      });
+      if (activeStartPage?.id === page.id) {
+        activeStartPage.showPasswordProtectedTours = result.page?.showPasswordProtectedTours !== false;
+        input.checked = activeStartPage.showPasswordProtectedTours;
+        status.textContent = 'Gespeichert ✓';
+      }
+    } catch(e) {
+      if (activeStartPage?.id === page.id) {
+        input.checked = page.showPasswordProtectedTours !== false;
+        status.textContent = 'Nicht gespeichert: ' + e.message;
+        notify('Sichtbarkeit konnte nicht gespeichert werden: ' + e.message, true);
+      }
+    } finally {
+      protectedVisibilitySaving = false;
+      input.disabled = false;
+    }
+  });
+  byId('ppi-start-page-share-enable').addEventListener('click', async () => {
+    if (selectionAutoSavePromise) await selectionAutoSavePromise;
+    if (!activeStartPage) return;
+    try {
+      const result = await request(startPagesApi + '/' + encodeURIComponent(activeStartPage.id) + '/share','POST',{
+        enabled:'1',
+        expiresOn:byId('ppi-start-page-share-expiry').value,
+        showPasswordProtectedTours:byId('ppi-start-page-show-locked-tours').checked ? '1' : '0',
+        password:byId('ppi-start-page-share-password').value,
+        tourPasswordMode:byId('ppi-start-page-tour-password-mode').value,
+        tourPasswordSelected:JSON.stringify([...byId('ppi-start-page-tour-password-list').querySelectorAll('input:checked')].map(el=>el.value))
+      });
+      activeStartPage = {...activeStartPage,...result.page};
+      refreshStartPageShareControls(activeStartPage);
+      await refreshStartPages();
+      notify('Freigabelink und Tour-Passwortregel gespeichert.');
+    } catch(e) { notify('Freigabe konnte nicht gespeichert werden: '+e.message,true); }
+  });
+  byId('ppi-start-page-share-password-apply').addEventListener('click', () => {
+    const password = byId('ppi-start-page-share-password');
+    if (!password.value) {
+      password.focus();
+      notify('Bitte zuerst ein neues Startseiten-Passwort eingeben.', true);
+      return;
+    }
+    // Uses the existing server-side Nextcloud policy and share-save handler.
+    byId('ppi-start-page-share-enable').click();
+  });
+  byId('ppi-start-page-share-remove-password').addEventListener('click', async () => {
+    if (selectionAutoSavePromise) await selectionAutoSavePromise;
+    if (!activeStartPage || !confirm('Startseiten-Passwort entfernen? Jeder mit dem Link kann dann die Startseite öffnen.')) return;
+    try {
+      const result = await request(startPagesApi + '/' + encodeURIComponent(activeStartPage.id) + '/share','POST',{
+        enabled:'1',expiresOn:byId('ppi-start-page-share-expiry').value,passwordAction:'remove',tourPasswordMode:'keep',tourPasswordSelected:'[]'
+      });
+      activeStartPage = {...activeStartPage,...result.page};
+      refreshStartPageShareControls(activeStartPage);
+      await refreshStartPages();
+      notify('Startseiten-Passwort entfernt.');
+    } catch(e) { notify(e.message,true); }
+  });
+  byId('ppi-start-page-share-disable').addEventListener('click', async () => {
+    if (selectionAutoSavePromise) await selectionAutoSavePromise;
+    if (!activeStartPage || !confirm('Startseiten-Link deaktivieren? Der bisherige Link wird sofort ungültig.')) return;
+    try {
+      const result = await request(startPagesApi + '/' + encodeURIComponent(activeStartPage.id) + '/share','POST',{enabled:'0'});
+      // Die Serverantwort ist der vollständige aktuelle Zustand.
+      // Nicht zusammenführen, da entfernte Tokens sonst erhalten bleiben.
+      activeStartPage = {...result.page};
+      refreshStartPageShareControls(activeStartPage);
+      await refreshStartPages();
+      notify('Startseiten-Link deaktiviert.');
+    } catch(e) { notify(e.message,true); }
+  });
+  byId('ppi-start-page-share-copy').addEventListener('click', async () => {
+    const url = byId('ppi-start-page-share-url').value;
+    if (!url) return;
+    try { await navigator.clipboard.writeText(url); notify('Startseiten-Link kopiert.'); }
+    catch { byId('ppi-start-page-share-url').select(); notify('Link markieren und kopieren.'); }
+  });
+  byId('ppi-start-page-share-open').addEventListener('click',()=>{
+    const url = byId('ppi-start-page-share-url').value;
+    if (url) window.open(url,'_blank','noopener,noreferrer');
+  });
+
+  /* PPI STARTPAGE MULTISHARE V1 2026-11-24 */
+  const extraLinkUrl = token => startPagePublicUrl({publicToken:token});
+  const extraLinkApi = (pageId,linkId) => startPagesApi + '/' + encodeURIComponent(pageId) +
+    '/share/links' + (linkId ? '/' + encodeURIComponent(linkId) : '');
+  const extraStatus = byId('ppi-startpage-extra-status');
+  /* PPI STARTPAGE EXTRA LINKS TOUR DESIGN V1 2026-11-24 */
+  function refreshStartPageExtraLinks(page) {
+    const list = byId('ppi-startpage-extra-list');
+    list.replaceChildren();
+    byId('ppi-start-page-main-rotate').hidden = !page?.publicToken;
+    for (const link of page?.shareLinks || []) {
+      const card = node('article', undefined, 'ppi-extra-entry ppi-startpage-extra-entry');
+      const expired = shareExpiredOn(link.expiresOn, page);
+      const state = expired ? 'Abgelaufen' : link.disabled ? 'Deaktiviert' :
+        link.passwordProtected ? 'Mit Passwort' : 'Ohne Passwort';
+      const heading = node('strong', (link.name || 'Freigabelink') + ' · ' + state);
+      card.append(heading);
+
+      const url = node('input');
+      url.type = 'text';
+      url.readOnly = true;
+      url.value = extraLinkUrl(link.token);
+      url.setAttribute('aria-label', 'Freigabelink ' + (link.name || ''));
+      const urlRow = node('div', undefined, 'ppi-extra-link');
+      const copy = node('button', 'Kopieren');
+      copy.type = 'button';
+      copy.addEventListener('click', async () => {
+        try {
+          await navigator.clipboard.writeText(url.value);
+          notify('Link kopiert.');
+        } catch (_) {
+          url.select();
+          notify('Link markieren und kopieren.');
+        }
+      });
+      const open = node('button', 'Öffnen');
+      open.type = 'button';
+      open.addEventListener('click', () => window.open(url.value, '_blank', 'noopener,noreferrer'));
+      urlRow.append(url, copy, open);
+      card.append(urlRow);
+
+      const fields = node('div', undefined, 'ppi-extra-fields');
+      const nameLabel = node('label', 'Bezeichnung');
+      const name = node('input');
+      name.type = 'text'; name.maxLength = 60; name.value = link.name || '';
+      nameLabel.append(name);
+      const dateLabel = node('label', 'Ablaufdatum (00:00 Uhr)');
+      const expiry = node('input');
+      expiry.type = 'date'; expiry.value = link.expiresOn || ''; expiry.min = earliestShareExpiry(page);
+      dateLabel.append(expiry);
+      const passwordFields = node('div', undefined, 'ppi-extra-fields');
+      const passwordLabel = node('label', 'Eigenes Passwort');
+      const password = node('input');
+      password.type = 'password';
+      password.maxLength = 128;
+      password.autocomplete = 'new-password';
+      password.placeholder = 'Neues Passwort';
+      passwordLabel.append(password);
+      passwordFields.append(passwordLabel);
+      const actions = node('div', undefined, 'ppi-startpage-extra-actions');
+      const status = node('small');
+      status.setAttribute('role', 'status');
+      status.setAttribute('aria-live', 'polite');
+
+      const addAction = (caption, action, parent) => {
+        const button = node('button', caption);
+        button.type = 'button';
+        button.addEventListener('click', async () => {
+          const pageId = page?.id;
+          if (!activeStartPage || String(activeStartPage.id) !== String(pageId)) return;
+          if ((action === 'revoke' || action === 'rotate' || action === 'removePassword') &&
+              !confirm(action === 'revoke' ? 'Link endgültig widerrufen?' :
+                action === 'rotate' ? 'Token erneuern? Der bisherige Link wird ungültig.' :
+                'Passwort entfernen?')) return;
+          const payload = {action};
+          if (action === 'settings') {
+            payload.name = name.value;
+            payload.expiresOn = expiry.value;
+          }
+          if (action === 'password') {
+            if (!password.value) {
+              status.textContent = 'Bitte ein neues Passwort eingeben.';
+              password.focus({preventScroll:true});
+              return;
+            }
+            payload.password = password.value;
+          }
+          button.disabled = true;
+          status.textContent = 'Speichere …';
+          try {
+            const result = await request(extraLinkApi(pageId, link.id), 'POST', payload);
+            if (String(activeStartPage?.id) !== String(pageId)) return;
+            activeStartPage = {...activeStartPage, ...result.page};
+            refreshStartPageExtraLinks(activeStartPage);
+            await refreshStartPages();
+            notify('Freigabelink aktualisiert.');
+          } catch (error) {
+            status.textContent = 'Nicht gespeichert: ' + error.message;
+            notify(error.message, true);
+          } finally {
+            button.disabled = false;
+          }
+        });
+        parent.append(button);
+      };
+      addAction('Änderungen speichern', 'settings', fields);
+      fields.prepend(nameLabel, dateLabel);
+      card.append(fields);
+      addAction(link.passwordProtected ? 'Passwort ändern' : 'Passwort setzen', 'password', passwordFields);
+      if (link.passwordProtected) addAction('Passwort entfernen', 'removePassword', passwordFields);
+      card.append(passwordFields);
+      if (!expired) addAction(link.disabled ? 'Link aktivieren' : 'Link deaktivieren', link.disabled ? 'enable' : 'disable', actions);
+      addAction('Diesen Link widerrufen', 'revoke', actions);
+      // Die Startseiten können ihre einzelnen Link-Tokens zusätzlich erneuern.
+      addAction('Token erneuern', 'rotate', actions);
+      card.append(actions, status);
+      list.append(card);
+    }
+    if (!list.children.length) list.append(node('p', 'Noch keine zusätzlichen Freigabelinks.'));
+  }
+  byId('ppi-startpage-extra-create').addEventListener('click',async()=>{
+    const page=activeStartPage;if(!page)return;
+    const btn=byId('ppi-startpage-extra-create');btn.disabled=true;extraStatus.textContent='Erstelle Link …';
+    try{
+      const result=await request(extraLinkApi(page.id),'POST',{
+        name:byId('ppi-startpage-extra-name').value,
+        expiresOn:byId('ppi-startpage-extra-expiry').value,
+        password:byId('ppi-startpage-extra-password').value
+      });
+      activeStartPage={...activeStartPage,...result.page};
+      byId('ppi-startpage-extra-name').value='';byId('ppi-startpage-extra-expiry').value='';
+      byId('ppi-startpage-extra-password').value='';
+      refreshStartPageExtraLinks(activeStartPage);await refreshStartPages();
+      extraStatus.textContent='Zusätzlicher Link erstellt ✓';
+    }catch(e){extraStatus.textContent='Nicht erstellt: '+e.message;notify(e.message,true);}
+    finally{btn.disabled=false;}
+  });
+  byId('ppi-start-page-main-rotate').addEventListener('click',async()=>{
+    if(!activeStartPage?.publicToken || !confirm('Hauptlink-Token erneuern? Der bisherige Link wird sofort ungültig.'))return;
+    const btn=byId('ppi-start-page-main-rotate');btn.disabled=true;
+    try{
+      const result=await request(startPagesApi+'/'+encodeURIComponent(activeStartPage.id)+'/share/rotate','POST',{});
+      activeStartPage={...activeStartPage,...result.page};
+      refreshStartPageShareControls(activeStartPage);await refreshStartPages();
+      notify('Neuer Hauptlink erstellt. Alter Link ist widerrufen.');
+    }catch(e){notify('Token konnte nicht erneuert werden: '+e.message,true);}
+    finally{btn.disabled=false;}
+  });
+
+  const orderedTourChoices = byId('ppi-start-page-tours');
+  let draggingStartPageTour = null;
+  function updateStartPageTourMoveButtons() {
+    const rows = [...orderedTourChoices.querySelectorAll('.ppi-startpage-tour-option')];
+    rows.forEach((row,index) => {
+      const buttons = row.querySelectorAll('.ppi-startpage-tour-move button');
+      if (buttons.length === 2) {
+        buttons[0].disabled = index === 0;
+        buttons[1].disabled = index === rows.length-1;
+      }
+    });
+  }
+  function tourOrderChanged() {
+    updateStartPageTourMoveButtons();
+    updateStartPagePreview();
+  }
+  orderedTourChoices.addEventListener('click',event => {
+    const button = event.target.closest('.ppi-startpage-tour-move button');
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const row = button.closest('.ppi-startpage-tour-option');
+    if (!row) return;
+    const buttons = row.querySelectorAll('.ppi-startpage-tour-move button');
+    const isUp = button === buttons[0];
+    const target = isUp ? row.previousElementSibling : row.nextElementSibling;
+    if (!target) return;
+    if (isUp) orderedTourChoices.insertBefore(row,target);
+    else orderedTourChoices.insertBefore(target,row);
+    tourOrderChanged();
+    button.focus();
+  });
+  orderedTourChoices.addEventListener('dragstart',event => {
+    const row = event.target.closest('.ppi-startpage-tour-option');
+    if (!row || event.target.closest('input,button')) {
+      event.preventDefault();return;
+    }
+    draggingStartPageTour = row;
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain',row.dataset.tourId);
+    row.classList.add('ppi-tour-dragging');
+  });
+  orderedTourChoices.addEventListener('dragover',event => {
+    if (!draggingStartPageTour) return;
+    const row = event.target.closest('.ppi-startpage-tour-option');
+    if (!row || row === draggingStartPageTour) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect='move';
+    orderedTourChoices.querySelectorAll('.ppi-startpage-tour-option').forEach(el => {
+      el.classList.remove('ppi-tour-drop-before','ppi-tour-drop-after');
+    });
+    const before = event.clientY < row.getBoundingClientRect().top + row.getBoundingClientRect().height/2;
+    row.classList.add(before ? 'ppi-tour-drop-before' : 'ppi-tour-drop-after');
+  });
+  orderedTourChoices.addEventListener('drop',event => {
+    const row = event.target.closest('.ppi-startpage-tour-option');
+    if (!draggingStartPageTour || !row) return;
+    event.preventDefault();
+    if (row !== draggingStartPageTour) {
+      const before = event.clientY < row.getBoundingClientRect().top + row.getBoundingClientRect().height/2;
+      orderedTourChoices.insertBefore(draggingStartPageTour,before ? row : row.nextSibling);
+      tourOrderChanged();
+    }
+    orderedTourChoices.querySelectorAll('.ppi-startpage-tour-option').forEach(el => {
+      el.classList.remove('ppi-tour-dragging','ppi-tour-drop-before','ppi-tour-drop-after');
+    });
+    draggingStartPageTour=null;
+  });
+  orderedTourChoices.addEventListener('dragend',() => {
+    orderedTourChoices.querySelectorAll('.ppi-startpage-tour-option').forEach(el => {
+      el.classList.remove('ppi-tour-dragging','ppi-tour-drop-before','ppi-tour-drop-after');
+    });
+    draggingStartPageTour=null;
+  });
+
+  function showStartPageEditor(page) {
+    activeStartPage = clone(page);
+    refreshStartPageShareControls(page);
+    byId('ppi-start-page-name').value = page.name || '';
+    byId('ppi-start-page-headline').value = page.headline || '';
+    byId('ppi-start-page-description').value = page.description || '';
+    const savedLayout = ['hero','split','gallery'].includes(page.layout) ? page.layout : 'hero';
+    byId('ppi-start-page-layout').value = savedLayout;
+    for (const button of layoutModeButtons) {
+      button.setAttribute('aria-pressed',String(button.dataset.startpageLayout === savedLayout));
+    }
+    byId('ppi-start-page-heading-color').value = /^#[a-f\d]{6}$/i.test(page.headingColor || '') ? page.headingColor : '#ffffff';
+    byId('ppi-start-page-description-color').value = /^#[a-f\d]{6}$/i.test(page.descriptionColor || '') ? page.descriptionColor : '#ffffff';
+    const effect = ['subtle','glass','glossy'].includes(page.designEffect) ? page.designEffect : 'subtle';
+    byId('ppi-start-page-effect').value = effect;
+    for (const button of effectButtons) button.setAttribute('aria-pressed',String(button.dataset.startpageEffect === effect));
+    byId('ppi-start-page-background-color').value = /^#[a-f\d]{6}$/i.test(page.backgroundColor || '') ? page.backgroundColor : '#000000';
+    byId('ppi-start-page-header-color').value = /^#[a-f\d]{6}$/i.test(page.headerBackgroundColor || '') ? page.headerBackgroundColor : byId('ppi-start-page-background-color').value;
+    const savedColumns = ['auto','2','3','4','5'].includes(page.tileColumns) ? page.tileColumns : 'auto';
+    byId('ppi-start-page-tile-columns').value = savedColumns;
+    for (const button of layoutPresetButtons) button.setAttribute('aria-pressed', String(button.dataset.columns === savedColumns));
+    startPageBackgroundFileId = Number(page.backgroundFileId) || 0;
+    byId('ppi-start-page-bg-selected').textContent = startPageBackgroundFileId ? 'Bild aus Nextcloud ausgewählt (Datei-ID ' + startPageBackgroundFileId + ')' : 'Kein Bild ausgewählt';
+    closeStartPageBackground();
+    startPageBgFolderId = 0;
+    const choices = byId('ppi-start-page-tours');
+    choices.replaceChildren();
+    // The saved order is authoritative. Unselected choices follow it in their normal order.
+    const orderedTours = [...tours].sort((a,b) => {
+      const ai = (page.tourIds || []).indexOf(a.id), bi = (page.tourIds || []).indexOf(b.id);
+      if (ai < 0 && bi < 0) return 0;
+      if (ai < 0) return 1;
+      if (bi < 0) return -1;
+      return ai-bi;
+    });
+    for (const tour of orderedTours) {
+      const row = node('label', undefined, 'ppi-startpage-tour-option');
+      row.dataset.tourId = tour.id;
+      row.draggable = true;
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.value = tour.id;
+      checkbox.checked = (page.tourIds || []).includes(tour.id);
+      if (tour.images?.length) {
+        const picture = imageThumb(tourCoverImage(tour).id,320,180);
+        picture.loading = 'lazy';
+        picture.alt = 'Vorschau: '+tour.name;
+        row.append(picture);
+      } else row.append(node('span','🌐','ppi-overview-placeholder'));
+      const info = node('span',undefined,'ppi-startpage-tour-info');
+      info.append(node('strong',tour.name));
+      info.append(node('small',tourShortDescription(tour) || 'Keine Beschreibung hinterlegt'));
+      const mover = node('span',undefined,'ppi-startpage-tour-move');
+      const grip = node('span','☰','ppi-startpage-tour-grip');
+      grip.title = 'Tour an diesem Griff ziehen und verschieben';
+      grip.setAttribute('aria-hidden','true');
+      const up = node('button','↑','');
+      up.type = 'button';
+      up.title = 'Tour nach oben';
+      up.setAttribute('aria-label',tour.name+' nach oben verschieben');
+      const down = node('button','↓','');
+      down.type = 'button';
+      down.title = 'Tour nach unten';
+      down.setAttribute('aria-label',tour.name+' nach unten verschieben');
+      mover.append(grip,up,down);
+      row.prepend(mover);
+      row.append(info,checkbox);
+      choices.append(row);
+    }
+    updateStartPageTourMoveButtons();
+    refreshStartPageTourPasswordSelection();
+    byId('ppi-start-pages-overview').hidden = true;
+    byId('ppi-start-pages-overview').style.display = 'none';
+    byId('ppi-start-page-editor').hidden = false;
+    byId('ppi-start-page-editor').style.display = 'block';
+    byId('ppi-start-page-create').hidden = true;
+    byId('ppi-overview-switch').hidden = true;
+    savedStartPageSnapshot = JSON.stringify(startPageFormValues());
+    showStartPageTab('start');
+    ppiAutoReset(page);
+    updateStartPagePreview();
+  }
+  async function refreshStartPages() {
+    const result = await request(startPagesApi);
+    startPages = Array.isArray(result.pages) ? result.pages : [];
+    const container = byId('ppi-start-pages-list');
+    container.replaceChildren();
+    container.classList.toggle('ppi-startpages-single', startPages.length === 1);
+    container.classList.toggle('ppi-startpages-double', startPages.length === 2);
+    container.classList.toggle('ppi-startpages-multi', startPages.length >= 3);
+    if (!startPages.length) container.append(node('p', 'Noch keine Startseiten erstellt.'));
+    for (const page of startPages) {
+      const tile = node('article', undefined, 'ppi-overview-tile');
+      const cover = node('div',undefined,'ppi-startpage-overview-cover');
+      if (Number(page.backgroundFileId) > 0) {
+        const background = previewUrl(Number(page.backgroundFileId), 920, 520);
+        cover.style.backgroundImage = 'linear-gradient(#0005,#0005),url("' + background + '")';
+      } else {
+        // The overview must reflect this start page's selected background color,
+        // not a fixed blue gradient. Distinct stops also work for pure black.
+        const base = /^#[0-9a-f]{6}$/i.test(page.backgroundColor || '')
+          ? page.backgroundColor : '#000000';
+        const rgb = [1,3,5].map(i => parseInt(base.slice(i,i+2),16));
+        const tint = (toward, proportion) => '#'+rgb.map(channel => Math.round(channel*(1-proportion)+toward*proportion).toString(16).padStart(2,'0')).join('');
+        cover.style.backgroundColor = base;
+        cover.style.backgroundImage = 'linear-gradient(135deg,' + tint(255,.24) + ' 0%,' + base + ' 55%,' + tint(0,.42) + ' 100%)';
+      }
+      cover.append(node('div', '▦', 'ppi-overview-placeholder'));
+      tile.append(cover);
+      const body = node('div', undefined, 'ppi-overview-body');
+      body.append(node('h3', page.name, 'ppi-overview-name'));
+      body.append(node('div', (page.publicToken ? '🌐 Freigegeben' : '🔒 Privater Entwurf') + ' · ' + (page.tourIds || []).length + ' Touren', 'ppi-overview-status'));
+      const actions = node('div', undefined, 'ppi-overview-actions');
+      actions.append(tourAction('Bearbeiten', () => showStartPageEditor(page), true));
+      actions.append(tourAction('Vorschau', () => {
+        if (page.publicToken) {
+          window.open(startPagePublicUrl(page), '_blank', 'noopener,noreferrer');
+        } else {
+          showStartPageEditor(page);
+          showStartPageTab('layout');
+          notify('Privater Entwurf: Live-Vorschau im Layout-Reiter geöffnet.');
+        }
+      }));
+      if (page.publicToken) {
+        actions.append(tourAction('Link kopieren', async () => {
+          const url = startPagePublicUrl(page);
+          try {
+            await navigator.clipboard.writeText(url);
+            notify('Startseiten-Link kopiert.');
+          } catch {
+            window.prompt('Startseiten-Link kopieren:', url);
+          }
+        }));
+        actions.append(tourAction('Hauptlink deaktivieren', async () => {
+          if (!confirm('Startseiten-Link deaktivieren? Der bisherige Link wird sofort ungültig.')) return;
+          try {
+            await request(startPagesApi + '/' + encodeURIComponent(page.id) + '/share', 'POST', {enabled:'0'});
+            await refreshStartPages();
+            notify('Startseiten-Link deaktiviert.');
+          } catch(e) {
+            notify('Freigabe konnte nicht deaktiviert werden: ' + e.message, true);
+          }
+        }));
+      } else {
+        actions.append(tourAction('Freigeben', () => {
+          showStartPageEditor(page);
+          showStartPageTab('share');
+        }));
+      }
+      actions.append(tourAction('Freigabe verwalten', () => {
+        showStartPageEditor(page);
+        showStartPageTab('share');
+      }));
+      actions.append(tourAction('Startseite duplizieren', async () => {
+        try {
+          await request(startPagesApi + '/' + encodeURIComponent(page.id) + '/duplicate', 'POST', {});
+          await refreshStartPages();
+          notify('Startseite als privater Entwurf dupliziert.');
+        } catch (e) { notify(e.message, true); }
+      }));
+      body.append(actions);
+      tile.append(body);
+      container.append(tile);
+    }
+  }
+  async function setManagementMode(mode) {
+    if (!['tours','startpages'].includes(mode)) return;
+    managementMode = mode;
+    const pages = mode === 'startpages';
+    byId('ppi-section-icon').textContent = '🌐';
+    byId('ppi-section-heading').textContent = pages ? 'Meine 360°-Startseiten' : 'Meine 360°-Touren';
+    byId('ppi-section-subtitle').textContent = pages ?
+      'Startseiten mit mehreren Panorama-Touren gestalten' : 'Touren aus deinen Nextcloud-Panoramen zusammenstellen';
+    byId('ppi-mode-tours').setAttribute('aria-pressed', String(!pages));
+    byId('ppi-mode-startpages').setAttribute('aria-pressed', String(pages));
+    byId('ppi-tour-overview').hidden = pages;
+    byId('ppi-tour-overview').style.display = pages ? 'none' : 'block';
+    byId('ppi-start-pages-overview').hidden = !pages;
+    byId('ppi-start-pages-overview').style.display = pages ? 'block' : 'none';
+    byId('ppi-start-page-editor').hidden = true;
+    byId('ppi-start-page-editor').style.display = 'none';
+    byId('ppi-tour-create').hidden = pages;
+    byId('ppi-start-page-create').hidden = !pages;
+    byId('ppi-overview-switch').hidden = false;
+    if (pages) {
+      try { await refreshStartPages(); }
+      catch (e) { notify('Startseiten konnten nicht geladen werden: ' + e.message, true); }
+    } else {
+      try { await refresh(); }
+      catch (e) { notify('Touren konnten nicht aktualisiert werden: ' + e.message, true); }
+    }
+  }
+  byId('ppi-mode-tours').addEventListener('click', () => setManagementMode('tours'));
+  byId('ppi-mode-startpages').addEventListener('click', () => setManagementMode('startpages'));
+  byId('ppi-start-page-create').addEventListener('click', async () => {
+    const name = prompt('Wie soll die neue Startseite heißen?');
+    if (name === null) return;
+    try {
+      const result = await request(startPagesApi, 'POST', {name});
+      await refreshStartPages();
+      showStartPageEditor(result.page);
+      notify('Private Startseite erstellt.');
+    } catch (e) { notify(e.message, true); }
+  });
+  byId('ppi-start-page-back').addEventListener('click', () => setManagementMode('startpages'));
+  byId('ppi-start-page-save').addEventListener('click', async () => {
+    if (!activeStartPage) return;
+    ppiAutoManualBusy = true;
+    if (ppiAutoTimer !== null) clearTimeout(ppiAutoTimer);
+    ppiAutoTimer = null;
+    await ppiAutoWaitForIdle();
+    const values = startPageFormValues();
+    try {
+      const result = await request(startPagesApi + '/' + encodeURIComponent(activeStartPage.id), 'POST', {
+        ...values,
+        tourIds:JSON.stringify(values.tourIds)
+      });
+      activeStartPage = clone(result.page);
+      refreshStartPageShareControls(activeStartPage);
+      savedStartPageSnapshot = JSON.stringify(startPageFormValues());
+      updateStartPagePreview();
+      await refreshStartPages();
+      notify('Startseite gespeichert. Übersicht und Vorschau sind aktualisiert.');
+      ppiAutoLast = ppiAutoSignature(ppiAutoPayload());
+      ppiAutoSetStatus('Gespeichert ✓');
+    } catch (e) { notify(e.message, true); }
+    finally { ppiAutoManualBusy = false; ppiAutoSchedule(); }
+  });
+  byId('ppi-start-page-delete').addEventListener('click', async () => {
+    if (!activeStartPage || !confirm('Diese Startseite endgültig löschen? Touren bleiben erhalten.')) return;
+    try {
+      await request(startPagesApi + '/' + encodeURIComponent(activeStartPage.id), 'DELETE');
+      activeStartPage = null;
+      await setManagementMode('startpages');
+      notify('Startseite gelöscht. Touren bleiben erhalten.');
+    } catch (e) { notify(e.message, true); }
+  });
+
   byId('ppi-tour-create').addEventListener('click',async()=>{
     const name=prompt('Wie soll die neue Tour heißen?');if(name===null)return;
     try{const data=await request(api,'POST',{name});await refresh();openTour(data.tour);notify('Tour erstellt. Jetzt Panoramen hinzufügen.');}catch(e){notify(e.message,true);}
@@ -1533,7 +3308,7 @@
     // Always start a new picker session with panoramas not yet in this tour.
     // Keep any user-selected tour status while navigating within the open picker.
     byId('ppi-picker-status').value='unused';
-    browse(0, true);
+    ppiKeepTourScroll(() => { void browse(0, true); });
   });
   byId('ppi-picker-close').addEventListener('click',()=>{++browseSerial;show('editor');});
   byId('ppi-picker-up').addEventListener('click',()=>browse(browsing?.parentId || 0));
@@ -1544,10 +3319,14 @@
     active.links.push({from,to,yaw:0,pitch:-0.10});render();notify('Verbindung hinzugefügt. Bitte Änderungen speichern.');
   });
   byId('ppi-tour-save').addEventListener('click',async()=>{
+    if(!active)return;
+    ppiTourAutoManual=true;
+    await ppiTourAutoWait();
     try { const result=await request(`${api}/${encodeURIComponent(active.id)}`,'POST',{
       name:byId('ppi-tour-name').value,images:JSON.stringify(active.images),links:JSON.stringify(active.links)});
-      active=clone(result.tour);await refresh();render();notify('Tour erfolgreich gespeichert.');
+      active=clone(result.tour);await refresh();render();ppiTourAutoReset();notify('Tour erfolgreich gespeichert.');
     }catch(e){notify(e.message,true);}
+    finally {ppiTourAutoManual=false;ppiTourAutoSchedule();}
   });
   byId('ppi-tour-delete').addEventListener('click',async()=>{
     if(!confirm('Diese Tour wirklich löschen? Die Originalbilder bleiben erhalten.'))return;
@@ -1561,4 +3340,5 @@
   });
   show('overview');
   refresh().catch(e=>notify('Touren konnten nicht geladen werden: '+e.message,true));
+  setManagementMode('tours');
 })();

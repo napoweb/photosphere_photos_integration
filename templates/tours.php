@@ -2,6 +2,7 @@
 /** @var array $_ */
 ?>
 <div id="ppi-tours-app"
+     data-start-pages-url="<?php p($_['startPagesUrl']); ?>"
      data-api-url="<?php p($_['apiUrl']); ?>"
      data-files-url="<?php p($_['filesUrl']); ?>"
      data-picker-tags-url="<?php p($_['pickerTagsUrl']); ?>"
@@ -13,13 +14,288 @@
      style="width:100%;max-width:1040px;min-width:0;box-sizing:border-box;margin:22px auto;padding:0 20px 50px;font-family:system-ui,sans-serif;">
   <div class="ppi-tour-intro">
   <header class="ppi-tour-intro-header">
-    <span style="font-size:36px" aria-hidden="true">🌐</span>
-    <div class="ppi-tour-intro-heading"><h1 style="font-size:26px;font-weight:700;margin:0">Meine 360°-Touren</h1>
-      <p style="margin:4px 0 0;color:var(--color-text-maxcontrast)">Touren aus deinen Nextcloud-Panoramen zusammenstellen</p></div>
+    <span id="ppi-section-icon" style="font-size:36px" aria-hidden="true">🌐</span>
+    <div class="ppi-tour-intro-heading"><h1 id="ppi-section-heading" style="font-size:26px;font-weight:700;margin:0">Meine 360°-Touren</h1>
+      <p id="ppi-section-subtitle" style="margin:4px 0 0;color:var(--color-text-maxcontrast)">Touren aus deinen Nextcloud-Panoramen zusammenstellen</p></div>
     <button class="primary" id="ppi-tour-create" type="button">+ Neue Tour erstellen</button>
+    <button class="primary" id="ppi-start-page-create" type="button" hidden>+ Neue Startseite</button>
   </header>
   <p id="ppi-tour-message" role="status" aria-live="polite" hidden></p>
   </div>
+  <nav class="ppi-startpage-switch" id="ppi-overview-switch" aria-label="Verwaltungsbereich auswählen">
+    <button type="button" id="ppi-mode-tours" aria-pressed="true">🌐 360°-Touren</button>
+    <button type="button" id="ppi-mode-startpages" aria-pressed="false">▦ Startseiten</button>
+  </nav>
+  <section class="ppi-tour-card" id="ppi-start-pages-overview" hidden>
+    <h2>Meine Startseiten</h2>
+    <p>Eigene 360°-Startseiten mit einer Auswahl deiner Touren. Öffentliche Freigaben folgen nach dem Sicherheitstest.</p>
+    <div id="ppi-start-pages-list" class="ppi-tour-list"></div>
+  </section>
+  <section class="ppi-tour-card" id="ppi-start-page-editor" hidden>
+    <div class="ppi-start-page-toolbar">
+      <button type="button" id="ppi-start-page-back">← Alle Startseiten</button>
+      <div><button type="button" id="ppi-start-page-delete">Startseite löschen</button> <button type="button" class="primary" id="ppi-start-page-save">Änderungen speichern</button></div>
+    </div>
+    <h2>Startseite gestalten</h2>
+    <nav class="ppi-startpage-editor-tabs" aria-label="Startseite einrichten">
+      <button type="button" data-startpage-tab="start" aria-current="step">1 · Startseite</button>
+      <button type="button" data-startpage-tab="tours">2 · Touren wählen</button>
+      <button type="button" data-startpage-tab="presets">3 · Vorlagen</button>
+      <button type="button" data-startpage-tab="layout">4 · Layout</button>
+      <button type="button" data-startpage-tab="share">5 · Freigabe</button>
+    </nav>
+  <section class="ppi-startpage-presets-panel" id="ppi-presets-overview" data-startpage-panel="presets" hidden>
+    <h2>Startseiten-Vorlagen verwalten</h2>
+    <p>Wähle ein Design, kopiere eine Standardvorlage oder verwalte deine eigenen Vorlagen. Die Vorlage wird nur in dieser Startseite als ungespeicherte Gestaltung geladen; Touren, Texte und Freigaben bleiben erhalten.</p>
+    <div class="ppi-preset-tab-grid">
+    <div class="ppi-preset-central">
+      <h3>Designvorlage auswählen</h3>
+      <p class="ppi-preset-card-hint">Klicke auf ein Miniaturbild, um das Design rechts in der Live-Vorschau anzusehen. Änderungen werden erst beim Speichern der Startseite übernommen.</p>
+      <div id="ppi-startpage-preset-cards" class="ppi-preset-card-groups" role="group" aria-label="Designvorlagen"></div>
+      <label for="ppi-startpage-preset-select" class="ppi-preset-select-fallback">Ausgewählte Designvorlage</label>
+      <select id="ppi-startpage-preset-select" aria-label="Ausgewählte Designvorlage" class="ppi-preset-select-fallback"></select>
+      <div class="ppi-startpage-preset-actions">
+        <button type="button" class="primary" id="ppi-startpage-preset-load">In diese Startseite laden</button>
+        <button type="button" id="ppi-startpage-preset-copy">Als eigene Vorlage kopieren</button>
+      </div>
+      <p id="ppi-startpage-preset-feedback" role="status" aria-live="polite"></p>
+      <div id="ppi-startpage-preset-manager" class="ppi-startpage-preset-manager">
+        <h3>Eigene Vorlagen</h3>
+        <p>Zum Aktualisieren einer eigenen Vorlage werden die aktuellen Einstellungen aus dem Reiter „Layout“ übernommen.</p>
+        <div class="ppi-startpage-preset-actions">
+          <button type="button" id="ppi-startpage-preset-update">Aktuelles Layout übernehmen</button>
+          <button type="button" id="ppi-startpage-preset-rename">Umbenennen</button>
+          <button type="button" id="ppi-startpage-preset-delete">Löschen</button>
+          <button type="button" id="ppi-startpage-preset-export">JSON exportieren</button>
+          <button type="button" id="ppi-startpage-preset-import">JSON importieren</button>
+          <input id="ppi-startpage-preset-file" type="file" accept="application/json,.json" hidden>
+        </div>
+      </div>
+    </div>
+    <div id="ppi-preset-preview-slot" class="ppi-preset-preview-slot"></div>
+    </div>
+  </section>
+    <div class="ppi-startpage-workspace">
+      <div class="ppi-start-page-fields">
+        <section class="ppi-startpage-editor-panel" data-startpage-panel="start">
+          <h3>Überschrift und Texte</h3>
+          <label>Name der Startseite (intern) <input id="ppi-start-page-name" maxlength="100"></label>
+          <label>Überschrift für Besucher <input id="ppi-start-page-headline" maxlength="120"></label>
+          <label>Beschreibung <textarea id="ppi-start-page-description" maxlength="1000" rows="4"></textarea></label>
+        </section>
+        <section class="ppi-startpage-editor-panel" data-startpage-panel="layout" hidden>
+          <h3>Layout und Hintergrund</h3>
+          <fieldset class="ppi-startpage-layout-mode-picker">
+            <legend>Layout</legend>
+            <div class="ppi-startpage-layout-mode-options" role="group" aria-label="Startseiten-Layout wählen">
+              <button type="button" data-startpage-layout="hero" aria-pressed="true" title="Vollbild – Hintergrund über gesamte Fläche">
+                <span class="ppi-layout-mode-mini ppi-layout-mode-mini-hero" aria-hidden="true"><i class="ppi-layout-mode-heading"></i><i class="ppi-layout-mode-subheading"></i><i class="ppi-layout-mode-tiles"><b></b><b></b><b></b></i></span>
+                <span>Vollbild</span>
+              </button>
+              <button type="button" data-startpage-layout="split" aria-pressed="false" title="Kopfbereich – Hintergrund nur oben">
+                <span class="ppi-layout-mode-mini ppi-layout-mode-mini-split" aria-hidden="true"><i class="ppi-layout-mode-heading"></i><i class="ppi-layout-mode-subheading"></i><i class="ppi-layout-mode-tiles"><b></b><b></b><b></b></i></span>
+                <span>Kopfbereich</span>
+              </button>
+              <button type="button" data-startpage-layout="gallery" aria-pressed="false" title="Galerie – kompakt ohne großen Kopfbereich">
+                <span class="ppi-layout-mode-mini ppi-layout-mode-mini-gallery" aria-hidden="true"><i class="ppi-layout-mode-heading"></i><i class="ppi-layout-mode-tiles"><b></b><b></b><b></b><b></b><b></b><b></b></i></span>
+                <span>Galerie</span>
+              </button>
+            </div>
+            <input type="hidden" id="ppi-start-page-layout" value="hero">
+          </fieldset>
+          <fieldset class="ppi-startpage-effect-picker">
+            <legend>Design-Effekt</legend>
+            <p>Wähle zwischen Dezent, Glas und Glanz-Glas. Alle Varianten behalten die Schriftkontur und die dezenten Schatten.</p>
+            <div class="ppi-startpage-effect-options" role="group" aria-label="Design-Effekt wählen">
+              <button type="button" data-startpage-effect="subtle" aria-pressed="true">
+                <span class="ppi-effect-mini ppi-effect-mini-subtle" aria-hidden="true"><i>360°</i></span>
+                <span>Dezent</span>
+              </button>
+              <button type="button" data-startpage-effect="glass" aria-pressed="false">
+                <span class="ppi-effect-mini ppi-effect-mini-glass" aria-hidden="true"><i>360°</i></span>
+                <span>Glas</span>
+              </button>
+              <button type="button" data-startpage-effect="glossy" aria-pressed="false">
+                <span class="ppi-effect-mini ppi-effect-mini-glossy" aria-hidden="true"><i>360°</i></span>
+                <span>Glanz-Glas</span>
+              </button>
+            </div>
+            <input type="hidden" id="ppi-start-page-effect" value="subtle">
+          </fieldset>
+          <fieldset class="ppi-startpage-layout-presets">
+            <legend>Tour-Kacheln anordnen</legend>
+            <p>Klicke auf eine Anordnung. Die Vorschau passt sich sofort an.</p>
+            <div id="ppi-start-page-tile-presets" class="ppi-startpage-layout-presets-grid" role="group" aria-label="Kachelanordnung auswählen">
+              <button type="button" class="ppi-startpage-layout-preset" data-columns="auto" aria-pressed="true" title="Automatisch: quadratisches Mosaik mit unterschiedlich großen Kacheln">
+                <span class="ppi-layout-mini ppi-layout-mini-auto" aria-hidden="true"><i></i><i></i><i></i></span><span>Automatisch</span>
+              </button>
+              <button type="button" class="ppi-startpage-layout-preset" data-columns="2" aria-pressed="false" title="Zwei Kacheln pro Reihe">
+                <span class="ppi-layout-mini ppi-layout-mini-2" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span>2 Spalten</span>
+              </button>
+              <button type="button" class="ppi-startpage-layout-preset" data-columns="3" aria-pressed="false" title="Drei Kacheln pro Reihe">
+                <span class="ppi-layout-mini ppi-layout-mini-3" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span><span>3 Spalten</span>
+              </button>
+              <button type="button" class="ppi-startpage-layout-preset" data-columns="4" aria-pressed="false" title="Vier Kacheln pro Reihe">
+                <span class="ppi-layout-mini ppi-layout-mini-4" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span>4 Spalten</span>
+              </button>
+              <button type="button" class="ppi-startpage-layout-preset" data-columns="5" aria-pressed="false" title="Fünf Kacheln pro Reihe">
+                <span class="ppi-layout-mini ppi-layout-mini-5" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span>5 Spalten</span>
+              </button>
+            </div>
+            <input id="ppi-start-page-tile-columns" type="hidden" value="auto">
+          </fieldset>
+          <div class="ppi-startpage-color-controls" aria-label="Farben der Startseite">
+            <label id="ppi-start-page-header-color-row" hidden><span>Kopfbereich-Farbe (ohne Hintergrundbild)</span><input id="ppi-start-page-header-color" type="color" value="#000000"></label>
+            <label id="ppi-start-page-background-color-row"><span>Hintergrundfarbe (Tourenbereich)</span><input id="ppi-start-page-background-color" type="color" value="#000000"></label>
+            <label><span>Überschriftenfarbe</span><input id="ppi-start-page-heading-color" type="color" value="#ffffff"></label>
+            <label><span>Beschreibungsfarbe</span><input id="ppi-start-page-description-color" type="color" value="#ffffff"></label>
+          </div>
+          <fieldset class="ppi-startpage-background-picker">
+            <legend>Hintergrundbild aus Nextcloud-Dateien</legend>
+            <p>Wähle ein JPEG aus deinen Dateien. Die Vorschau lädt nur eine optimierte Nextcloud-Vorschau statt des großen Originals. Neue Bilder kannst du vorher in Nextcloud „Dateien“ hochladen.</p>
+            <div class="ppi-startpage-bg-toolbar">
+              <button type="button" id="ppi-start-page-bg-browse">Bilder auswählen</button>
+              <button type="button" id="ppi-start-page-bg-remove">Hintergrundbild entfernen</button>
+            </div>
+            <p id="ppi-start-page-bg-selected">Kein Bild ausgewählt</p>
+            <div id="ppi-start-page-bg-browser" class="ppi-startpage-bg-overlay" hidden>
+              <div class="ppi-startpage-bg-dialog" role="dialog" aria-modal="true" aria-labelledby="ppi-startpage-bg-dialog-title" tabindex="-1">
+                <div class="ppi-startpage-bg-dialog-heading">
+                  <h4 id="ppi-startpage-bg-dialog-title">Hintergrundbild auswählen</h4>
+                  <button type="button" id="ppi-start-page-bg-close" aria-label="Bildauswahl schließen" title="Schließen">✕</button>
+                </div>
+                <div class="ppi-startpage-bg-toolbar">
+                  <button type="button" id="ppi-start-page-bg-up">← Übergeordneter Ordner</button>
+                  <span id="ppi-start-page-bg-path">/</span>
+                </div>
+                <div id="ppi-start-page-bg-files" class="ppi-startpage-bg-files"></div>
+              </div>
+            </div>
+          </fieldset>
+        </section>
+        <section class="ppi-startpage-editor-panel" data-startpage-panel="tours" hidden>
+          <h3>Touren auswählen</h3>
+          <p>Wähle Touren aus und ziehe sie am Griff ☰ per Drag-and-drop in deine gewünschte Reihenfolge. Mit ↑ und ↓ kannst du die Reihenfolge auch ohne Maus ändern. Die Anordnung der Kacheln legst du unter „Layout“ fest.</p>
+          <fieldset><legend>Eigene Touren</legend><div id="ppi-start-page-tours"></div></fieldset>
+        </section>
+        <section class="ppi-startpage-editor-panel" data-startpage-panel="share" hidden>
+          <div class="ppi-share-help-top">
+            <h3>Freigabe</h3>
+            <details class="ppi-share-help-disclosure">
+              <summary aria-label="Hilfe zur Startseiten-Freigabe öffnen">ⓘ Hilfe zur Freigabe</summary>
+              <div class="ppi-share-help-page">
+                <h4>So funktioniert die Freigabe deiner Startseite</h4>
+                <p>Mit dem Startseiten-Link teilst du eine Auswahl deiner bereits freigegebenen 360°-Touren. Startseiten und Touren haben eigenständige Freigaben. Alle Einstellungen in diesem Bereich gelten für diese Startseite.</p>
+                <h5>1. Link erstellen und verwalten</h5>
+                <p>Mit <strong>Freigabeeinstellungen speichern</strong> erstellst oder aktualisierst du den öffentlichen Startseiten-Link. <strong>Link kopieren</strong> übernimmt ihn zum Weitergeben. Über <strong>Freigabelink deaktivieren</strong> sperrst du den Zugriff auf diese Startseite, ohne die Startseite selbst zu löschen.</p>
+                <h5>2. Passwort der Startseite</h5>
+                <p>Trage ein Passwort ein und speichere die Freigabeeinstellungen. Besucher müssen es beim Öffnen der Startseite eingeben. Ein leeres Passwortfeld lässt ein bereits gesetztes Passwort unverändert. Mit <strong>Passwort entfernen</strong> entfernst du den Passwortschutz der Startseite.</p>
+                <h5>3. Ablaufdatum</h5>
+                <p>Das Ablaufdatum bezeichnet den Beginn des Tages, an dem der Link nicht mehr zugänglich ist: 00:00 Uhr in deiner Nextcloud-Zeitzone. Ab diesem Zeitpunkt kann die öffentliche Startseite nicht mehr geöffnet werden. Ohne Ablaufdatum bleibt der Link gültig, bis du ihn deaktivierst oder die Freigabe anderweitig endet.</p>
+                <h5>4. Passwortschutz eingebundener Touren</h5>
+                <ul>
+                  <li><strong>Tour-Passwörter beibehalten:</strong> Jede geschützte Tour verlangt weiterhin ihr eigenes Passwort (empfohlen).</li>
+                  <li><strong>Alle eingebundenen Touren freischalten:</strong> Nach erfolgreicher Anmeldung an der passwortgeschützten Startseite können dort eingebundene, berechtigte Touren ohne zusätzliche Passworteingabe geöffnet werden.</li>
+                  <li><strong>Touren einzeln auswählen:</strong> Nur die markierten Touren dürfen über diese passwortgeschützte Startseite ohne erneute Passworteingabe geöffnet werden.</li>
+                </ul>
+                <p>Die Freischaltung setzt eine gültige passwortgeschützte Startseite voraus. Tour-Passwörter werden nicht entfernt oder geändert. <strong>Direkte Tour-Links</strong> behalten ihren eigenen Passwortschutz. Deaktivierte oder abgelaufene Tour-Freigaben werden durch die Startseite nicht wieder aktiviert.</p>
+                <h5>5. Änderungen und bereits geöffnete Seiten</h5>
+                <p>Nach einer Passwortänderung oder Deaktivierung müssen neue Anfragen erneut berechtigt sein. Inhalte, die ein Browser zuvor bereits geladen hat, können dadurch nicht nachträglich aus seinem Speicher entfernt werden. Teste Änderungen am besten in einem neuen privaten Browserfenster.</p>
+                <p class="ppi-share-help-tip"><strong>Tipp:</strong> Verwende für jede Startseite bewusst gewählte Freigaberegeln. Die sichere Standardeinstellung lautet „Tour-Passwörter beibehalten“.</p>
+              </div>
+            </details>
+          </div>
+          <p class="ppi-startpage-private-note">Ein eigener Startseiten-Link kann optional mit Passwort und Ablaufdatum geschützt werden. Touren behalten ihre bisherigen Freigaberegeln. Nur bereits freigegebene Touren erscheinen für Besucher.</p>
+          <div class="ppi-startpage-share-field-row">
+            <label for="ppi-start-page-share-expiry">Ablaufdatum (optional, 00:00 Uhr)</label>
+            <div class="ppi-startpage-share-inline">
+              <input type="date" id="ppi-start-page-share-expiry">
+              <button type="button" id="ppi-start-page-share-enable">Freigabeeinstellungen speichern</button>
+            </div>
+            <small class="ppi-startpage-share-helptext">Ablauf um 00:00 Uhr am gewählten Datum in deiner Nextcloud-Zeitzone.</small>
+          </div>
+          <div class="ppi-startpage-share-field-row">
+            <label for="ppi-start-page-share-password">Startseiten-Passwort (optional, leer lassen zum Beibehalten)</label>
+            <div class="ppi-startpage-share-inline ppi-startpage-share-password-row">
+              <input type="password" id="ppi-start-page-share-password" maxlength="128" autocomplete="new-password" placeholder="Passwort nach Nextcloud-Richtlinie">
+              <button type="button" id="ppi-start-page-share-password-apply">Passwort setzen / ändern</button>
+              <button type="button" id="ppi-start-page-share-remove-password">Passwort entfernen</button>
+            </div>
+            <small class="ppi-startpage-share-helptext">Leeres Feld: bestehendes Passwort bleibt erhalten. Passwortänderungen sperren bisherige Besuchersitzungen.</small>
+          </div>
+          <fieldset class="ppi-startpage-tour-security">
+            <legend>Passwortschutz eingebundener Touren</legend>
+            <!-- PPI DYNAMIC STARTPAGE PASSWORD DESCRIPTION 2026-11-24 -->
+            <p id="ppi-start-page-tour-password-description" aria-live="polite">Jede Tour behält ihren eigenen Passwortschutz. Geschützte Touren verlangen beim Öffnen ihr eigenes Tour-Passwort. Direkte Tour-Links bleiben unverändert geschützt.</p>
+            <label for="ppi-start-page-tour-password-mode">Tour-Passwortregel</label>
+            <select id="ppi-start-page-tour-password-mode">
+              <option value="keep">Tour-Passwörter beibehalten (empfohlen)</option>
+              <option value="all">Alle eingebundenen Touren nach Startseiten-Anmeldung freischalten</option>
+              <option value="selected">Touren einzeln auswählen</option>
+            </select>
+            <div id="ppi-start-page-tour-password-selection" hidden>
+              <p>Nur ausgewählte Touren können über diese Startseite ohne eigene Passworteingabe geöffnet werden.</p>
+              <div id="ppi-start-page-tour-password-list"></div>
+            </div>
+            <p id="ppi-start-page-tour-password-notice" role="status"></p>
+          </fieldset>
+          <!-- PPI PROTECTED TOUR TILE VISIBILITY 2026-11-24 -->
+          <div class="ppi-startpage-protected-visibility" style="margin:14px 0 16px">
+            <label for="ppi-start-page-show-locked-tours" style="display:flex;align-items:center;gap:12px;cursor:pointer">
+              <input type="checkbox" id="ppi-start-page-show-locked-tours" checked
+                style="width:18px;min-width:18px;height:18px;flex:0 0 18px;margin:0">
+              <span>Passwortgeschützte Touren anzeigen</span>
+            </label>
+            <p style="margin:5px 0 0 30px;font-size:.9em;opacity:.85">Aus: Touren mit weiterhin erforderlichem eigenem Passwort werden auf der öffentlichen Startseite ausgeblendet. Bereits über die Startseite freigeschaltete Touren bleiben sichtbar.</p>
+            <small id="ppi-start-page-show-locked-status" role="status" style="display:block;margin:6px 0 0 30px"></small>
+          </div>
+          <p id="ppi-start-page-share-status">Noch kein Freigabelink erstellt</p>
+          <div class="ppi-startpage-bg-toolbar ppi-startpage-share-actions">
+            <button type="button" id="ppi-start-page-share-disable">Freigabelink deaktivieren</button>
+          </div>
+          <label>Startseiten-Link <input type="text" id="ppi-start-page-share-url" readonly></label>
+          <div class="ppi-startpage-bg-toolbar">
+            <button type="button" id="ppi-start-page-share-copy">Link kopieren</button>
+            <button type="button" id="ppi-start-page-share-open">Startseite im neuen Tab öffnen</button>
+            <button type="button" id="ppi-start-page-main-rotate">Token erneuern</button>
+          </div>
+          <!-- PPI STARTPAGE MULTISHARE V1 2026-11-24 -->
+          <section class="ppi-tour-share-box ppi-startpage-extra-links" aria-label="Zusätzliche Freigabelinks">
+            <div class="ppi-share-heading">
+              <strong>Weitere Freigabelinks</strong>
+              <span>Unabhängige Links pro Startseite</span>
+            </div>
+            <p>Erstelle zusätzliche Links mit eigener Bezeichnung, Ablaufdatum (00:00 Uhr in deiner Nextcloud-Zeitzone) und eigenem Passwort. Bestehende Links bleiben unverändert.</p>
+            <div class="ppi-extra-create">
+              <label>Bezeichnung<input type="text" id="ppi-startpage-extra-name" maxlength="60" placeholder="z. B. Freunde, Familie oder Verein"></label>
+              <label>Ablaufdatum (optional, 00:00 Uhr)<input type="date" id="ppi-startpage-extra-expiry"></label>
+              <label>Passwort (optional)<input type="password" id="ppi-startpage-extra-password" maxlength="128" autocomplete="new-password" placeholder="Nach Nextcloud-Richtlinie"></label>
+              <button type="button" id="ppi-startpage-extra-create">+ Weiteren Link erstellen</button>
+            </div>
+            <div id="ppi-startpage-extra-status" role="status" aria-live="polite"></div>
+            <div id="ppi-startpage-extra-list" class="ppi-extra-list" aria-live="polite"></div>
+          </section>
+        </section>
+      </div>
+      <aside class="ppi-startpage-preview-column" aria-label="Live-Vorschau der Startseite">
+        <div class="ppi-preset-preview-save" hidden><button type="button" id="ppi-startpage-preset-save">＋ Vorlage speichern</button></div>
+        <div class="ppi-startpage-preview-heading">
+          <h3>Live-Vorschau</h3>
+          <span id="ppi-startpage-dirty" role="status">Gespeicherter Stand</span>
+        </div>
+        <div id="ppi-startpage-preview" class="ppi-startpage-live-preview" data-layout="hero">
+          <div class="ppi-startpage-preview-hero">
+            <div class="ppi-startpage-preview-header">
+              <h2 id="ppi-startpage-preview-title"></h2>
+              <p id="ppi-startpage-preview-description"></p>
+            </div>
+          </div>
+          <div class="ppi-startpage-preview-grid-container"><div id="ppi-startpage-preview-grid" class="ppi-startpage-preview-grid"></div></div>
+        </div>
+        <p class="ppi-startpage-preview-note">Die Vorschau reagiert sofort. Erst „Änderungen speichern“ übernimmt deine Einstellungen dauerhaft. Tour-Kacheln sind hier noch nicht öffentlich anklickbar.</p>
+      </aside>
+    </div>
+  </section>
   <section class="ppi-tour-card" id="ppi-tour-overview">
     <h2>Meine Touren</h2>
     <div id="ppi-tour-list" class="ppi-tour-list"></div>
@@ -149,7 +425,7 @@
         <button type="button" id="ppi-share-enable">Öffentlichen Link erstellen</button>
         <button type="button" id="ppi-share-disable" hidden>Hauptlink deaktivieren</button>
       </div>
-      <div class="ppi-share-expiry-row"><label for="ppi-share-expiry">Ablaufdatum (optional)</label><input type="date" id="ppi-share-expiry" aria-label="Ablaufdatum der öffentlichen Freigabe"/><button type="button" id="ppi-share-expiry-save" hidden>Ablaufdatum speichern</button><span class="ppi-share-expiry-hint">Ohne Datum bleibt der Link gültig, bis du ihn deaktivierst.</span></div>
+      <div class="ppi-share-expiry-row"><label for="ppi-share-expiry">Ablaufdatum (optional, 00:00 Uhr)</label><input type="date" id="ppi-share-expiry" aria-label="Ablaufdatum der öffentlichen Freigabe"/><button type="button" id="ppi-share-expiry-save" hidden>Ablaufdatum speichern</button><span class="ppi-share-expiry-hint">Ablauf am gewählten Datum um 00:00 Uhr in deiner Nextcloud-Zeitzone. Ohne Datum bleibt der Link gültig, bis du ihn deaktivierst.</span></div>
       <div class="ppi-share-password-row">
         <label for="ppi-share-password">Passwortschutz (optional)</label>
         <span id="ppi-share-password-state">Kein Passwort eingerichtet</span>
@@ -173,10 +449,10 @@
     </section>
     <section class="ppi-tour-share-box" aria-label="Zusätzliche Freigabelinks">
       <div class="ppi-share-heading"><strong>Weitere Freigabelinks</strong><span>Unabhängige Links pro Tour</span></div>
-      <p>Erstelle zusätzliche Links mit eigener Bezeichnung, Ablaufdatum und eigenem Passwort. Bestehende Links bleiben unverändert.</p>
+      <p>Erstelle zusätzliche Links mit eigener Bezeichnung, Ablaufdatum (00:00 Uhr in deiner Nextcloud-Zeitzone) und eigenem Passwort. Bestehende Links bleiben unverändert.</p>
       <div class="ppi-extra-create">
         <label>Bezeichnung<input type="text" id="ppi-extra-name" maxlength="60" placeholder="z. B. Freunde, Familie oder Verein"></label>
-        <label>Ablaufdatum (optional)<input type="date" id="ppi-extra-expiry"></label>
+        <label>Ablaufdatum (optional, 00:00 Uhr)<input type="date" id="ppi-extra-expiry"></label>
         <label>Passwort (optional)<input type="password" id="ppi-extra-password" maxlength="128" autocomplete="new-password" placeholder="Nach Nextcloud-Richtlinie"></label>
         <button type="button" id="ppi-extra-create">+ Weiteren Link erstellen</button>
       </div>
@@ -283,6 +559,112 @@
 #ppi-tours-app .ppi-tour-edge-delete{position:absolute;transform:translate(-50%,-50%);z-index:10;border-radius:50%!important;padding:0!important;width:25px;height:25px;min-height:25px;background:var(--color-main-background)!important;color:#bd3434!important;border:1px solid #bd3434!important;line-height:20px;font-size:18px!important;box-shadow:0 2px 6px #0005}
 #ppi-tours-app .ppi-tour-edge-delete:hover{background:#bd3434!important;color:#fff!important}
 
+/* Private start page management: same visual language as the existing tour cards. */
+#ppi-tours-app .ppi-startpage-switch{display:flex;gap:8px;margin:0 0 14px;flex-wrap:wrap}
+#ppi-tours-app .ppi-startpage-switch button{flex:1;min-width:150px;border:1px solid var(--color-border);border-radius:10px;padding:12px!important;background:var(--color-main-background);color:var(--color-main-text)}
+#ppi-tours-app .ppi-startpage-switch button[aria-pressed="true"]{border:2px solid var(--color-primary-element);background:var(--color-primary-element-light);font-weight:700}
+#ppi-tours-app .ppi-start-page-toolbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+#ppi-tours-app .ppi-start-page-fields{display:grid;gap:15px;max-width:760px;margin-top:15px}
+#ppi-tours-app .ppi-start-page-fields label{display:grid;gap:6px;font-weight:600}
+#ppi-tours-app .ppi-start-page-fields input,#ppi-tours-app .ppi-start-page-fields select,#ppi-tours-app .ppi-start-page-fields textarea{width:100%;box-sizing:border-box}
+#ppi-tours-app .ppi-startpage-tour-option{display:flex;align-items:center;gap:10px;padding:8px;border-bottom:1px solid var(--color-border)}
+#ppi-tours-app .ppi-startpage-tour-option input{width:auto}
+#ppi-tours-app .ppi-startpage-private-note{padding:12px;border:1px solid var(--color-border);border-radius:10px;background:var(--color-background-hover);margin-top:15px}
+/* 0.4.62.103: Accessible four-step editor with immediate private tour tile preview. */
+#ppi-tours-app .ppi-startpage-editor-tabs{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:7px;margin:15px 0;padding:0}
+#ppi-tours-app .ppi-startpage-editor-tabs button{white-space:normal;min-height:46px;border:1px solid var(--color-border);border-radius:9px;background:var(--color-main-background);color:var(--color-main-text);font-weight:600;padding:8px!important}
+#ppi-tours-app .ppi-startpage-editor-tabs button[aria-current="step"]{border:2px solid var(--color-primary-element);background:var(--color-primary-element-light);font-weight:750}
+#ppi-tours-app .ppi-startpage-editor-tabs button:focus-visible{outline:3px solid var(--color-primary-element);outline-offset:2px}
+#ppi-tours-app .ppi-startpage-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:18px;align-items:start}
+#ppi-tours-app .ppi-start-page-fields{display:block;min-width:0;margin-top:0}
+#ppi-tours-app .ppi-startpage-editor-panel{display:grid;gap:14px;min-width:0}
+#ppi-tours-app .ppi-startpage-editor-panel[hidden]{display:none!important}
+#ppi-tours-app .ppi-startpage-editor-panel h3{margin:0}
+#ppi-tours-app .ppi-startpage-editor-panel label{display:grid;gap:7px}
+#ppi-tours-app .ppi-startpage-editor-panel input[type="color"]{height:44px;width:85px;padding:3px;cursor:pointer}
+#ppi-tours-app .ppi-startpage-preview-column{min-width:0;position:sticky;top:12px}
+#ppi-tours-app .ppi-startpage-preview-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+#ppi-tours-app .ppi-startpage-preview-heading h3{margin:0 0 10px}
+#ppi-tours-app #ppi-startpage-dirty{font-size:12px;color:var(--color-text-maxcontrast)}
+#ppi-tours-app .ppi-startpage-live-preview{--ppi-startpage-bg:#1d3849;--ppi-startpage-heading:#ffffff;box-sizing:border-box;min-height:330px;overflow:hidden;border-radius:13px;padding:20px 14px 25px;background:var(--ppi-startpage-bg);color:#f4f7fb;border:1px solid rgba(255,255,255,.22);box-shadow:0 6px 21px #0003}
+#ppi-tours-app .ppi-startpage-preview-header{text-align:center;padding:22px 6px}
+#ppi-tours-app .ppi-startpage-preview-header h2{color:var(--ppi-startpage-heading)!important;font-size:clamp(18px,2vw,29px);overflow-wrap:anywhere;margin:0 0 10px}
+#ppi-tours-app .ppi-startpage-preview-header p{color:#f4f7fb!important;font-size:13px;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.5}
+#ppi-tours-app .ppi-startpage-preview-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#ppi-tours-app .ppi-startpage-preview-tile{min-width:0;overflow:hidden;border-radius:9px;background:#ffffff;color:#1d2732;box-shadow:0 5px 14px #0004}
+#ppi-tours-app .ppi-startpage-preview-tile img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:#213848}
+#ppi-tours-app .ppi-startpage-preview-tile strong{display:block;font-size:12px;padding:9px;overflow-wrap:anywhere}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"]{padding:0 0 18px}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-header{padding:35px 12px;background:#0003}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-grid{margin:15px 14px 0}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"]{background:var(--color-main-background);color:var(--color-main-text)}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-header h2{color:var(--color-main-text)!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-header p{color:var(--color-main-text)!important}
+#ppi-tours-app .ppi-startpage-preview-empty{grid-column:1/-1;color:#ffffff!important;text-align:center;font-size:13px}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-empty{color:var(--color-main-text)!important}
+#ppi-tours-app .ppi-startpage-preview-note{font-size:12px;color:var(--color-text-maxcontrast);line-height:1.5;margin:10px 0}
+@media(max-width:900px){#ppi-tours-app .ppi-startpage-workspace{grid-template-columns:1fr}#ppi-tours-app .ppi-startpage-preview-column{position:static}}
+@media(max-width:600px){#ppi-tours-app .ppi-startpage-editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}#ppi-tours-app .ppi-startpage-live-preview{min-height:270px}}
+
+/* Start page 0.4.62.104: background selection and responsive card grids. */
+#ppi-tours-app .ppi-startpage-tour-option{display:flex!important;flex-direction:row!important;align-items:center!important;gap:12px!important;cursor:pointer;border:1px solid var(--color-border);border-radius:10px;padding:9px!important;margin:0 0 9px;min-width:0}
+#ppi-tours-app .ppi-startpage-tour-option img{width:125px;height:72px;max-width:32%;object-fit:cover;border-radius:7px;flex:0 0 auto;background:var(--color-background-dark)}
+#ppi-tours-app .ppi-startpage-tour-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+#ppi-tours-app .ppi-startpage-tour-info strong{font-size:14px;overflow-wrap:anywhere}
+#ppi-tours-app .ppi-startpage-tour-info small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.4;color:var(--color-text-maxcontrast);font-size:12px;font-weight:400}
+#ppi-tours-app .ppi-startpage-tour-option input[type=checkbox]{width:20px!important;height:20px!important;flex:0 0 20px}
+#ppi-tours-app .ppi-startpage-bg-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+#ppi-tours-app .ppi-startpage-bg-toolbar button{min-height:36px}
+#ppi-tours-app #ppi-start-page-bg-browser{max-height:300px;overflow:auto;border:1px solid var(--color-border);padding:8px;border-radius:9px}
+#ppi-tours-app #ppi-start-page-bg-browser[hidden]{display:none!important}
+#ppi-tours-app .ppi-startpage-bg-files{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+#ppi-tours-app .ppi-startpage-bg-files button{display:flex;flex-direction:column;gap:5px;min-width:0;padding:7px;border:1px solid var(--color-border);border-radius:8px;overflow-wrap:anywhere;background:var(--color-main-background);font-size:12px}
+#ppi-tours-app .ppi-startpage-bg-files img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:5px}
+#ppi-tours-app .ppi-startpage-live-preview{background-image:linear-gradient(#0006,#0006),var(--ppi-startpage-image,none);background-size:cover;background-position:center}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"] .ppi-startpage-preview-tile:only-child{grid-column:1/-1}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(3):last-child) .ppi-startpage-preview-tile:first-child{grid-column:1/-1}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"]{grid-template-columns:repeat(2,minmax(0,1fr))}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"]{grid-template-columns:repeat(5,minmax(0,1fr))}
+#ppi-tours-app .ppi-startpage-preview-tile small{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding:0 9px 9px;font-size:11px;line-height:1.4;color:#52606e}
+@media(max-width:600px){#ppi-tours-app .ppi-startpage-preview-grid[data-cols]{grid-template-columns:repeat(2,minmax(0,1fr))}#ppi-tours-app .ppi-startpage-tour-option img{width:90px;height:60px}}
+@media(max-width:420px){#ppi-tours-app .ppi-startpage-preview-grid[data-cols]{grid-template-columns:1fr}#ppi-tours-app .ppi-startpage-preview-grid .ppi-startpage-preview-tile{grid-column:auto!important}}
+
+
+/* 0.4.62.105: fast illustrated layout choice, preview cards and true split header */
+#ppi-tours-app .ppi-startpage-layout-presets{min-width:0;border:1px solid var(--color-border);border-radius:10px;padding:11px}
+#ppi-tours-app .ppi-startpage-layout-presets-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(102px,1fr));gap:8px}
+#ppi-tours-app .ppi-startpage-layout-preset{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:88px;padding:9px 5px!important;border:2px solid var(--color-border)!important;background:var(--color-main-background)!important;color:var(--color-main-text)!important;border-radius:10px;cursor:pointer}
+#ppi-tours-app .ppi-startpage-layout-preset[aria-pressed="true"]{border-color:var(--color-primary-element)!important;background:var(--color-primary-element-light)!important;box-shadow:0 0 0 1px var(--color-primary-element)}
+#ppi-tours-app .ppi-startpage-layout-preset:focus-visible{outline:3px solid var(--color-primary-element);outline-offset:2px}
+#ppi-tours-app .ppi-startpage-layout-preset>span:last-child{font-size:12px;font-weight:650}
+#ppi-tours-app .ppi-layout-mini{display:grid;gap:3px;width:66px;height:36px;grid-template-columns:repeat(2,1fr);grid-auto-rows:1fr}
+#ppi-tours-app .ppi-layout-mini i{min-width:0;min-height:0;border-radius:2px;background:var(--color-primary-element,#1768a1);opacity:.8}
+#ppi-tours-app .ppi-layout-mini-auto i:first-child{grid-column:1/-1}
+#ppi-tours-app .ppi-layout-mini-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+#ppi-tours-app .ppi-layout-mini-4{grid-template-columns:repeat(4,minmax(0,1fr))}
+#ppi-tours-app .ppi-layout-mini-5{grid-template-columns:repeat(5,minmax(0,1fr))}
+#ppi-tours-app .ppi-startpage-preview-header p{color:var(--ppi-startpage-description,#ffffff)!important}
+#ppi-tours-app .ppi-startpage-preview-tile{border:3px solid #fff!important;border-radius:11px!important;box-shadow:0 7px 22px rgba(0,0,0,.65)!important;background:#fff!important;color:#1d2732!important}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy{padding:9px;background:#fff;color:#1d2732}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy strong{padding:0 0 5px!important;font-size:13px}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy small{padding:0!important;color:#4c5664}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"]{background-image:none!important;background-color:var(--color-main-background)!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-header{background-image:linear-gradient(#0006,#0006),var(--ppi-startpage-image,none);background-color:var(--ppi-startpage-bg);background-size:cover;background-position:center;min-height:140px}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-grid{margin:15px 14px 0}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-header p{color:var(--color-main-text)!important}
+#ppi-tours-app #ppi-start-pages-list.ppi-startpages-single{display:grid!important;grid-template-columns:1fr!important}
+#ppi-tours-app #ppi-start-pages-list.ppi-startpages-single>.ppi-overview-tile{grid-column:1/-1;width:100%;max-width:none}
+#ppi-tours-app #ppi-start-pages-list.ppi-startpages-double{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px}
+#ppi-tours-app #ppi-start-pages-list.ppi-startpages-multi{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:16px}
+#ppi-tours-app #ppi-start-pages-list.ppi-startpages-multi>.ppi-overview-tile:first-child:nth-last-child(3){grid-column:1/-1}
+#ppi-tours-app .ppi-startpage-overview-cover{display:block!important;position:relative;min-height:150px;background:#172331 linear-gradient(140deg,#12161e,#34465b);background-position:center;background-size:cover;border-radius:8px 8px 0 0}
+#ppi-tours-app .ppi-startpage-overview-cover .ppi-overview-placeholder{background:transparent!important}
+@media(min-width:1300px){#ppi-tours-app #ppi-start-pages-list.ppi-startpages-multi:not(:has(>.ppi-overview-tile:nth-child(3):last-child)){grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(max-width:620px){#ppi-tours-app #ppi-start-pages-list.ppi-startpages-double,#ppi-tours-app #ppi-start-pages-list.ppi-startpages-multi{grid-template-columns:1fr!important}#ppi-tours-app #ppi-start-pages-list .ppi-overview-tile{grid-column:1/-1!important}}
+
 /* Contrast remains correct over custom Nextcloud background images, in light and dark themes. */
 #ppi-tours-app .ppi-tour-intro{padding:18px 20px 14px;border:1px solid var(--color-border);border-radius:14px;background:var(--color-main-background);color:var(--color-main-text);margin-bottom:14px;box-shadow:0 2px 12px rgba(0,0,0,.10)}
 #ppi-tours-app .ppi-tour-intro h1{color:var(--color-main-text);line-height:1.25}
@@ -354,22 +736,16 @@
  #ppi-tours-app .ppi-picker-filters{display:flex;align-items:end;flex-wrap:wrap;gap:8px;margin:4px 0 14px}
  #ppi-tours-app .ppi-picker-filters>label{display:flex;flex:1 1 135px;min-width:120px;flex-direction:column;gap:4px;font-size:12px;line-height:16px}
  #ppi-tours-app .ppi-picker-filters .ppi-picker-filter-search{flex:2 1 300px;min-width:220px;width:auto}
- #ppi-tours-app .ppi-picker-search-combined{display:flex;flex-direction:column;gap:4px;margin-bottom:4px;align-self:auto}
+ #ppi-tours-app .ppi-picker-search-combined{display:flex;flex-direction:column;gap:4px;margin-bottom:4px;align-self:flex-end}
  #ppi-tours-app .ppi-picker-search-labels{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;column-gap:8px;min-height:16px;height:16px;box-sizing:border-box}
  #ppi-tours-app .ppi-picker-filters .ppi-picker-search-labels>label{display:block;flex:none;min-width:0;width:auto;margin:0;padding:0;font-size:12px;line-height:16px;white-space:nowrap}
- #ppi-tours-app #ppi-picker-search-mode-label{font-size:11px;color:#7D7D7D;max-width:165px;overflow:hidden;text-overflow:ellipsis;text-align:right;cursor:pointer}
- #ppi-tours-app .ppi-picker-search-control{display:flex;align-items:stretch;min-width:0;width:100%;height:38px;min-height:38px;max-height:38px;box-sizing:border-box;border:2px solid #7D7D7D;border-radius:10px;overflow:hidden;background:var(--color-main-background);outline:none;box-shadow:none}
- #ppi-tours-app .ppi-picker-filters #ppi-picker-search{flex:1 1 auto;min-width:0;width:0;height:100%!important;min-height:0!important;max-height:none!important;box-sizing:border-box;margin:0!important;border:0!important;border-radius:0!important;background:transparent!important;outline:none!important;box-shadow:none!important;font-size:14px;line-height:normal;padding:0 10px!important;appearance:none!important;-webkit-appearance:none!important}
- #ppi-tours-app .ppi-picker-search-control #ppi-picker-search:focus,#ppi-tours-app .ppi-picker-search-control #ppi-picker-search:focus-visible{outline:none!important;box-shadow:none!important;border:0!important}
-  /* On hover or keyboard focus use the active color; keep it when a tag remains selected. */
- #ppi-tours-app .ppi-picker-search-control:hover,#ppi-tours-app .ppi-picker-search-control:focus-within,#ppi-tours-app .ppi-picker-search-control.ppi-has-selected-tag{border-color:#222222;outline:none;box-shadow:none}
- #ppi-tours-app .ppi-picker-search-combined:hover #ppi-picker-search-mode-label,#ppi-tours-app .ppi-picker-search-combined:focus-within #ppi-picker-search-mode-label,#ppi-tours-app .ppi-picker-search-combined.ppi-has-selected-tag #ppi-picker-search-mode-label{color:#222222}
- #ppi-tours-app .ppi-picker-tag-wrap{display:flex;align-items:stretch;flex:0 1 43%;min-width:105px;max-width:43%;border-left:1px solid #7D7D7D}
- #ppi-tours-app .ppi-picker-tag-wrap[hidden]{display:none!important}
- #ppi-tours-app .ppi-picker-filters #ppi-picker-tag{display:block;height:100%!important;min-height:0!important;max-height:100%!important;width:100%;margin:0!important;border:0!important;border-radius:0!important;background:var(--color-main-background);outline:none!important;box-shadow:none!important;font-size:12px;line-height:normal;padding:0 6px!important;color:#7D7D7D;cursor:pointer}
-  #ppi-tours-app .ppi-picker-tag-wrap:hover #ppi-picker-tag,#ppi-tours-app .ppi-picker-tag-wrap:focus-within #ppi-picker-tag,#ppi-tours-app .ppi-picker-tag-wrap.ppi-tag-active #ppi-picker-tag{color:#222222!important}
- #ppi-tours-app .ppi-picker-filters #ppi-picker-tag:focus,#ppi-tours-app .ppi-picker-filters #ppi-picker-tag:focus-visible{outline:none!important;box-shadow:none!important}
- #ppi-tours-app .ppi-picker-search-mode-wrap{position:relative;flex:0 0 36px;width:36px;border-left:1px solid var(--color-border);background:var(--color-main-background)}
+ #ppi-tours-app #ppi-picker-search-mode-label{font-size:11px;color:var(--color-text-maxcontrast);max-width:165px;overflow:hidden;text-overflow:ellipsis;text-align:right;cursor:pointer}
+ #ppi-tours-app .ppi-picker-search-control{display:flex;align-items:stretch;min-width:0;width:100%;height:38px;min-height:38px;max-height:38px;box-sizing:border-box;border:1px solid color-mix(in srgb, var(--color-main-text) 55%, var(--color-main-background));border-radius:7px;overflow:hidden;background:var(--color-main-background)}
+ #ppi-tours-app .ppi-picker-filters .ppi-picker-search-control input{flex:1 1 auto;min-width:0;width:0;height:36px!important;min-height:36px!important;max-height:36px!important;box-sizing:border-box;margin:0!important;border:0!important;border-radius:0!important;background:transparent;box-shadow:none!important;font-size:14px;line-height:36px;padding:0 10px!important;appearance:none}
+ #ppi-tours-app .ppi-picker-search-control input:focus{outline:0;box-shadow:none}
+ #ppi-tours-app .ppi-picker-search-control:focus-within{outline:2px solid var(--color-primary-element);outline-offset:1px}
+ #ppi-tours-app .ppi-picker-search-control:hover{border-color:color-mix(in srgb, var(--color-main-text) 75%, var(--color-main-background))}
+ #ppi-tours-app .ppi-picker-search-mode-wrap{position:relative;flex:0 0 36px;width:36px;border-left:1px solid color-mix(in srgb, var(--color-main-text) 28%, var(--color-main-background));background:var(--color-main-background)}
  #ppi-tours-app .ppi-picker-filters .ppi-picker-search-mode-wrap select{position:absolute;inset:0;width:100%;height:100%;min-height:0;opacity:0;cursor:pointer;z-index:2}
  #ppi-tours-app .ppi-picker-search-chevron{display:flex;align-items:center;justify-content:center;position:absolute;inset:0;pointer-events:none;font-size:0;color:var(--color-main-text)}
  #ppi-tours-app .ppi-picker-search-chevron::after{content:'';display:block;width:0;height:0;border-left:4px solid transparent;border-right:4px solid transparent;border-top:5px solid currentColor}
@@ -379,7 +755,7 @@
  #ppi-tours-app #ppi-picker-results{font-size:14px;font-weight:600;line-height:1.4;color:var(--color-text-maxcontrast)}
  #ppi-tours-app #ppi-picker-limit-warning{padding:8px;background:var(--color-background-hover);border-radius:6px;font-size:13px}
  @media(max-width:620px){#ppi-tours-app .ppi-picker-filters>label{flex:1 1 45%}#ppi-tours-app .ppi-picker-filters .ppi-picker-filter-search{flex-basis:100%;min-width:0}#ppi-tours-app .ppi-picker-search-control input{font-size:14px;padding:0 8px}}
- @media(max-width:620px){#ppi-tours-app .ppi-picker-search-combined{margin-bottom:0}#ppi-tours-app .ppi-picker-tag-wrap{flex-basis:42%;max-width:42%;min-width:100px}#ppi-tours-app .ppi-picker-filter-actions .ppi-picker-switches{gap:8px 12px}#ppi-tours-app .ppi-picker-filter-actions .ppi-picker-switches .ppi-picker-inline{white-space:normal}}
+ @media(max-width:620px){#ppi-tours-app .ppi-picker-search-combined{margin-bottom:0}#ppi-tours-app .ppi-picker-filter-actions .ppi-picker-switches{gap:8px 12px}#ppi-tours-app .ppi-picker-filter-actions .ppi-picker-switches .ppi-picker-inline{white-space:normal}}
  #ppi-tours-app .ppi-picker-folder-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:8px}
  #ppi-tours-app .ppi-folder-tile{border:1px solid var(--color-border);background:var(--color-background-hover);border-radius:10px;padding:12px;text-align:left;display:flex;align-items:center;gap:10px;min-height:55px;overflow-wrap:anywhere}
  #ppi-tours-app .ppi-folder-icon{font-size:23px}
@@ -1290,4 +1666,1262 @@
 #ppi-tours-app #ppi-step-design .ppi-intro-icon-grid button:hover,#ppi-tours-app #ppi-step-design .ppi-intro-icon-grid button:focus-visible{border-color:var(--color-primary-element);outline:1px solid var(--color-primary-element)}
 #ppi-tours-app #ppi-step-design .ppi-intro-icon-grid svg{width:31px;height:24px;fill:none;stroke:currentColor;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
 #ppi-tours-app #ppi-step-design .ppi-intro-360-badge{display:inline-flex;align-items:center;justify-content:center;border:2px solid currentColor;border-radius:50%;font-weight:800;font-size:13px;letter-spacing:-.04em;width:33px;height:30px}
+
+/* 0.4.62.106: gallery background, readable preview cards, distinct header and selection depth */
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"]{
+  background-color:var(--ppi-startpage-bg,#000000)!important;
+  background-image:none!important;
+  color:#fff!important;
+  padding:12px 14px 24px!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-header{
+  padding:10px 6px 16px!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-header h2{
+  color:var(--ppi-startpage-heading,#ffffff)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-header p{
+  color:var(--ppi-startpage-description,#ffffff)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-empty{
+  color:var(--ppi-startpage-description,#ffffff)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-header{
+  position:relative;z-index:1;
+  box-shadow:0 8px 14px rgba(0,0,0,.28)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-grid{
+  position:relative;z-index:0;
+}
+#ppi-tours-app .ppi-startpage-tour-option{
+  background:linear-gradient(125deg,var(--color-background-hover,#f4f5f7),var(--color-main-background,#fff))!important;
+  box-shadow:0 3px 10px rgba(0,0,0,.12)!important;
+  transition:box-shadow .15s ease,transform .15s ease;
+}
+#ppi-tours-app .ppi-startpage-tour-option:hover,
+#ppi-tours-app .ppi-startpage-tour-option:focus-within{
+  box-shadow:0 5px 16px rgba(0,0,0,.19)!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile{
+  display:flex!important;flex-direction:column!important;
+  min-width:0;min-height:0;overflow:hidden!important;
+  border:3px solid #fff!important;
+  border-radius:10px!important;
+  box-shadow:0 5px 16px rgba(0,0,0,.42)!important;
+  background:#fff!important;
+  color:#192b37!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile > img{
+  display:block!important;flex:none!important;
+  width:100%!important;max-width:100%!important;height:auto!important;
+  aspect-ratio:16/9!important;object-fit:cover!important;
+  border-radius:6px 6px 0 0!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy{
+  display:block!important;flex:1 0 auto!important;
+  position:static!important;visibility:visible!important;
+  background:#fff!important;color:#192b37!important;
+  min-height:52px!important;padding:9px!important;
+  text-align:left!important;box-sizing:border-box!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy strong{
+  display:block!important;color:#192b37!important;
+  font-weight:700!important;font-size:13px!important;line-height:1.35!important;
+  padding:0 0 4px!important;white-space:normal!important;overflow-wrap:anywhere!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy small{
+  display:-webkit-box!important;-webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2;overflow:hidden!important;
+  color:#4e5b68!important;font-size:11px!important;line-height:1.4!important;
+  padding:0!important;white-space:normal!important;
+}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"]{grid-template-columns:repeat(3,minmax(0,1fr))}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"]{grid-template-columns:repeat(4,minmax(0,1fr))}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"]{grid-template-columns:repeat(5,minmax(0,1fr))}
+@media(max-width:800px){
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"],
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"],
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"]{
+   grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+}
+@media(max-width:420px){
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols]{grid-template-columns:1fr!important}
+}
+
+
+/* 0.4.62.108: selectable editorial / glassmorphism presets, usable on any background. */
+#ppi-tours-app .ppi-startpage-effect-picker{min-width:0;padding:12px;border:1px solid var(--color-border);border-radius:11px}
+#ppi-tours-app .ppi-startpage-effect-picker p{font-size:12px;line-height:1.5;margin:5px 0 10px;color:var(--color-text-maxcontrast)}
+#ppi-tours-app .ppi-startpage-effect-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#ppi-tours-app .ppi-startpage-effect-options button{display:flex;flex-direction:column;align-items:center;gap:7px;padding:10px!important;border:2px solid var(--color-border)!important;border-radius:11px!important;background:var(--color-main-background)!important;color:var(--color-main-text)!important;font-weight:700;min-width:0;cursor:pointer}
+#ppi-tours-app .ppi-startpage-effect-options button[aria-pressed="true"]{border-color:var(--color-primary-element)!important;box-shadow:0 0 0 1px var(--color-primary-element)}
+#ppi-tours-app .ppi-startpage-effect-options button:focus-visible{outline:3px solid var(--color-primary-element);outline-offset:3px}
+#ppi-tours-app .ppi-effect-mini{display:grid;place-items:center;width:96px;height:52px;max-width:100%;border-radius:8px;background:linear-gradient(130deg,#142335,#4c7891);overflow:hidden}
+#ppi-tours-app .ppi-effect-mini i{display:grid;place-items:center;width:68px;height:32px;font-size:16px;font-style:normal;color:#fff;text-shadow:0 2px 3px #0008}
+#ppi-tours-app .ppi-effect-mini-glass i{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.45);border-radius:8px;box-shadow:0 5px 12px #0004;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#ppi-tours-app .ppi-startpage-preview-header{
+  --ppi-startpage-shadow:rgba(0,0,0,.40);
+  --ppi-startpage-shadow-soft:rgba(0,0,0,.20);
+  --ppi-startpage-stroke:rgba(0,0,0,.40);
+}
+#ppi-tours-app .ppi-startpage-preview-header h2{
+  -webkit-text-stroke:.45px var(--ppi-startpage-stroke)!important;
+  paint-order:stroke fill;
+  text-shadow:0 2px 5px var(--ppi-startpage-shadow),0 1px 2px var(--ppi-startpage-shadow)!important;
+}
+#ppi-tours-app .ppi-startpage-preview-header p{
+  text-shadow:0 1px 3px var(--ppi-startpage-shadow-soft)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="subtle"] .ppi-startpage-preview-header{
+  border-radius:0;background-color:transparent;
+  backdrop-filter:none;-webkit-backdrop-filter:none;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glass"] .ppi-startpage-preview-header{
+  position:relative;isolation:isolate;
+  width:calc(100% - 16px);max-width:100%;box-sizing:border-box;
+  margin:10px auto 16px!important;padding:24px 15px!important;
+  border:1px solid rgba(255,255,255,.42)!important;
+  border-radius:16px!important;
+  background:rgba(25,39,54,.27)!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.22)!important;
+  backdrop-filter:blur(12px) saturate(125%);-webkit-backdrop-filter:blur(12px) saturate(125%);
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"][data-effect="glass"] .ppi-startpage-preview-header{
+  margin:12px auto 20px!important;
+  box-shadow:0 10px 22px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.22)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"][data-effect="glass"] .ppi-startpage-preview-header{
+  background:rgba(255,255,255,.10)!important;
+}
+@media(prefers-reduced-transparency:reduce){
+  #ppi-tours-app .ppi-startpage-live-preview[data-effect="glass"] .ppi-startpage-preview-header{
+    backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(17,25,32,.86)!important;
+  }
+}
+
+
+/* Glass keeps the chosen Nextcloud background image in gallery mode too. */
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"][data-effect="glass"] {
+  background-color:var(--ppi-startpage-bg,#000)!important;
+  background-image:linear-gradient(#0005,#0005),var(--ppi-startpage-image,none)!important;
+  background-size:cover!important;
+  background-position:center!important;
+}
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] input{width:100%;max-width:680px}
+
+/* 0.4.62.110: preserve chosen overview gradient under decorative icon. */
+#ppi-tours-app #ppi-start-pages-list .ppi-startpage-overview-cover{
+  background-position:center!important;
+  background-size:cover!important;
+  isolation:isolate;
+}
+#ppi-tours-app #ppi-start-pages-list .ppi-startpage-overview-cover .ppi-overview-placeholder{
+  position:relative;
+  background:none!important;
+  background-color:transparent!important;
+  color:rgba(255,255,255,.82)!important;
+  text-shadow:0 2px 8px rgba(0,0,0,.45);
+  height:150px;
+}
+
+/* 0.4.62.111: full-width share settings and subtler typographic hierarchy. */
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-share-only {
+  grid-template-columns:minmax(0,1fr)!important;
+}
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-share-only .ppi-startpage-preview-column,
+#ppi-tours-app .ppi-startpage-preview-column[hidden] {display:none!important}
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-share-only .ppi-start-page-fields {
+  max-width:920px;width:100%;
+}
+#ppi-tours-app .ppi-startpage-preview-header h2 {
+  -webkit-text-stroke:.35px var(--ppi-startpage-stroke)!important;
+  text-shadow:0 2px 4px rgba(0,0,0,.40)!important;
+}
+#ppi-tours-app .ppi-startpage-preview-header p {
+  -webkit-text-stroke:0!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.20)!important;
+}
+
+/* 0.4.62.112: split preview mirrors the real guest page: backdrop on the
+   hero container, frosted glass on a separate child, user's color below. */
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] {
+  background-color:var(--ppi-startpage-bg,#000000)!important;
+  background-image:none!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-hero {
+  display:grid;align-items:center;justify-items:center;
+  min-height:170px;padding:16px 12px;
+  background-color:var(--ppi-startpage-bg,#000000)!important;
+  background-image:linear-gradient(rgba(0,0,0,.32),rgba(0,0,0,.32)),var(--ppi-startpage-image,none)!important;
+  background-size:cover!important;background-position:center!important;
+  box-shadow:0 8px 18px rgba(0,0,0,.30)!important;
+  isolation:isolate;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-header {
+  width:100%;max-width:100%;min-height:0;
+  margin:0!important;padding:20px 14px!important;
+  background:transparent!important;background-image:none!important;
+  box-shadow:none!important;border-color:transparent!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"][data-effect="glass"] .ppi-startpage-preview-header {
+  width:calc(100% - 8px);margin:0!important;padding:22px 16px!important;
+  background:rgba(25,39,54,.27)!important;background-image:none!important;
+  border:1px solid rgba(255,255,255,.42)!important;
+  border-radius:16px!important;
+  box-shadow:0 12px 28px rgba(0,0,0,.24),inset 0 1px 0 rgba(255,255,255,.22)!important;
+  backdrop-filter:blur(12px) saturate(125%);
+  -webkit-backdrop-filter:blur(12px) saturate(125%);
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-grid {
+  margin:24px 15px 10px!important;
+}
+#ppi-tours-app .ppi-startpage-preview-header h2 {
+  -webkit-text-stroke:.65px var(--ppi-startpage-stroke)!important;
+  paint-order:stroke fill;
+  text-shadow:0 2px 4px rgba(0,0,0,.40)!important;
+}
+#ppi-tours-app .ppi-startpage-preview-header p {
+  -webkit-text-stroke:0!important;
+  text-shadow:0 1px 2px rgba(0,0,0,.20)!important;
+}
+@media(prefers-reduced-transparency:reduce){
+  #ppi-tours-app .ppi-startpage-live-preview[data-layout="split"][data-effect="glass"] .ppi-startpage-preview-header {
+    backdrop-filter:none;-webkit-backdrop-filter:none;
+    background:rgba(17,25,32,.85)!important;
+  }
+}
+
+
+/* 0.4.62.113: glossy glass, responsive matched widths and automatic split seam. */
+#ppi-tours-app .ppi-startpage-effect-options{grid-template-columns:repeat(3,minmax(0,1fr))}
+#ppi-tours-app .ppi-effect-mini-glossy i{
+ background:linear-gradient(145deg,rgba(255,255,255,.48) 0%,rgba(255,255,255,.12) 38%,rgba(255,255,255,.02) 65%);
+ border:1px solid rgba(255,255,255,.65);border-radius:8px;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 6px 13px rgba(0,0,0,.32);
+ backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header{
+ position:relative;isolation:isolate;overflow:hidden;
+ box-sizing:border-box;width:calc(100% - 16px);max-width:100%;
+ margin:10px auto 16px!important;padding:24px 15px!important;
+ border:1px solid rgba(255,255,255,.62)!important;border-radius:16px!important;
+ background:rgba(24,39,54,.23)!important;background-image:none!important;
+ backdrop-filter:blur(15px) saturate(140%);-webkit-backdrop-filter:blur(15px) saturate(140%);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.60),inset 0 -1px 0 rgba(255,255,255,.10),0 13px 30px rgba(0,0,0,.30)!important
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header::before{
+ content:"";pointer-events:none;position:absolute;inset:0;z-index:0;
+ background:linear-gradient(157deg,rgba(255,255,255,.28) 0%,rgba(255,255,255,.11) 25%,transparent 39%,transparent 70%,rgba(255,255,255,.07) 100%);
+ border-radius:inherit
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header::after{
+ content:"";pointer-events:none;position:absolute;inset:0 0 auto;z-index:0;height:40%;
+ background:linear-gradient(to bottom,rgba(255,255,255,.16),rgba(255,255,255,0));
+ border-radius:inherit
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header>h2,
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header>p{
+ position:relative;z-index:1
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-hero{
+ border-bottom:1px solid var(--ppi-startpage-divider,rgba(255,255,255,.58))!important;
+ box-shadow:0 8px 18px rgba(0,0,0,.25),0 1px 2px var(--ppi-startpage-divider,rgba(255,255,255,.58))!important
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"][data-effect="glossy"] .ppi-startpage-preview-header{
+ width:calc(100% - 8px);margin:0!important
+}
+@media(max-width:520px){
+ #ppi-tours-app .ppi-startpage-effect-options{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(prefers-reduced-transparency:reduce){
+ #ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header{
+ backdrop-filter:none;-webkit-backdrop-filter:none;background:rgba(17,25,32,.87)!important
+ }
+}
+
+
+/* 0.4.62.114: sortable selected tours, visible drop target and keyboard controls. */
+/* In Vollbild the text/glass block spans the same usable width as the tile grid. */
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="hero"] .ppi-startpage-preview-header {
+ width:100%!important;max-width:none!important;box-sizing:border-box!important;
+ margin:0 auto 16px!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="hero"] .ppi-startpage-preview-hero {
+ width:100%!important;
+}
+
+#ppi-tours-app .ppi-startpage-tour-option{position:relative}
+#ppi-tours-app .ppi-startpage-tour-option[draggable=true]{cursor:grab}
+#ppi-tours-app .ppi-startpage-tour-option.ppi-tour-dragging{opacity:.48;cursor:grabbing}
+#ppi-tours-app .ppi-startpage-tour-option.ppi-tour-drop-before{
+  box-shadow:inset 0 3px 0 var(--color-primary-element,#1768a1),0 3px 12px rgba(0,0,0,.13)!important
+}
+#ppi-tours-app .ppi-startpage-tour-option.ppi-tour-drop-after{
+  box-shadow:inset 0 -3px 0 var(--color-primary-element,#1768a1),0 3px 12px rgba(0,0,0,.13)!important
+}
+#ppi-tours-app .ppi-startpage-tour-move{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+  flex:0 0 34px;min-width:34px;align-self:stretch
+}
+#ppi-tours-app .ppi-startpage-tour-grip{font-size:22px;color:var(--color-text-maxcontrast);cursor:grab;user-select:none;line-height:1}
+#ppi-tours-app .ppi-startpage-tour-move button{
+  display:grid;place-items:center;min-height:25px!important;height:25px!important;min-width:30px!important;
+  padding:0!important;border:1px solid var(--color-border)!important;border-radius:6px!important;
+  background:var(--color-main-background)!important;color:var(--color-main-text)!important;
+  font-size:14px;cursor:pointer
+}
+#ppi-tours-app .ppi-startpage-tour-move button:disabled{opacity:.35;cursor:default}
+#ppi-tours-app .ppi-startpage-tour-move button:focus-visible{outline:2px solid var(--color-primary-element)}
+@media(max-width:480px){#ppi-tours-app .ppi-startpage-tour-option img{max-width:27%!important}}
+
+/* 0.4.62.115: gallery-preview alignment and high-gloss reflections. */
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-hero {
+  width:100%!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"] .ppi-startpage-preview-header {
+  width:100%!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+  margin:0 auto 15px!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header {
+  background:rgba(10,24,37,.15)!important;
+  background-image:none!important;
+  border:1px solid rgba(255,255,255,.80)!important;
+  box-shadow:inset 0 2px 0 rgba(255,255,255,.72),
+    inset 1px 0 0 rgba(255,255,255,.32),
+    inset -1px 0 0 rgba(255,255,255,.18),
+    inset 0 -1px 0 rgba(255,255,255,.25),
+    0 15px 38px rgba(0,0,0,.34)!important;
+  backdrop-filter:blur(17px) saturate(135%);
+  -webkit-backdrop-filter:blur(17px) saturate(135%);
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header::before {
+  background:linear-gradient(117deg,transparent 0%,rgba(255,255,255,.09) 11%,rgba(255,255,255,.33) 22%,rgba(255,255,255,.06) 32%,transparent 43%),
+    linear-gradient(166deg,rgba(255,255,255,.30) 0%,rgba(255,255,255,.08) 19%,transparent 49%,rgba(255,255,255,.07) 100%)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header::after {
+  height:52%!important;
+  background:radial-gradient(ellipse at 35% -30%,rgba(255,255,255,.46) 0%,rgba(255,255,255,.13) 35%,transparent 76%)!important;
+}
+@media(prefers-reduced-transparency:reduce){
+ #ppi-tours-app .ppi-startpage-live-preview[data-effect="glossy"] .ppi-startpage-preview-header{
+   backdrop-filter:none!important;-webkit-backdrop-filter:none!important;
+   background:rgba(16,31,44,.90)!important;
+ }
+}
+
+/* 0.4.62.116: align split preview with card grid and show gallery JPEG in
+   all effect presets, as in the real public start page. */
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-hero{
+  box-sizing:border-box!important;width:100%!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-header{
+  box-sizing:border-box!important;width:calc(100% - 28px)!important;
+  max-width:none!important;margin:0 auto!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-grid{
+  box-sizing:border-box!important;width:calc(100% - 28px)!important;
+  margin:24px 14px 10px!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="gallery"]{
+  background-color:var(--ppi-startpage-bg,#000)!important;
+  background-image:linear-gradient(rgba(0,0,0,.20),rgba(0,0,0,.20)),var(--ppi-startpage-image,none)!important;
+  background-size:cover!important;background-position:center!important;
+}
+
+/* 0.4.62.118: the editor mirrors the public tile composition. */
+#ppi-tours-app .ppi-startpage-preview-tile {
+ height:clamp(155px,21vw,245px)!important;min-height:155px!important;
+ display:flex!important;flex-direction:column!important;overflow:hidden!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media {
+ position:relative;flex:1 1 auto;min-height:0;overflow:hidden;
+ display:grid;place-items:center;background:#213848;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media img {
+ width:100%!important;height:100%!important;min-height:0!important;
+ max-width:100%!important;aspect-ratio:auto!important;object-fit:cover!important;
+ border-radius:0!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::after {
+ content:"";position:absolute;inset:0;pointer-events:none;
+ background:linear-gradient(155deg,rgba(255,255,255,.23) 0%,rgba(255,255,255,.10) 23%,transparent 48%,rgba(255,255,255,.07) 100%);
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.34);
+ opacity:1;transition:opacity .18s ease
+}
+@media(hover:hover) and (pointer:fine) {
+ #ppi-tours-app .ppi-startpage-preview-tile:hover .ppi-startpage-tile-media::after{opacity:0}
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy {
+ height:70px!important;min-height:70px!important;max-height:70px!important;
+ flex:0 0 70px!important;
+ box-sizing:border-box!important;padding:8px 9px!important;
+ display:flex!important;flex-direction:column!important;
+ align-items:center!important;justify-content:flex-start!important;
+ gap:3px!important;overflow:hidden!important;text-align:center!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy strong {
+ display:-webkit-box!important;-webkit-box-orient:vertical!important;
+ -webkit-line-clamp:2!important;overflow:hidden!important;
+ font-size:clamp(12px,1.45vw,16px)!important;font-weight:750!important;
+ line-height:1.2!important;padding:0!important;margin:0!important;
+ max-width:100%!important;overflow-wrap:anywhere!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy small {
+ display:-webkit-box!important;-webkit-box-orient:vertical!important;
+ -webkit-line-clamp:2!important;overflow:hidden!important;
+ max-width:100%!important;color:#5c6571!important;
+ font-size:10px!important;line-height:1.3!important;
+ margin:0!important;padding:0!important;overflow-wrap:anywhere!important;
+}
+@media(prefers-reduced-motion:reduce){
+ #ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::after{transition:none}
+}
+
+
+/* 0.4.62.119: match the public start page heading, split background
+   and readable descriptions in the layout editor. */
+#ppi-tours-app .ppi-startpage-preview-header h2{
+ -webkit-text-stroke:1.15px var(--ppi-startpage-stroke)!important;
+ paint-order:stroke fill;
+ text-shadow:0 2px 4px var(--ppi-startpage-shadow),0 5px 12px rgba(0,0,0,.55)!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-hero{
+ background-color:var(--ppi-startpage-header-bg,var(--ppi-startpage-bg,#000000))!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-grid{
+ background-color:transparent!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy {
+ height:88px!important;min-height:88px!important;max-height:88px!important;
+ flex:0 0 88px!important;padding:8px 9px!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy strong {
+ font-size:clamp(14px,1.5vw,18px)!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy small {
+ font-size:clamp(13px,1.05vw,15px)!important;
+ line-height:1.35!important;
+}
+@media(max-width:800px){
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] .ppi-startpage-preview-tile:last-child:nth-child(4n + 3){
+  grid-column:auto!important;
+ }
+}
+@media(max-width:420px){
+ #ppi-tours-app .ppi-startpage-preview-grid[data-cols] .ppi-startpage-preview-tile{grid-column:auto!important}
+}
+
+
+/* 0.4.62.121: identical dark-at-rest, clear-on-hover effect in editor. */
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::after{
+ background:linear-gradient(135deg,rgba(8,18,26,.32),rgba(8,18,26,.40))!important;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.15)!important;
+ opacity:1!important;transition:opacity .22s ease!important;
+}
+@media(hover:hover) and (pointer:fine){
+ #ppi-tours-app .ppi-startpage-preview-tile:hover .ppi-startpage-tile-media::after{
+  opacity:0!important;
+ }
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy {
+ padding-left:5px!important;padding-right:5px!important;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-copy small{
+ font-size:clamp(12px,1vw,14px)!important;
+}
+@media(prefers-reduced-motion:reduce){
+ #ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::after {transition:none!important}
+}
+
+
+/* 0.4.62.123 – Matching square geometry in live preview. */
+#ppi-tours-app .ppi-startpage-preview-grid-container{
+  container-type:inline-size;
+  box-sizing:border-box;
+  width:100%!important;min-width:0!important;
+  margin:0!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-grid-container {
+  padding:0 14px!important;
+  margin:24px 0 10px!important;
+}
+#ppi-tours-app .ppi-startpage-preview-grid{
+  --ppi-mosaic-columns:2;--ppi-mosaic-gap:10px;
+  width:100%!important;margin:0!important;
+  gap:var(--ppi-mosaic-gap)!important;
+  grid-template-columns:repeat(var(--ppi-mosaic-columns),minmax(0,1fr))!important;
+  grid-auto-rows:calc((100cqw - (var(--ppi-mosaic-columns) - 1) * var(--ppi-mosaic-gap)) / var(--ppi-mosaic-columns))!important;
+  grid-auto-flow:row!important;align-items:stretch!important;
+}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"]{--ppi-mosaic-columns:3}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"]{--ppi-mosaic-columns:4}
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"]{--ppi-mosaic-columns:5}
+#ppi-tours-app .ppi-startpage-preview-grid > .ppi-startpage-preview-tile {
+  grid-column:span 1!important;grid-row:span 1!important;
+  width:100%!important;height:100%!important;
+  min-height:0!important;max-height:none!important;
+  min-width:0!important;aspect-ratio:1/1!important;
+}
+@media(min-width:801px){
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(7n + 1),
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(7n + 1){
+    grid-column:span 2!important;grid-row:span 2!important;
+  }
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(3n + 1):nth-last-child(n + 3){
+    grid-column:span 2!important;grid-row:span 2!important;
+  }
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"]:has(> .ppi-startpage-preview-tile:nth-child(10)) > .ppi-startpage-preview-tile:first-child{
+    grid-column:span 3!important;grid-row:span 3!important;
+  }
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(5n + 5):nth-last-child(n + 5){
+    grid-column:span 2!important;grid-row:span 2!important;
+  }
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols="4"]:not(:has(> .ppi-startpage-preview-tile:nth-child(10))) > .ppi-startpage-preview-tile:first-child:nth-last-child(n + 5){
+    grid-column:span 2!important;grid-row:span 2!important;
+  }
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"]:has(> .ppi-startpage-preview-tile:nth-child(10)) > .ppi-startpage-preview-tile:first-child{
+    grid-column:span 3!important;grid-row:span 3!important;
+  }
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"] > .ppi-startpage-preview-tile:nth-child(7n + 8):nth-last-child(n + 7){
+    grid-column:span 2!important;grid-row:span 2!important;
+  }
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols="5"]:not(:has(> .ppi-startpage-preview-tile:nth-child(10))) > .ppi-startpage-preview-tile:first-child:nth-last-child(n + 7){
+    grid-column:span 2!important;grid-row:span 2!important;
+  }
+}
+@media(min-width:421px) and (max-width:800px){
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols]{--ppi-mosaic-columns:2}
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:nth-child(7n + 1){
+    grid-column:span 2!important;grid-row:span 2!important;
+  }
+}
+@media(max-width:420px){
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols]{--ppi-mosaic-columns:1}
+  #ppi-tours-app .ppi-startpage-preview-grid[data-cols] > .ppi-startpage-preview-tile{
+    grid-column:span 1!important;grid-row:span 1!important;
+  }
+}
+
+/* 0.4.62.124: matching four-sided inner shadow in the tour graph.
+   The white card/frame, image dimensions and graph controls stay intact. */
+#ppi-tours-app .ppi-tour-graph-thumb{
+ position:relative!important;
+ isolation:isolate;
+ overflow:hidden!important;
+}
+#ppi-tours-app .ppi-tour-graph-thumb::after{
+ content:"";position:absolute;inset:0;z-index:1;
+ pointer-events:none;border-radius:inherit;
+ box-shadow:inset 0 0 6px 1px rgba(0,0,0,.22),inset 0 0 1px rgba(0,0,0,.14);
+}
+/* Same inset edge on Startseiten live-preview pictures. */
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media{
+ position:relative;isolation:isolate;
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::before{
+ content:"";position:absolute;inset:0;z-index:2;
+ pointer-events:none;border-radius:inherit;
+ box-shadow:inset 0 0 6px 1px rgba(0,0,0,.22),inset 0 0 1px rgba(0,0,0,.14);
+}
+#ppi-tours-app .ppi-startpage-preview-tile .ppi-startpage-tile-media::after{z-index:1;}
+/* Explicit 2-column start-page preview: every tile is exactly 1x1. */
+#ppi-tours-app .ppi-startpage-preview-grid[data-cols="2"]:not(#ppi-mosaic-wide-override) > .ppi-startpage-preview-tile:nth-child(n){
+ grid-column:span 1!important;grid-row:span 1!important;
+}
+
+
+
+/* 0.4.62.126: strong but even white frame on every startpage tile;
+   border-box keeps 1x1, 2x2 and 3x3 mosaic sizing unchanged. */
+#ppi-tours-app .ppi-startpage-preview-grid > .ppi-startpage-preview-tile{
+ box-sizing:border-box!important;
+ border:6px solid #fff!important;
+}
+
+
+/* 0.4.62.127: identical action-button geometry in Touren / Startseiten.
+   Both buttons share the same slot; hidden buttons never occupy space. */
+#ppi-tours-app .ppi-tour-intro-header :is(#ppi-tour-create,#ppi-start-page-create){
+ box-sizing:border-box!important;
+ flex:0 0 auto;
+ min-height:42px!important;
+ min-width:194px!important;
+ padding:8px 16px!important;
+ margin:0 0 0 auto!important;
+ white-space:normal!important;
+ text-align:center!important;
+ line-height:1.35!important;
+ display:inline-flex!important;
+ align-items:center!important;
+ justify-content:center!important;
+}
+#ppi-tours-app .ppi-tour-intro-header :is(#ppi-tour-create,#ppi-start-page-create)[hidden]{
+ display:none!important;
+}
+@media(max-width:700px){
+ #ppi-tours-app .ppi-tour-intro-header :is(#ppi-tour-create,#ppi-start-page-create){
+  flex:1 1 100%;
+  min-width:0!important;
+  width:100%!important;
+  margin:0!important;
+ }
+}
+
+
+/* 0.4.62.128: layout thumbnails share the design-effect row geometry. */
+#ppi-tours-app .ppi-startpage-layout-mode-picker{
+ min-width:0;padding:12px;border:1px solid var(--color-border);border-radius:11px;
+}
+#ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options){
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;
+}
+#ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options) > button{
+ display:flex!important;flex-direction:column!important;align-items:center!important;
+ justify-content:flex-start!important;gap:7px!important;
+ min-width:0!important;min-height:100px!important;
+ padding:10px 5px!important;
+ border:2px solid var(--color-border)!important;border-radius:11px!important;
+ background:var(--color-main-background)!important;color:var(--color-main-text)!important;
+ font-weight:700!important;cursor:pointer;
+ text-align:center!important;overflow-wrap:anywhere!important;
+}
+#ppi-tours-app .ppi-startpage-layout-mode-options > button[aria-pressed="true"]{
+ border-color:var(--color-primary-element)!important;
+ box-shadow:0 0 0 1px var(--color-primary-element)!important;
+}
+#ppi-tours-app .ppi-startpage-layout-mode-options > button:focus-visible{
+ outline:3px solid var(--color-primary-element);outline-offset:3px;
+}
+#ppi-tours-app .ppi-layout-mode-mini{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;
+ position:relative;box-sizing:border-box;
+ width:96px;height:52px;max-width:100%;flex:0 0 52px;
+ padding:6px 8px;gap:4px;overflow:hidden;border-radius:8px;
+ background:linear-gradient(130deg,#142335,#4c7891);
+}
+#ppi-tours-app .ppi-layout-mode-mini i{display:block;box-sizing:border-box;font-style:normal}
+#ppi-tours-app .ppi-layout-mode-heading{
+ width:56%;height:5px;flex:0 0 5px;border-radius:5px;background:rgba(255,255,255,.94);
+}
+#ppi-tours-app .ppi-layout-mode-subheading{
+ width:72%;height:3px;flex:0 0 3px;border-radius:4px;background:rgba(255,255,255,.70);
+}
+#ppi-tours-app .ppi-layout-mode-tiles{
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));
+ gap:3px;width:83%;min-height:0;flex:1 1 auto;
+}
+#ppi-tours-app .ppi-layout-mode-tiles b{
+ display:block;min-width:0;min-height:0;border-radius:2px;
+ background:rgba(190,225,247,.90);box-shadow:0 1px 2px #0004;
+}
+#ppi-tours-app .ppi-layout-mode-mini-split{
+ justify-content:flex-start;gap:3px;padding:5px 8px;
+ background:linear-gradient(to bottom,#244561 0 55%,#d3e1e8 55% 100%);
+}
+#ppi-tours-app .ppi-layout-mode-mini-split .ppi-layout-mode-tiles{
+ flex:1 1 auto;width:83%;
+}
+#ppi-tours-app .ppi-layout-mode-mini-split .ppi-layout-mode-tiles b{background:#729db8}
+#ppi-tours-app .ppi-layout-mode-mini-gallery{
+ gap:5px;background:linear-gradient(130deg,#d7e5ed,#b9d1df);
+}
+#ppi-tours-app .ppi-layout-mode-mini-gallery .ppi-layout-mode-heading{background:#294c63}
+#ppi-tours-app .ppi-layout-mode-mini-gallery .ppi-layout-mode-tiles{grid-template-rows:repeat(2,minmax(0,1fr));width:88%}
+#ppi-tours-app .ppi-layout-mode-mini-gallery .ppi-layout-mode-tiles b{background:#638ca5}
+@media(max-width:520px){
+ #ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options){
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:6px!important;
+ }
+ #ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options) > button{
+  padding:8px 3px!important;min-height:98px!important;font-size:11px!important;
+ }
+}
+/* Consistent bright 2px seam across the split-layout hero in the editor. */
+#ppi-tours-app .ppi-startpage-live-preview[data-layout="split"] .ppi-startpage-preview-hero{
+ box-sizing:border-box!important;
+ border-bottom:2px solid #fff!important;
+ box-shadow:0 8px 18px rgba(0,0,0,.32),0 2px 3px rgba(0,0,0,.45)!important;
+}
+
+
+/* 0.4.62.129: one visual vocabulary for all three start-page selectors.
+   All groups are stacked, use the design-effect button theme and the
+   exact same three-column grid, height, spacing and selected state. */
+#ppi-tours-app :is(.ppi-startpage-layout-mode-picker,.ppi-startpage-effect-picker,.ppi-startpage-layout-presets){
+ min-width:0!important;
+ margin:0!important;
+ padding:12px!important;
+ box-sizing:border-box!important;
+ border:1px solid var(--color-border)!important;
+ border-radius:11px!important;
+ background:var(--color-main-background)!important;
+}
+#ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options,.ppi-startpage-layout-presets-grid){
+ display:grid!important;
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ gap:10px!important;
+ align-items:stretch!important;
+}
+#ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options,.ppi-startpage-layout-presets-grid) > button{
+ appearance:none!important;
+ display:flex!important;flex-direction:column!important;
+ align-items:center!important;justify-content:flex-start!important;
+ gap:7px!important;
+ width:100%!important;min-width:0!important;
+ min-height:108px!important;
+ padding:10px 5px!important;
+ box-sizing:border-box!important;
+ border:2px solid var(--color-border)!important;
+ border-radius:11px!important;
+ background:var(--color-main-background)!important;
+ color:var(--color-main-text)!important;
+ box-shadow:none!important;
+ font-size:12px!important;font-weight:700!important;line-height:1.25!important;
+ text-align:center!important;overflow-wrap:anywhere!important;cursor:pointer!important;
+}
+#ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options,.ppi-startpage-layout-presets-grid) > button[aria-pressed="true"]{
+ border-color:var(--color-primary-element)!important;
+ background:var(--color-main-background)!important;
+ box-shadow:0 0 0 1px var(--color-primary-element)!important;
+}
+#ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options,.ppi-startpage-layout-presets-grid) > button:focus-visible{
+ outline:3px solid var(--color-primary-element)!important;outline-offset:3px!important;
+}
+#ppi-tours-app :is(.ppi-layout-mode-mini,.ppi-effect-mini,.ppi-layout-mini){
+ box-sizing:border-box!important;
+ position:relative!important;
+ width:96px!important;max-width:100%!important;
+ height:52px!important;min-height:52px!important;
+ flex:0 0 52px!important;
+ border-radius:8px!important;
+ overflow:hidden!important;
+ background:linear-gradient(130deg,#142335,#4c7891)!important;
+}
+/* Tour-tile pictograms represent square arrangements, rather than generic bars. */
+#ppi-tours-app .ppi-layout-mini{
+ display:grid!important;
+ align-content:center!important;
+ justify-content:center!important;
+ justify-items:stretch!important;
+ gap:3px!important;
+ padding:8px!important;
+ grid-auto-rows:minmax(0,1fr)!important;
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+#ppi-tours-app .ppi-layout-mini i{
+ display:block!important;
+ min-width:0!important;min-height:0!important;
+ border-radius:2px!important;
+ background:#a8cde4!important;
+ opacity:1!important;
+ box-shadow:0 1px 2px rgba(0,0,0,.25)!important;
+}
+#ppi-tours-app .ppi-layout-mini-auto{
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ grid-template-rows:repeat(2,minmax(0,1fr))!important;
+}
+#ppi-tours-app .ppi-layout-mini-auto i:first-child{
+ grid-column:span 2!important;grid-row:span 2!important;
+ background:#e4f3fb!important;
+}
+#ppi-tours-app .ppi-layout-mini-2{grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important}
+#ppi-tours-app .ppi-layout-mini-3{grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important}
+#ppi-tours-app .ppi-layout-mini-4{grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important}
+#ppi-tours-app .ppi-layout-mini-5{grid-template-columns:repeat(5,minmax(0,1fr))!important;grid-template-rows:repeat(2,minmax(0,1fr))!important}
+#ppi-tours-app .ppi-startpage-layout-presets p,
+#ppi-tours-app .ppi-startpage-effect-picker p{
+ margin:5px 0 10px!important;
+ color:var(--color-text-maxcontrast)!important;
+ font-size:12px!important;line-height:1.5!important;
+}
+/* Fixed dimensions prevent the left heading icon from changing width when
+   switching the Touren and Startseiten overview. */
+#ppi-tours-app #ppi-section-icon{
+ display:inline-flex!important;
+ align-items:center!important;justify-content:center!important;
+ flex:0 0 44px!important;width:44px!important;height:44px!important;
+ line-height:1!important;font-size:32px!important;
+}
+@media(max-width:520px){
+ #ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options,.ppi-startpage-layout-presets-grid){
+  gap:6px!important;
+ }
+ #ppi-tours-app :is(.ppi-startpage-layout-mode-options,.ppi-startpage-effect-options,.ppi-startpage-layout-presets-grid) > button{
+  padding:8px 3px!important;min-height:102px!important;font-size:11px!important;
+ }
+}
+
+
+/* 0.4.62.130: compact, responsive 4-across / 2-by-2 color strip,
+   below the Tour-Kacheln selection. Hidden colors keep stored values. */
+#ppi-tours-app .ppi-startpage-color-controls{
+ display:grid!important;
+ grid-template-columns:repeat(4,minmax(0,1fr))!important;
+ gap:8px!important;
+ min-width:0!important;
+ container-type:inline-size;
+}
+#ppi-tours-app .ppi-startpage-color-controls > label{
+ display:flex!important;flex-direction:column!important;
+ align-items:center!important;justify-content:space-between!important;
+ gap:6px!important;
+ min-width:0!important;box-sizing:border-box!important;
+ padding:9px 5px!important;
+ border:1px solid var(--color-border)!important;border-radius:10px!important;
+ background:var(--color-main-background)!important;
+ text-align:center!important;
+ font-size:11px!important;line-height:1.25!important;
+}
+#ppi-tours-app .ppi-startpage-color-controls > label[hidden]{display:none!important}
+#ppi-tours-app .ppi-startpage-color-controls > label > span{
+ display:block!important;overflow-wrap:anywhere!important;
+}
+#ppi-tours-app .ppi-startpage-color-controls input[type="color"]{
+ flex:0 0 auto!important;
+ display:block!important;
+ width:54px!important;max-width:100%!important;
+ height:36px!important;min-height:36px!important;
+ padding:3px!important;margin:0!important;
+ cursor:pointer!important;
+}
+@media(max-width:600px){
+ #ppi-tours-app .ppi-startpage-color-controls{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+}
+/* Constrain the layout editor's own compact column, not just the viewport. */
+@supports (container-type:inline-size){
+ #ppi-tours-app .ppi-start-page-fields{container-type:inline-size;}
+ @container (max-width:540px){
+  #ppi-tours-app .ppi-startpage-color-controls{
+   grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+ }
+}
+/* Floating image picker: no page-height jump when the browser opens. */
+#ppi-tours-app #ppi-start-page-bg-browser.ppi-startpage-bg-overlay{
+ position:fixed!important;inset:0!important;
+ z-index:10000!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ box-sizing:border-box!important;
+ padding:20px!important;
+ max-height:none!important;overflow:visible!important;
+ background:rgba(8,18,30,.67)!important;
+ backdrop-filter:blur(3px);
+}
+#ppi-tours-app #ppi-start-page-bg-browser.ppi-startpage-bg-overlay[hidden]{
+ display:none!important;
+}
+#ppi-tours-app .ppi-startpage-bg-dialog{
+ display:flex!important;flex-direction:column!important;
+ width:min(760px,100%)!important;
+ max-width:100%!important;
+ max-height:min(80vh,780px)!important;
+ min-height:0!important;
+ padding:16px!important;
+ gap:12px!important;
+ box-sizing:border-box!important;
+ border:1px solid var(--color-border)!important;
+ border-radius:15px!important;
+ background:var(--color-main-background)!important;
+ color:var(--color-main-text)!important;
+ box-shadow:0 22px 70px rgba(0,0,0,.65),0 6px 20px rgba(0,0,0,.40)!important;
+}
+#ppi-tours-app .ppi-startpage-bg-dialog-heading{
+ display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+#ppi-tours-app .ppi-startpage-bg-dialog-heading h4{
+ margin:0!important;font-size:17px!important;font-weight:700!important;
+}
+#ppi-tours-app #ppi-start-page-bg-close{
+ min-width:40px!important;min-height:40px!important;
+ font-size:20px!important;border-radius:9px!important;
+}
+#ppi-tours-app .ppi-startpage-bg-dialog #ppi-start-page-bg-path{
+ min-width:0;overflow-wrap:anywhere;font-size:12px;
+}
+#ppi-tours-app .ppi-startpage-bg-dialog .ppi-startpage-bg-files{
+ min-height:0;overflow-y:auto!important;
+ max-height:none!important;
+ grid-template-columns:repeat(auto-fill,minmax(min(100%,135px),1fr))!important;
+}
+#ppi-tours-app .ppi-startpage-bg-dialog .ppi-startpage-bg-files button{
+ cursor:pointer;text-align:left;
+}
+@media(max-width:520px){
+ #ppi-tours-app #ppi-start-page-bg-browser.ppi-startpage-bg-overlay{padding:9px!important}
+ #ppi-tours-app .ppi-startpage-bg-dialog{padding:12px!important;max-height:88vh!important}
+}
+/* Exactly the same text sizing for both upper create actions. */
+#ppi-tours-app .ppi-tour-intro-header #ppi-tour-create,
+#ppi-tours-app .ppi-tour-intro-header #ppi-start-page-create{
+ font-size:14px!important;
+ font-weight:650!important;
+ letter-spacing:normal!important;
+ font-family:inherit!important;
+}
+
+
+/* 0.4.62.131: description grows to the live-preview bottom in two columns.
+   The script measures the actual preview edge, which changes with tour tiles.
+   On stacked layouts use a comfortable independent height instead. */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="start"] #ppi-start-page-description{
+ display:block!important;
+ width:100%!important;
+ box-sizing:border-box!important;
+ min-height:180px!important;
+ height:var(--ppi-description-height,180px)!important;
+ max-height:none!important;
+ resize:none!important;
+ overflow-y:auto!important;
+}
+@media(max-width:900px){
+ #ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="start"] #ppi-start-page-description{
+  height:180px!important;
+  min-height:180px!important;
+  resize:vertical!important;
+ }
+}
+
+
+/* 0.4.62.132: production search field and Nextcloud tag chooser
+   (keep existing startpage editor styles intact). */
+#ppi-tours-app #ppi-picker-search-mode-label{color:#7D7D7D!important}
+#ppi-tours-app .ppi-picker-search-control{border:2px solid #7D7D7D!important;border-radius:10px!important;outline:none!important;box-shadow:none!important;overflow:hidden!important;align-items:stretch!important}
+#ppi-tours-app .ppi-picker-filters #ppi-picker-search{height:100%!important;min-height:0!important;max-height:none!important;box-sizing:border-box!important;border:0!important;border-radius:0!important;background:transparent!important;outline:none!important;box-shadow:none!important}
+#ppi-tours-app .ppi-picker-search-control #ppi-picker-search:focus,#ppi-tours-app .ppi-picker-search-control #ppi-picker-search:focus-visible{outline:none!important;box-shadow:none!important;border:0!important}
+#ppi-tours-app .ppi-picker-search-control:hover,#ppi-tours-app .ppi-picker-search-control:focus-within,#ppi-tours-app .ppi-picker-search-control.ppi-has-selected-tag{border-color:#222222!important;outline:none!important;box-shadow:none!important}
+#ppi-tours-app .ppi-picker-search-combined:hover #ppi-picker-search-mode-label,#ppi-tours-app .ppi-picker-search-combined:focus-within #ppi-picker-search-mode-label,#ppi-tours-app .ppi-picker-search-combined.ppi-has-selected-tag #ppi-picker-search-mode-label{color:#222222!important}
+#ppi-tours-app .ppi-picker-tag-wrap{display:flex;align-items:stretch;flex:0 1 43%;min-width:105px;max-width:43%;border-left:1px solid #7D7D7D}
+#ppi-tours-app .ppi-picker-tag-wrap[hidden]{display:none!important}
+#ppi-tours-app .ppi-picker-filters #ppi-picker-tag{display:block;height:100%!important;min-height:0!important;max-height:100%!important;width:100%;margin:0!important;border:0!important;border-radius:0!important;background:var(--color-main-background);outline:none!important;box-shadow:none!important;font-size:12px;line-height:normal;padding:0 6px!important;color:#7D7D7D;cursor:pointer}
+#ppi-tours-app .ppi-picker-tag-wrap:hover #ppi-picker-tag,#ppi-tours-app .ppi-picker-tag-wrap:focus-within #ppi-picker-tag,#ppi-tours-app .ppi-picker-tag-wrap.ppi-tag-active #ppi-picker-tag{color:#222222!important}
+#ppi-tours-app .ppi-picker-filters #ppi-picker-tag:focus,#ppi-tours-app .ppi-picker-filters #ppi-picker-tag:focus-visible{outline:none!important;box-shadow:none!important}
+@media(max-width:620px){#ppi-tours-app .ppi-picker-tag-wrap{flex-basis:42%;max-width:42%;min-width:100px}}
+
+
+/* Personal start-page design presets */
+#ppi-tours-app .ppi-startpage-design-presets{display:grid;gap:10px;border:1px solid var(--color-border);border-radius:12px;padding:14px;min-width:0}
+#ppi-tours-app .ppi-startpage-design-presets legend{font-weight:700;padding:0 5px}
+#ppi-tours-app .ppi-startpage-design-presets p{margin:0;color:var(--color-text-maxcontrast);font-size:13px}
+#ppi-tours-app #ppi-startpage-preset-select{width:100%;min-width:0;max-width:100%;height:42px;border:1px solid var(--color-border);border-radius:9px;background:var(--color-main-background);color:var(--color-main-text);padding:6px 10px}
+#ppi-tours-app .ppi-startpage-preset-actions{display:flex;gap:8px;flex-wrap:wrap}
+#ppi-tours-app .ppi-startpage-preset-actions button{min-height:38px;white-space:normal}
+#ppi-tours-app .ppi-startpage-preset-manager{border-top:1px solid var(--color-border);padding-top:12px;display:grid;gap:10px}
+#ppi-tours-app .ppi-startpage-preset-manager[hidden]{display:none!important}
+#ppi-tours-app #ppi-startpage-preset-feedback:empty{display:none}
+
+
+/* 0.4.62.135: centralized preset manager and layout-only save shortcut */
+#ppi-tours-app .ppi-preset-central{max-width:760px;display:grid;gap:11px;padding:14px 0}
+#ppi-tours-app .ppi-preset-central>label{font-weight:650}
+#ppi-tours-app .ppi-preset-central>select{min-height:42px;width:100%;max-width:100%;background:var(--color-main-background);color:var(--color-main-text);border:1px solid var(--color-border);border-radius:9px;padding:7px 12px}
+#ppi-tours-app .ppi-preset-central .ppi-startpage-preset-manager{border-top:1px solid var(--color-border);margin-top:12px;padding-top:14px}
+#ppi-tours-app .ppi-preset-central .ppi-startpage-preset-manager h3{margin:4px 0}
+#ppi-tours-app .ppi-preset-preview-save{display:flex;justify-content:flex-end;margin-bottom:12px}
+#ppi-tours-app .ppi-preset-preview-save[hidden]{display:none!important}
+#ppi-tours-app #ppi-startpage-preset-save{min-height:38px}
+
+/* PPI STARTPAGE SHARE HELP 0.4.62.139 LOCAL */
+#ppi-tours-app .ppi-share-help-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;position:relative;z-index:2}
+#ppi-tours-app .ppi-share-help-top h3{margin:0!important}
+#ppi-tours-app .ppi-share-help-disclosure{margin-left:auto;max-width:100%}
+#ppi-tours-app .ppi-share-help-disclosure > summary{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:9px 13px;border-radius:9px;background:var(--color-background-dark,#e9eff4);border:1px solid var(--color-border,#d6dfe6);color:var(--color-main-text,#1b2733);font-weight:650;font-size:13px;list-style:none;user-select:none}
+#ppi-tours-app .ppi-share-help-disclosure > summary::-webkit-details-marker{display:none}
+#ppi-tours-app .ppi-share-help-disclosure > summary:hover,#ppi-tours-app .ppi-share-help-disclosure > summary:focus-visible{background:var(--color-background-hover,#dce9f3);outline-offset:3px}
+#ppi-tours-app .ppi-share-help-disclosure[open]{
+    width:auto;
+    margin-left:auto;
+    order:initial;
+}
+#ppi-tours-app .ppi-share-help-disclosure[open] .ppi-share-help-page{
+    position:absolute;
+    top:calc(100% + 8px);
+    left:0;
+    width:100%;
+    z-index:10;
+    box-shadow:0 8px 20px rgba(0,0,0,.12);
+}
+#ppi-tours-app .ppi-share-help-page{margin-top:12px;padding:clamp(14px,2vw,22px);border:1px solid var(--color-border,#d6dfe6);border-radius:12px;background:var(--color-main-background,#fff);color:var(--color-main-text,#1b2733);font-size:14px;line-height:1.6;max-height:min(65vh,620px);overflow:auto;box-sizing:border-box}
+#ppi-tours-app .ppi-share-help-page h4{font-size:17px;margin:0 0 10px;font-weight:750}
+#ppi-tours-app .ppi-share-help-page h5{font-size:14px;font-weight:700;margin:16px 0 5px}
+#ppi-tours-app .ppi-share-help-page p{margin:0 0 10px}
+#ppi-tours-app .ppi-share-help-page ul{padding-left:22px;margin:0 0 12px;list-style:disc}
+#ppi-tours-app .ppi-share-help-page li{margin-bottom:7px}
+#ppi-tours-app .ppi-share-help-page .ppi-share-help-tip{padding:10px 12px;border-left:3px solid var(--color-primary-element,#1768a1);background:var(--color-background-hover,#edf3f7);border-radius:5px}
+@media(max-width:600px){#ppi-tours-app .ppi-share-help-top{align-items:stretch}#ppi-tours-app .ppi-share-help-disclosure{margin-left:0}#ppi-tours-app .ppi-share-help-disclosure > summary{width:100%;box-sizing:border-box}#ppi-tours-app .ppi-share-help-page{max-height:55vh}}
+
+
+/* PPI STARTPAGE SHARE INPUT ROWS 2026-11-23 */
+/* PPI STARTPAGE SHARE COMPACT FORM 2026-11-24 */
+#ppi-tours-app .ppi-startpage-share-field-row{margin:16px 0 18px;max-width:none;min-width:0}
+#ppi-tours-app .ppi-startpage-share-field-row > label{display:block!important;margin:0 0 8px!important;font-weight:500;line-height:1.35}
+#ppi-tours-app .ppi-startpage-share-inline{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;flex-wrap:wrap;gap:10px;min-width:0}
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-inline input{
+  flex:0 1 350px!important;width:min(350px,100%)!important;max-width:350px!important;min-width:0!important;
+  box-sizing:border-box;height:34px;min-height:34px;margin:0!important
+}
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-inline input[type="date"]{
+  flex:0 1 190px!important;width:190px!important;max-width:190px!important
+}
+#ppi-tours-app .ppi-startpage-share-inline button{flex:0 0 auto;min-height:34px;white-space:normal;margin:0!important}
+#ppi-tours-app .ppi-startpage-share-actions{margin-top:12px}
+#ppi-tours-app .ppi-startpage-share-helptext{display:block;font-size:11px;line-height:1.5;color:var(--color-text-maxcontrast,#6b7280);margin-top:8px}
+@media (max-width:620px){
+ #ppi-tours-app .ppi-startpage-share-inline{align-items:stretch!important}
+ #ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-inline input,
+ #ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-inline input[type="date"]{
+   flex:1 1 100%!important;width:100%!important;max-width:none!important
+ }
+ #ppi-tours-app .ppi-startpage-share-inline button{width:100%}
+}
+
+</style>
+
+<style>
+/* 0.4.62.136: template manager is a dedicated full-width editor tab. */
+#ppi-tours-app .ppi-startpage-presets-panel{min-width:0;padding:12px 0 18px}
+#ppi-tours-app .ppi-startpage-presets-panel[hidden],#ppi-tours-app .ppi-startpage-workspace[hidden]{display:none!important}
+#ppi-tours-app .ppi-startpage-presets-panel .ppi-preset-central{max-width:100%;width:100%;box-sizing:border-box}
+@media(max-width:800px){#ppi-tours-app .ppi-startpage-editor-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:520px){#ppi-tours-app .ppi-startpage-editor-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+
+<style>
+/* 0.4.62.137: selectable thumbnail gallery and shared live preview */
+#ppi-tours-app .ppi-preset-tab-grid{display:grid;grid-template-columns:minmax(0, .9fr) minmax(0,1.1fr);gap:18px;align-items:start}
+#ppi-tours-app .ppi-preset-central{padding:0;min-width:0}
+#ppi-tours-app .ppi-preset-central>h3{margin:0 0 4px}
+#ppi-tours-app .ppi-preset-card-hint{margin:0 0 5px;font-size:12px;color:var(--color-text-maxcontrast)}
+#ppi-tours-app .ppi-preset-card-groups{display:grid;gap:14px}
+#ppi-tours-app .ppi-preset-card-group{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#ppi-tours-app .ppi-preset-card-group-title{grid-column:1/-1;font-size:13px;font-weight:650;margin:3px 0 0}
+#ppi-tours-app .ppi-preset-card{display:block;width:100%;text-align:left;min-width:0;cursor:pointer;border:1px solid var(--color-border);border-radius:11px;background:var(--color-main-background);color:var(--color-main-text);padding:6px;box-sizing:border-box;box-shadow:0 3px 9px rgba(0,0,0,.12);transition:box-shadow .15s ease,border-color .15s ease,transform .15s ease}
+#ppi-tours-app .ppi-preset-card:hover{box-shadow:0 5px 13px rgba(0,0,0,.18);transform:translateY(-1px)}
+#ppi-tours-app .ppi-preset-card[aria-pressed="true"]{border:2px solid var(--color-primary-element,#00679e);padding:5px;box-shadow:0 3px 10px rgba(0,0,0,.16)}
+#ppi-tours-app .ppi-preset-card:focus-visible{outline:2px solid var(--color-primary-element,#00679e);outline-offset:2px}
+#ppi-tours-app .ppi-preset-card-scene{display:flex;flex-direction:column;justify-content:flex-start;position:relative;overflow:hidden;aspect-ratio:1.7;border-radius:7px;background:var(--preset-bg);color:var(--preset-heading);isolation:isolate}
+#ppi-tours-app .ppi-preset-card-hero{display:flex;flex-direction:column;justify-content:flex-end;gap:4px;min-height:55%;padding:10px 9px 7px;box-sizing:border-box;background:linear-gradient(180deg,transparent,rgba(0,0,0,.12)),var(--preset-image,none);background-position:center;background-size:cover;background-color:var(--preset-header)}
+#ppi-tours-app .ppi-preset-card-scene[data-layout="gallery"] .ppi-preset-card-hero{min-height:33%;padding-top:6px}
+#ppi-tours-app .ppi-preset-card-scene[data-layout="hero"] .ppi-preset-card-hero{min-height:67%}
+#ppi-tours-app .ppi-preset-card-titleline{height:6px;width:75%;background:var(--preset-heading);border-radius:3px;opacity:.9;box-shadow:0 1px 3px #0003}
+#ppi-tours-app .ppi-preset-card-subline{height:3px;width:53%;background:var(--preset-description);border-radius:3px;opacity:.8}
+#ppi-tours-app .ppi-preset-card-tiles{display:grid;grid-template-columns:repeat(var(--preset-cols),minmax(0,1fr));gap:4px;padding:7px;flex:1;align-content:start}
+#ppi-tours-app .ppi-preset-card-tile{height:27px;border-radius:3px;background:rgba(255,255,255,.72);border:1px solid #ffffff73;box-shadow:0 1px 3px #0002}
+#ppi-tours-app .ppi-preset-card-scene[data-effect="glass"] .ppi-preset-card-tile{background:rgba(255,255,255,.38);backdrop-filter:blur(2px)}
+#ppi-tours-app .ppi-preset-card-scene[data-effect="glossy"] .ppi-preset-card-tile{background:linear-gradient(140deg,#fffd,#fff6)}
+#ppi-tours-app .ppi-preset-card-name{display:block;padding:7px 3px 3px;font-size:12px;font-weight:650;line-height:1.3;overflow-wrap:anywhere}
+#ppi-tours-app .ppi-preset-card-type{display:block;font-size:10px;color:var(--color-text-maxcontrast);padding:0 3px 2px}
+#ppi-tours-app .ppi-preset-select-fallback{position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important}
+#ppi-tours-app .ppi-preset-preview-slot{min-width:0}
+#ppi-tours-app .ppi-preset-preview-slot .ppi-startpage-preview-column{position:sticky;top:12px}
+#ppi-tours-app .ppi-preset-preview-slot .ppi-preset-preview-save{display:none!important}
+@media(max-width:760px){#ppi-tours-app .ppi-preset-tab-grid{grid-template-columns:1fr}#ppi-tours-app .ppi-preset-preview-slot .ppi-startpage-preview-column{position:static}}
+@media(max-width:450px){#ppi-tours-app .ppi-preset-card-group{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* 0.4.62.139: start-page tour password policy */
+#ppi-tours-app .ppi-startpage-tour-security{margin:18px 0;padding:14px 16px;border:1px solid var(--color-border);border-radius:12px}
+#ppi-tours-app .ppi-startpage-tour-security legend{font-weight:650;padding:0 6px}
+#ppi-tours-app .ppi-startpage-tour-security select{width:100%;max-width:580px;margin:8px 0 12px}
+#ppi-tours-app .ppi-startpage-tour-security p{color:var(--color-text-maxcontrast)}
+#ppi-tours-app .ppi-startpage-tour-password-choice{display:flex;align-items:center;gap:9px;padding:6px 0}
+#ppi-tours-app .ppi-startpage-tour-password-choice input{flex:0 0 auto}
+
+/* PPI STARTPAGE SHARE SPACING FIX 2026-11-24 */
+
+/* Nur den Startseiten-Freigabe-Reiter verändern */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+}
+
+/* Überschrift mit Hilfebutton */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-share-help-top {
+    margin: 0 0 12px;
+}
+
+/* Einleitung */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-private-note {
+    margin: 0 0 16px;
+    padding: 11px 13px;
+}
+
+/* Ablaufdatum und Passwort */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-field-row {
+    margin: 0 0 16px !important;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-field-row > label {
+    margin-bottom: 6px !important;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-inline {
+    gap: 8px;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-helptext {
+    margin-top: 5px;
+}
+
+/* Tour-Passwortregel */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-tour-security {
+    margin: 2px 0 12px !important;
+    padding: 11px 13px;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-tour-security p {
+    margin: 4px 0 7px;
+    line-height: 1.45;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-tour-security select {
+    margin: 5px 0 8px;
+}
+
+/* Automatisch gespeicherte Tour-Auswahl */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] #ppi-start-page-tour-password-selection > p {
+    margin: 4px 0 6px;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] #ppi-start-page-tour-password-notice {
+    margin: 5px 0 0;
+}
+
+/* Sichtbarkeitsschalter */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-protected-visibility {
+    margin: 2px 0 10px !important;
+}
+
+/* Freigabestatus */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] #ppi-start-page-share-status {
+    margin: 2px 0 8px !important;
+}
+
+/* Deaktivieren und Link-Aktionen */
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-actions {
+    margin: 0 0 10px !important;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] label:has(#ppi-start-page-share-url) {
+    margin: 0 0 8px;
+    gap: 5px;
+}
+
+#ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-bg-toolbar:last-child {
+    margin: 0;
+}
+
+/* Auf Smartphones etwas mehr Luft erhalten */
+@media (max-width: 620px) {
+    #ppi-tours-app .ppi-startpage-editor-panel[data-startpage-panel="share"] .ppi-startpage-share-field-row {
+        margin-bottom: 14px !important;
+    }
+}
+
+
+
+/* PPI EXTRA SHARE BUTTON ALIGNMENT V2 2026-11-24
+   Only offset the button to align with labelled input controls.
+   No grid, no stretching, no modification of input sizing. */
+#ppi-tours-app .ppi-startpage-extra-links #ppi-startpage-extra-create {
+  position: relative;
+  top: 15px;
+}
+@media (max-width: 620px) {
+  #ppi-tours-app .ppi-startpage-extra-links #ppi-startpage-extra-create {
+    top: 0;
+  }
+}
+
+
+/* PPI START PANORAMA CARD PICKER CSS V1 2026-11-24 */
+/* Same base button class as 'Panorama aus Tour entfernen'. Only icon, color,
+   and its mirrored top-left position differ. */
+#ppi-tours-app #ppi-tour-start-pick-mode{margin-left:8px;white-space:normal}
+#ppi-tours-app #ppi-tour-start-pick-mode.ppi-tour-start-pick-active{
+  border-color:#448f68!important;color:#246e43!important;
+}
+/* Background of the complete card around the thumbnail; no extra outline. */
+#ppi-tours-app .ppi-tour-graph-card.ppi-tour-start-selected,
+#ppi-tours-app .ppi-mobile-pano.ppi-tour-start-selected{
+  /* PPI TOUR STARTPANORAMA SANDFARBE V1 2026-11-24 */
+  background-color:#F0F0F0!important;
+  border:1px solid var(--color-border)!important;
+}
+#ppi-tours-app .ppi-tour-graph-card .ppi-tour-card-delete.ppi-tour-start-check,
+#ppi-tours-app .ppi-mobile-pano .ppi-tour-card-delete.ppi-tour-start-check{
+  position:absolute!important;z-index:5!important;
+  top:8px!important;left:8px!important;right:auto!important;
+  transform:translate(-50%,-50%)!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  opacity:1!important;pointer-events:auto!important;
+  color:#23814d!important;border-color:rgba(35,129,77,.45)!important;
+}
+#ppi-tours-app .ppi-tour-graph-card .ppi-tour-card-delete.ppi-tour-start-check:hover,
+#ppi-tours-app .ppi-mobile-pano .ppi-tour-card-delete.ppi-tour-start-check:hover{
+  background:#23814d!important;color:#fff!important;
+}
+#ppi-tours-app .ppi-start-check-glyph{
+  display:block!important;width:19px!important;height:19px!important;
+  min-width:19px!important;min-height:19px!important;
+  flex:0 0 19px!important;position:static!important;transform:none!important;
+}
+/* Mobile image begins after the card's 10px padding. Keep the same corner placement. */
+#ppi-tours-app .ppi-mobile-pano{position:relative}
+#ppi-tours-app .ppi-mobile-pano .ppi-tour-card-delete.ppi-tour-start-check{
+  top:18px!important;left:18px!important;
+}
+@media (hover:none){
+  #ppi-tours-app .ppi-tour-graph-card .ppi-tour-card-delete.ppi-tour-start-check,
+  #ppi-tours-app .ppi-mobile-pano .ppi-tour-card-delete.ppi-tour-start-check{
+    opacity:1!important;pointer-events:auto!important;
+  }
+}
+
+/* PPI START PANORAMA DESIGN CSS V2 2026-11-24 */
+/* During choosing, hide panorama deletion controls (but not the green ticks). */
+#ppi-tours-app.ppi-tour-start-picking .ppi-tour-graph-card .ppi-tour-card-delete:not(.ppi-tour-start-check),
+#ppi-tours-app.ppi-tour-start-picking .ppi-mobile-pano .ppi-mobile-pano-remove{
+  opacity:0!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+/* PPI STARTPANORAMA VERBINDUNGEN LOESCHEN AUSBLENDEN V3 2026-11-24 */
+/* Only while choosing the start panorama: keep edge-delete controls hidden
+   even when hover/focus handlers temporarily apply their active class.
+   When selection ends or is cancelled, the normal controls return. */
+#ppi-tours-app.ppi-tour-start-picking .ppi-tour-edge-delete,
+#ppi-tours-app.ppi-tour-start-picking .ppi-mobile-link button[title="Verbindung entfernen"] {
+  display:none!important;
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+/* PPI STARTPAGE EXTRA LINKS TOUR DESIGN V1 2026-11-24 */
+#ppi-tours-app .ppi-startpage-extra-links{min-width:0}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-create{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr));gap:10px;align-items:end;margin:14px 0}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-create label{display:flex;flex-direction:column;gap:5px;min-width:0}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-create input,
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-fields input,
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-link input{width:100%;max-width:none!important;min-width:0;box-sizing:border-box}
+#ppi-tours-app .ppi-startpage-extra-links #ppi-startpage-extra-create{position:static!important;top:auto!important;align-self:end}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-list{margin-top:12px}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-link input{flex:1 1 250px;width:auto!important}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-extra-fields label{flex:1 1 160px}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-startpage-extra-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:12px}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-startpage-extra-entry > small{display:block;margin-top:8px}
+#ppi-tours-app .ppi-startpage-extra-links .ppi-startpage-extra-entry > small:empty,
+#ppi-tours-app .ppi-startpage-extra-links #ppi-startpage-extra-status:empty{display:none}
+@media (max-width:620px){
+ #ppi-tours-app .ppi-startpage-extra-links .ppi-extra-link input{flex:1 1 100%;width:100%!important}
+ #ppi-tours-app .ppi-startpage-extra-links .ppi-extra-fields label{flex:1 1 100%}
+}
+
 </style>
