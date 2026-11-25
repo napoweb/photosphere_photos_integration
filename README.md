@@ -1,6 +1,6 @@
 # Photo Sphere – 360° Panorama
 
-**Version 0.4.62.92 (Veröffentlichungskandidat)** · Entwickler: **Stefan Sührer** · Nextcloud 35
+**Version 0.4.62.140 (Release-Kandidat – noch nicht veröffentlicht)** · Entwickler: **Stefan Sührer** · Nextcloud 35
 
 Photo Sphere erweitert die Nextcloud **Fotos-App** und **Dateien-App** um eine interaktive 360°-Panoramaansicht. Geeignete Panoramabilder werden automatisch erkannt, **aber nicht automatisch geöffnet**. Die gewohnte Navigation und die normale Bildanzeige bleiben erhalten. Die 360°-Ansicht startet erst nach einer bewussten Benutzeraktion.
 
@@ -29,6 +29,10 @@ Unter **Gespeicherte Wasserzeichen → Ordnerzuweisungen** lassen sich Ordner ü
 ## 360°-Touren und Hotspots
 
 Angemeldete Benutzer können eigene Touren aus ihren berechtigten Panorama-Dateien zusammenstellen, Bilder mit Hotspots verknüpfen und Touren verwalten. Öffentliche Tourfreigaben besitzen eigenständige Links und können je nach Freigabe mit Passwort, Ablaufdatum und Aktivierungsstatus verwaltet werden. Die bestehende Tourenübersicht kann optional über einen zusätzlichen Eintrag im Nextcloud-App-Menü geöffnet werden.
+
+## Startseiten und Freigaben
+
+Angemeldete Benutzer können 360°-Touren zu eigenen, responsiv gestalteten Startseiten zusammenfassen. Layout und Designvorlagen lassen sich mit einer Live-Vorschau bearbeiten. Für Startseiten sind gesonderte öffentliche Freigaben mit optionalem Passwort und Ablaufdatum verfügbar. Zusätzliche Freigabelinks können unabhängig verwaltet werden. Ein optionales Ablaufdatum sperrt den Link ab 00:00 Uhr am gewählten Datum in der Nextcloud-Zeitzone des Freigabebesitzers, auch für bestehende Besuchersitzungen. Dabei gelten die Berechtigungsprüfungen und die konfigurierten Tour-Passwortregeln weiterhin.
 
 ## Tour-Cache und Hintergrundjobs
 
@@ -95,3 +99,5 @@ mit stabilen IDs `builtin:*` definiert. Vor einer offiziellen Veröffentlichung:
 
 Die persönlichen Presets sind benutzerspezifisch gespeichert und werden nicht automatisch
 Teil des App-Pakets. Diese Trennung verhindert, dass private Dateireferenzen veröffentlicht werden.
+
+> **Release-Status:** 0.4.62.140 ist ein noch unveröffentlichter Release-Kandidat. Quellcode-Abgleich, Sicherheitstests, signiertes Paket und App-Store-Prüfung stehen noch aus.
