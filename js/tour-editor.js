@@ -3944,8 +3944,8 @@
           window.open(startPagePublicUrl(page), '_blank', 'noopener,noreferrer');
         } else {
           showStartPageEditor(page);
-          showStartPageTab('layout');
-          notify('Privater Entwurf: Live-Vorschau im Layout-Reiter geöffnet.');
+          showStartPageTab('share');
+          notify('Diese Startseite ist noch privat. Bitte zuerst einen Freigabelink erstellen.');
         }
       }));
       if (page.publicToken) {

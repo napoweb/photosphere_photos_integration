@@ -1220,9 +1220,9 @@
 
 /* 0.4.62.23: move size control opposite the description and fill available vertical space. */
 #ppi-tours-app #ppi-step-design .ppi-design-layout{align-items:stretch}
-#ppi-tours-app #ppi-step-design .ppi-design-layout>.ppi-design-group{align-self:stretch;min-height:0}
-#ppi-tours-app #ppi-step-design .ppi-design-intro{display:flex;flex-direction:column;flex:1 1 auto;min-height:175px}
-#ppi-tours-app #ppi-step-design .ppi-design-intro textarea{flex:1 1 auto;min-height:128px;height:100%;box-sizing:border-box;resize:vertical}
+#ppi-tours-app #ppi-step-design .ppi-design-layout>.ppi-design-group{min-height:0}
+#ppi-tours-app #ppi-step-design .ppi-design-intro{display:flex;flex-direction:column;min-height:175px}
+#ppi-tours-app #ppi-step-design .ppi-design-intro textarea{min-height:128px;height:100%;box-sizing:border-box;resize:vertical}
 #ppi-tours-app #ppi-step-design .ppi-design-intro>p{flex-shrink:0}
 @media(max-width:700px){
  #ppi-tours-app #ppi-step-design .ppi-design-intro{min-height:0;flex:0 1 auto}
@@ -1572,10 +1572,10 @@
    The tour title stays above; previews have identical heights. */
 #ppi-tours-app #ppi-step-design .ppi-design-name-row{margin:12px 0 10px}
 #ppi-tours-app #ppi-step-design .ppi-design-name-row .ppi-design-name{width:100%;box-sizing:border-box}
-#ppi-tours-app #ppi-step-design .ppi-design-top{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:stretch;margin:0 0 10px}
-#ppi-tours-app #ppi-step-design .ppi-design-top>.ppi-design-mini{min-width:0;display:flex;flex-direction:column;gap:7px;align-self:stretch}
+#ppi-tours-app #ppi-step-design .ppi-design-top{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0 0 10px}
+#ppi-tours-app #ppi-step-design .ppi-design-top>.ppi-design-mini{min-width:0;gap:7px}
 #ppi-tours-app #ppi-step-design .ppi-design-top .ppi-design-mini-image{height:74px;min-height:74px;box-sizing:border-box}
-#ppi-tours-app #ppi-step-design .ppi-design-top .ppi-design-mini>label:first-child{font-size:12px;font-weight:650;line-height:18px}
+
 #ppi-tours-app #ppi-step-design #ppi-design-pin-colors{display:flex!important}
 #ppi-tours-app #ppi-step-design .ppi-design-color-preview{position:relative;cursor:pointer}
 #ppi-tours-app #ppi-step-design #ppi-design-color-chip{display:block;position:absolute;inset:0;background:var(--ppi-svg-pin-color,#1687bc);border-radius:6px}
@@ -1655,9 +1655,7 @@
 #ppi-tours-app #ppi-step-design .ppi-design-watermark-preview{
   background:repeating-conic-gradient(#d9dde0 0% 25%,#fff 0% 50%) 50%/16px 16px;
 }
-#ppi-tours-app #ppi-step-design .ppi-design-watermark-preview>img{
-  object-fit:contain;padding:5px;
-}
+
 #ppi-tours-app #ppi-step-design .ppi-design-watermark-toggle{
   min-height:22px;flex:none;margin:0;
 }
@@ -1674,9 +1672,7 @@
   max-height:90px;
 }
 
-@media(max-width:440px){
-  #ppi-tours-app #ppi-step-design .ppi-design-top{grid-template-columns:minmax(0,1fr)}
-}
+
 
 
 /* 0.4.62.58 – larger four-card headings, watermark toggle alongside title,

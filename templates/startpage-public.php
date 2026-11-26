@@ -1287,4 +1287,41 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
   }
 }
 
+
+/* PPI STARTPAGE TOUR TITLE TOP CENTER V1
+   Smaller tour names, aligned top and center.
+   Existing mosaic geometry remains unchanged. */
+
+#ppi-public-startpage[data-cols]
+.ppi-public-start-grid > .ppi-public-start-card
+> .ppi-public-start-card-content {
+  justify-content:flex-start!important;
+  align-items:center!important;
+  text-align:center!important;
+}
+
+#ppi-public-startpage[data-cols]
+.ppi-public-start-grid > .ppi-public-start-card
+> .ppi-public-start-card-content > strong {
+  font-size:clamp(11px,1vw,14px)!important;
+  line-height:1.25!important;
+  text-align:center!important;
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+
+@media(max-width:650px) {
+  #ppi-public-startpage[data-cols]
+  .ppi-public-start-grid > .ppi-public-start-card
+  > .ppi-public-start-card-content > strong {
+    font-size:12px!important;
+  }
+
+  #ppi-public-startpage[data-mobile-cols="auto"][data-cols]
+  .ppi-public-start-grid > .ppi-public-start-card
+  > .ppi-public-start-card-content > strong {
+    font-size:10px!important;
+  }
+}
+
 </style>
