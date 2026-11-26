@@ -623,7 +623,7 @@
       if(display.showNavigation===false){nav.hidden=true;navToggle.hidden=true;mobileNav.hidden=true;}
       root.dataset.hotspotSize=['xsmall','small','medium','large','xlarge'].includes(display.hotspotSize)?display.hotspotSize:'medium';
       surface.style.setProperty('--ppi-svg-pin-color',/^#[0-9a-fA-F]{6}$/.test(display.svgPinColor||'')?display.svgPinColor:'#1687bc');
-      surface.dataset.hotspotStyle=display.hotspotStyle==='chat-pin'?'map-pin':(['classic','blue','map-pin','label-pin','outline-pin'].includes(display.hotspotStyle)?display.hotspotStyle:'classic');
+      surface.dataset.hotspotStyle=display.hotspotStyle==='chat-pin'?'map-pin':(['classic','blue','map-pin','label-pin','outline-pin','gps-pin','you-pin'].includes(display.hotspotStyle)?display.hotspotStyle:'classic');
       if(mobile())byId('ppi-public-guide').hidden=true;
       byId('ppi-public-fullscreen').hidden=display.showFullscreen===false;
       mobileFullscreen.hidden=display.showFullscreen===false;
