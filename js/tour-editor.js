@@ -139,7 +139,7 @@
     byId('ppi-preview-image').style.display = 'none';
     sphereRoot.hidden = false; sphereRoot.style.display = 'block';
     sphereRoot.style.setProperty('--ppi-svg-pin-color',/^#[0-9a-fA-F]{6}$/.test(active?.display?.svgPinColor||'')?active.display.svgPinColor:'#1687bc');
-    sphereRoot.dataset.hotspotStyle=active?.display?.hotspotStyle==='chat-pin'?'map-pin':(['classic','blue','map-pin','label-pin','outline-pin'].includes(active?.display?.hotspotStyle)?active.display.hotspotStyle:'classic');
+    sphereRoot.dataset.hotspotStyle=active?.display?.hotspotStyle==='chat-pin'?'map-pin':(['classic','blue','map-pin','label-pin','outline-pin','gps-pin','you-pin'].includes(active?.display?.hotspotStyle)?active.display.hotspotStyle:'classic');
     const url = `${imageApi}?fileId=${encodeURIComponent(id)}`;
     // Preserve the loading overlay while WebGL is reconstructed. Allow it
     // to paint before potentially expensive image / texture work begins.
@@ -394,7 +394,6 @@
     return {...d,
       startImageId:Number(byId('ppi-design-start').value)||0,
       startYaw:Number(byId('ppi-design-yaw').value)||0,
-      socialPreviewMode:byId('ppi-design-social').value,
       hotspotSize:sizeSteps[Number(byId('ppi-design-size').value)]||'medium',
       hotspotStyle:byId('ppi-design-style').value,
       svgPinColor:byId('ppi-design-pin-color').value,
@@ -518,6 +517,61 @@
     try {await navigator.clipboard.writeText(tourPublicUrl(tour)); notify('Freigabelink kopiert.');}
     catch {window.prompt('Freigabelink kopieren:', tourPublicUrl(tour));}
   }
+  /* ppi-compact-actions-v5 */
+  // Keep the original action buttons, handlers and permission rules untouched.
+  function decorateCompactActions(actions) {
+    if (!actions || actions.dataset.ppiCompactActions) return;
+    const buttons = [...actions.children].filter(el => el.tagName === 'BUTTON');
+    if (buttons.length < 3 || buttons[0].textContent.trim() !== 'Bearbeiten' || buttons[1].textContent.trim() !== 'Vorschau') return;
+    const rest = buttons.slice(2);
+    const more = document.createElement('div');
+    more.className = 'ppi-compact-more';
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'ppi-compact-more-trigger';
+    toggle.setAttribute('aria-haspopup','true');
+    toggle.setAttribute('aria-expanded','false');
+    toggle.setAttribute('aria-label','Weitere Aktionen');
+    toggle.title = 'Weitere Aktionen';
+    toggle.textContent = '⋯ Mehr';
+    const panel = document.createElement('div');
+    panel.className = 'ppi-compact-more-panel';
+    for (const btn of rest) panel.append(btn); // Move real buttons; listeners remain intact.
+    more.append(toggle, panel);
+    actions.append(more);
+    actions.dataset.ppiCompactActions = '1';
+    const close = () => {
+      more.classList.remove('ppi-compact-more-open');
+      actions.closest('.ppi-overview-tile')?.classList.remove('ppi-compact-menu-visible');
+      toggle.setAttribute('aria-expanded', 'false');
+    };
+    toggle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const opening = !more.classList.contains('ppi-compact-more-open');
+      document.querySelectorAll('.ppi-compact-more-open').forEach(el => {
+        el.classList.remove('ppi-compact-more-open');
+        el.querySelector('.ppi-compact-more-trigger')?.setAttribute('aria-expanded', 'false');
+        el.closest('.ppi-overview-tile')?.classList.remove('ppi-compact-menu-visible');
+      });
+      if (opening) {
+        more.classList.add('ppi-compact-more-open');
+        actions.closest('.ppi-overview-tile')?.classList.add('ppi-compact-menu-visible');
+        toggle.setAttribute('aria-expanded', 'true');
+      }
+    });
+    panel.addEventListener('click', event => { if (event.target.closest('button')) close(); });
+    more.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { event.preventDefault(); close(); toggle.focus(); }
+    });
+  }
+  document.addEventListener('click', event => {
+    if (event.target.closest('.ppi-compact-more')) return;
+    document.querySelectorAll('.ppi-compact-more-open').forEach(el => {
+      el.classList.remove('ppi-compact-more-open');
+      el.querySelector('.ppi-compact-more-trigger')?.setAttribute('aria-expanded','false');
+      el.closest('.ppi-overview-tile')?.classList.remove('ppi-compact-menu-visible');
+    });
+  });
   function tourAction(label, handler, primary=false) {
     const b=node('button',label);b.type='button';if(primary)b.classList.add('primary');
     b.addEventListener('click',handler);return b;
@@ -533,6 +587,7 @@
     if (!tours.length) container.append(node('p','Noch keine Touren erstellt.'));
     for (const tour of tours) {
       const tile=node('article',undefined,'ppi-overview-tile');
+      tile.dataset.ppiName=tour.name||'';tile.dataset.ppiModified=tour.modified||tour.created||'';tile.dataset.ppiOriginalIndex=String(container.querySelectorAll(':scope > .ppi-overview-tile').length);
       if (tour.images?.length) {
         const preview=imageThumb(tourCoverImage(tour).id,640,300);
         preview.className='ppi-overview-thumb';preview.alt='Tour-Vorschaubild: '+tour.name;
@@ -552,6 +607,7 @@
         actions.append(tourAction('Hauptlink deaktivieren',()=>quickShare(tour,false)));
       } else actions.append(tourAction('Freigeben',()=>quickShare(tour,true)));
       actions.append(tourAction('Freigabe verwalten',()=>openTour(tour,'share')));
+      decorateCompactActions(actions);
       body.append(actions);tile.append(body);container.append(tile);
     }
   }
@@ -691,7 +747,7 @@
     classicPreview.hidden=!classic;
     classicPreview.style.display=classic?'block':'none';
     const pinPreview=byId('ppi-design-pin-preview');
-    const isPin=style==='map-pin'||style==='label-pin'||style==='outline-pin';
+    const isPin=['map-pin','label-pin','outline-pin','gps-pin','you-pin'].includes(style);
     const pinColor=byId('ppi-design-pin-color').value;
     // The color card remains visible in the top row; only SVG pin styles use its value.
     root.style.setProperty('--ppi-svg-pin-color',pinColor);
@@ -700,7 +756,7 @@
     pinPreview.hidden=!isPin;
     pinPreview.style.display=isPin?'block':'none';
     if(isPin){
-      const file=style==='label-pin'?'hotspot-label-pin.svg':style==='outline-pin'?'hotspot-outline-pin.svg':'hotspot-map-pin.svg';
+      const file=({ 'label-pin':'hotspot-label-pin.svg', 'outline-pin':'hotspot-outline-pin.svg', 'gps-pin':'hotspot-gps-pin.svg', 'you-pin':'hotspot-you-pin.svg' })[style] || 'hotspot-map-pin.svg';
       const path=window.OC?.filePath ? window.OC.filePath('photosphere_photos_integration','img',file) : '/custom_apps/photosphere_photos_integration/img/'+file;
       if(pinPreview.dataset.maskUrl!==path){pinPreview.dataset.maskUrl=path;pinPreview.style.webkitMaskImage=`url("${path}")`;pinPreview.style.maskImage=`url("${path}")`;}
     }
@@ -708,7 +764,7 @@
     byId('ppi-design-size-label').textContent=sizeNames[n];
     root.querySelector('.ppi-design-hotspot-preview')?.style.setProperty('--ppi-mini-scale',String([.72,.8,1,1.2,1.28][n]));
   }
-  const designDefault = {watermarkEnabled:false,watermarkId:'none',startImageId:0,startYaw:0,showTitle:true,showNavigation:true,showFullscreen:true,hotspotSize:'medium',hotspotStyle:'classic',introText:'',socialPreviewMode:'cover',svgPinColor:'#1687bc'};
+  const designDefault = {watermarkEnabled:false,watermarkId:'none',startImageId:0,startYaw:0,showTitle:true,showNavigation:true,showFullscreen:true,hotspotSize:'medium',hotspotStyle:'label-pin',introText:'',svgPinColor:'#1687bc'};
   function currentDesign(){return {...designDefault,...(active?.display||{})};}
   /* PPI START PANORAMA CARD PICKER V1 2026-11-24 */
   // One persisted property for both editing tabs; no separate data model.
@@ -801,8 +857,19 @@
     button.addEventListener('click', event => {
       event.preventDefault();
       event.stopPropagation();
-      if (!active || !active.images.some(item => Number(item.id) === Number(img.id))) return;
-      active.display = {...currentDesign(), startImageId: Number(img.id)};
+      ppiChooseStartPanorama(img);
+    });
+    return button;
+  }
+
+  function ppiChooseStartPanorama(img) {
+    if (!active || !active.images.some(item =>
+      Number(item.id) === Number(img.id))) return;
+
+    active.display = {
+      ...currentDesign(),
+      startImageId: Number(img.id)
+    };
       const select = byId('ppi-design-start');
       if ([...select.options].some(option => Number(option.value) === Number(img.id))) {
         select.value = String(img.id);
@@ -813,9 +880,16 @@
         ppiStartUpdatePickButton();
         renderGraph();
       });
+      // 0.4.64: Neues Startpanorama automatisch speichern.
       ppiTourAutoSchedule();
-    });
-    return button;
+  }
+
+  function ppiHandleStartPanoramaClick(img) {
+    if (ppiStartPickMode) {
+      ppiChooseStartPanorama(img);
+    } else {
+      previewImage(img);
+    }
   }
   ppiStartPickButton.addEventListener('click', () => {
     if (!active?.images?.length) {
@@ -838,20 +912,6 @@
     if (!byId('ppi-step-edit').hidden) renderGraph();
   });
   ppiStartUpdatePickButton();
-  function updateSocialPreviewStatus(){
-    const indicator=byId('ppi-design-social-status');
-    if(!indicator)return;
-    const mode=byId('ppi-design-social').value;
-    if(mode==='off'){
-      indicator.textContent='Keine zusätzlichen Linkvorschau-Daten aktiviert.';
-    }else if(active?.sharePasswordProtected){
-      indicator.textContent='Passwortschutz aktiv: neutrales 360°-Motiv und allgemeiner Beschreibungstext.';
-    }else if(mode==='neutral'){
-      indicator.textContent='Neutrales 360°-Motiv; Tourtitel und Tourbeschreibung bleiben sichtbar.';
-    }else{
-      indicator.textContent='Ohne Passwort: Startpanorama, Tourname und Beschreibung werden automatisch verwendet.';
-    }
-  }
   function renderDesign(){
     const d=currentDesign();const select=byId('ppi-design-start');select.replaceChildren();
     for(const img of active.images){const opt=node('option',img.name);opt.value=String(img.id);select.append(opt);}
@@ -859,10 +919,9 @@
     byId('ppi-tour-name').value=String(active.name||'');
     byId('ppi-design-yaw').value=String(d.startYaw);byId('ppi-design-yaw-value').textContent=d.startYaw+'°';
     byId('ppi-design-intro').value=String(d.introText||'');
-    byId('ppi-design-social').value=['cover','neutral','off'].includes(d.socialPreviewMode)?d.socialPreviewMode:'cover';
     byId('ppi-design-size').value=String(Math.max(0,sizeSteps.indexOf(d.hotspotSize)));
     byId('ppi-design-pin-color').value=/^#[0-9a-fA-F]{6}$/.test(d.svgPinColor||'')?d.svgPinColor:'#1687bc';
-    byId('ppi-design-style').value=d.hotspotStyle==='chat-pin'?'map-pin':(['classic','blue','map-pin','label-pin','outline-pin'].includes(d.hotspotStyle)?d.hotspotStyle:'classic');
+    byId('ppi-design-style').value=d.hotspotStyle==='chat-pin'?'map-pin':(['classic','blue','map-pin','label-pin','outline-pin','gps-pin','you-pin'].includes(d.hotspotStyle)?d.hotspotStyle:'classic');
     byId('ppi-design-title').checked=Boolean(d.showTitle);
     byId('ppi-design-nav').checked=Boolean(d.showNavigation);
     byId('ppi-design-fullscreen').checked=Boolean(d.showFullscreen);
@@ -877,7 +936,6 @@
     byId('ppi-design-watermark-info').textContent=tourWatermarks.length?'Nur vom Administrator freigegebene Wasserzeichen sind auswählbar.':'Aktuell wurden keine Wasserzeichen für Touren freigegeben.';
     refreshDesignPreviews();
     refreshWatermarkThumbnail();
-    updateSocialPreviewStatus();
   }
   function refreshWatermarkThumbnail(){
     const enabled=byId('ppi-design-watermark-enabled').checked;
@@ -899,7 +957,6 @@
     refreshWatermarkThumbnail();
   });
   byId('ppi-design-watermark-id').addEventListener('change',refreshWatermarkThumbnail);
-  byId('ppi-design-social').addEventListener('change',updateSocialPreviewStatus);
   // Native color picker: Firefox may dispatch input, change or both.
   // Queue autosave only AFTER the input value is already updated.
   for (const eventType of ['input', 'change']) {
@@ -1038,7 +1095,7 @@
       if(descriptionField.value.trim().length>300){notify('Beschreibung: maximal 300 Zeichen. Bitte vorhandenen Text kürzen.',true);descriptionField.focus();return;}
       if(!byId('ppi-tour-name').value.trim()){notify('Bitte einen Namen für die Tour eingeben.',true);byId('ppi-tour-name').focus();return;}
       const display={startImageId:Number(byId('ppi-design-start').value)||0,startYaw:Number(byId('ppi-design-yaw').value),
-        introText:byId('ppi-design-intro').value.trim(),socialPreviewMode:byId('ppi-design-social').value,hotspotSize:sizeSteps[Number(byId('ppi-design-size').value)]||'medium',hotspotStyle:byId('ppi-design-style').value,svgPinColor:byId('ppi-design-pin-color').value,showTitle:byId('ppi-design-title').checked,
+        introText:byId('ppi-design-intro').value.trim(),hotspotSize:sizeSteps[Number(byId('ppi-design-size').value)]||'medium',hotspotStyle:byId('ppi-design-style').value,svgPinColor:byId('ppi-design-pin-color').value,showTitle:byId('ppi-design-title').checked,
         showNavigation:byId('ppi-design-nav').checked,showFullscreen:byId('ppi-design-fullscreen').checked,
         watermarkEnabled:byId('ppi-design-watermark-enabled').checked,watermarkId:byId('ppi-design-watermark-id').value};
       const result=await request(`${api}/${encodeURIComponent(active.id)}`,'POST',{
@@ -1051,14 +1108,47 @@
   async function openTour(tour,step='edit') { ppiStartPickMode=false;ppiStartUpdatePickButton();active=clone(tour); ppiTourAutoId=null; await loadTourWatermarks(); show('editor'); render(); setSetupStep(step); ppiTourAutoReset(); }
   function renderExtraShareLinks() {
     const list=byId('ppi-extra-list');
+    const expandedLinkIds = new Set(
+      [...list.querySelectorAll('details[data-link-id][open]')]
+        .map(el => el.dataset.linkId)
+    );
     list.replaceChildren();
     const links=Array.isArray(active?.shareLinks)?active.shareLinks:[];
     if(!links.length){list.append(node('p','Noch keine zusätzlichen Freigabelinks.'));return;}
     for(const link of links){
-      const card=node('article',undefined,'ppi-extra-entry');
-      const header=node('strong',link.name);
-      const state=node('span',shareExpiredOn(link.expiresOn, active)?' · Abgelaufen':(link.disabled?' · Deaktiviert':(link.passwordProtected?' · Mit Passwort':' · Ohne Passwort')));
-      header.append(state);card.append(header);
+      // PPI TOUR EXTRA SHARE ACCORDION V1
+      const card=node(
+        'details',undefined,
+        'ppi-extra-entry ppi-startpage-extra-entry ppi-startpage-share-accordion'
+      );
+      card.dataset.linkId=String(link.id);
+      card.open=expandedLinkIds.has(String(link.id));
+      const expired=shareExpiredOn(link.expiresOn,active);
+      const state=expired?'Abgelaufen':
+        link.disabled?'Deaktiviert':
+        link.passwordProtected?'Mit Passwort':'Ohne Passwort';
+
+      const heading=node(
+        'summary',undefined,'ppi-startpage-share-accordion-heading'
+      );
+
+      const linkNumber=links.indexOf(link)+2;
+
+      heading.append(
+        node('strong',link.name||'Freigabelink'),
+        node(
+          'span',
+          'Link '+linkNumber+' · '+state+
+          (link.expiresOn?' · Ablauf '+link.expiresOn:''),
+          'ppi-startpage-share-accordion-state'
+        )
+      );
+
+      card.append(heading);
+
+      const actions=node(
+        'div',undefined,'ppi-startpage-extra-actions'
+      );
       const url=tourPublicUrl({publicToken:link.token});
       const linkRow=node('div',undefined,'ppi-extra-link');
       const urlInput=node('input');urlInput.type='text';urlInput.readOnly=true;urlInput.value=url;urlInput.setAttribute('aria-label','Freigabelink '+link.name);
@@ -1081,18 +1171,19 @@
       }));}
       card.append(passwordFields);
       if (!shareExpiredOn(link.expiresOn, active)) {
-        card.append(tourAction(link.disabled?'Link aktivieren':'Link deaktivieren',()=>{
+        actions.append(tourAction(link.disabled?'Link aktivieren':'Link deaktivieren',()=>{
           if(link.disabled || confirm('Diesen Link vorübergehend deaktivieren?'))return extraAction(link.id,link.disabled?'enable':'disable');
         }));
       }
-      card.append(tourAction('Token erneuern',()=>{
+      actions.append(tourAction('Token erneuern',()=>{
         if(confirm('Token für diesen Freigabelink erneuern? Der bisherige Link und seine Bild-URLs werden sofort ungültig. Passwort und Einstellungen bleiben erhalten.')){
           return extraAction(link.id,'rotate');
         }
       }));
-      card.append(tourAction('Diesen Link widerrufen',()=>{
+      actions.append(tourAction('Diesen Link widerrufen',()=>{
         if(confirm('Diesen Freigabelink endgültig widerrufen? Andere Links bleiben gültig.'))return extraAction(link.id,'revoke');
       }));
+      card.append(actions);
       list.append(card);
     }
   }
@@ -1119,7 +1210,6 @@
   function updateShareUi() {
     renderExtraShareLinks();
     byId('ppi-extra-expiry').min = earliestShareExpiry(active);
-    updateSocialPreviewStatus();
     const token = active?.publicToken || null;
     byId('ppi-share-state').textContent = token ? (shareExpiredOn(active?.shareExpiresOn, active) ? 'Abgelaufen' : 'Freigegeben') : 'Nicht freigegeben';
     byId('ppi-share-enable').hidden = Boolean(token);
@@ -1232,8 +1322,11 @@
     active.images.forEach(img=>{
       const card=node('div',undefined,'ppi-mobile-pano');
       card.classList.toggle('ppi-tour-start-selected', Number(img.id) === ppiStartSelectedId());
-      const photo=node('button',undefined,'ppi-mobile-pano-photo');photo.type='button';photo.title=`Panorama öffnen: ${img.name}`;
-      photo.append(imageThumb(img.id,420,240));photo.addEventListener('click',()=>previewImage(img));
+      const photo=node('button',undefined,'ppi-mobile-pano-photo');photo.type='button';photo.title=ppiStartPickMode
+        ? `Als Startpanorama festlegen: ${img.name}`
+        : `Panorama öffnen: ${img.name}`;
+      photo.append(imageThumb(img.id,420,240));photo.addEventListener('click',()=>
+        ppiHandleStartPanoramaClick(img));
       const title=node('div',img.name,'ppi-mobile-pano-title');
       const linksBox=node('div',undefined,'ppi-mobile-pano-links');
       const outgoing=active.links.filter(l=>Number(l.from)===Number(img.id));
@@ -1251,7 +1344,8 @@
         line.append(del);linksBox.append(line);
       }
       const actions=node('div',undefined,'ppi-mobile-pano-actions');
-      const open=node('button','360° öffnen');open.type='button';open.addEventListener('click',()=>previewImage(img));
+      const open=node('button','360° öffnen');open.type='button';open.addEventListener('click',()=>
+        ppiHandleStartPanoramaClick(img));
       const remove=node('button','Entfernen');remove.type='button';remove.classList.add('ppi-mobile-pano-remove');remove.addEventListener('click',()=>{
         if(!confirm(`„${img.name}“ aus dieser Tour entfernen? Zugehörige Verbindungen werden ebenfalls gelöscht. Die Originaldatei bleibt erhalten.`))return;
         active.images=active.images.filter(x=>Number(x.id)!==Number(img.id));
@@ -1613,10 +1707,13 @@
       card.style.left=p.x+'px';card.style.top=p.y+'px';
       const picture=node('button',undefined,'ppi-tour-graph-thumb');
       picture.type='button';
-      picture.title=`Panorama öffnen: ${img.name}`;
+      picture.title=ppiStartPickMode
+        ? `Als Startpanorama festlegen: ${img.name}`
+        : `Panorama öffnen: ${img.name}`;
       picture.setAttribute('aria-label',picture.title);
       picture.append(imageThumb(img.id,420,240),node('span','🌐','ppi-thumb-fallback'));
-      picture.addEventListener('click',()=>previewImage(img));
+      picture.addEventListener('click',()=>
+        ppiHandleStartPanoramaClick(img));
       const name=node('div',img.name,'ppi-tour-graph-name');name.title=img.path||img.name;
       const remove=node('button',undefined,'ppi-tour-card-delete');remove.type='button';remove.append(node('span','×','ppi-delete-glyph'));remove.title=`Panorama aus Tour entfernen: ${img.name}`;
       remove.setAttribute('aria-label',remove.title);
@@ -1937,7 +2034,7 @@
   let ppiAutoError = false;
   let ppiAutoStatus = null;
   const ppiAutoDesignKeys = ['layout','headingColor','descriptionColor','designEffect',
-    'backgroundColor','headerBackgroundColor','backgroundFileId','tileColumns','tourIds'];
+    'backgroundColor','headerBackgroundColor','backgroundFileId','tileColumns','mobileColumns','tourIds','tourShareBindings'];
   function ppiAutoPayload() {
     const values = startPageFormValues();
     const payload = {};
@@ -2021,7 +2118,8 @@
     ppiAutoBusy = true;
     try {
       const result = await request(startPagesApi+'/'+encodeURIComponent(pageId),'POST',{
-        ...text,...values,tourIds:JSON.stringify(values.tourIds)
+        ...text,...values,tourIds:JSON.stringify(values.tourIds),
+        tourShareBindings:JSON.stringify(values.tourShareBindings)
       });
       ppiAutoLast = signature;
       ppiAutoError = false;
@@ -2075,7 +2173,11 @@
       headerBackgroundColor:byId('ppi-start-page-header-color').value,
       backgroundFileId:startPageBackgroundFileId,
       tileColumns:byId('ppi-start-page-tile-columns').value,
-      tourIds:[...byId('ppi-start-page-tours').querySelectorAll('input:checked')].map(input => input.value)
+      mobileColumns:byId('ppi-start-page-mobile-columns').value,
+      tourIds:[...byId('ppi-start-page-tours').querySelectorAll('input[type="checkbox"]:checked')].map(input => input.value),
+      tourShareBindings:Object.fromEntries([...byId('ppi-start-page-tours').querySelectorAll('.ppi-startpage-tour-option')]
+        .filter(row=>row.querySelector('input[type="checkbox"]')?.checked)
+        .map(row=>[row.dataset.tourId,row.querySelector('.ppi-startpage-link-select')?.value || 'main']))
     };
   }
   // Startpage presets are stored per user on the server (Nextcloud IConfig), never localStorage.
@@ -2344,6 +2446,7 @@
     const preview = byId('ppi-startpage-preview');
     preview.dataset.layout = values.layout;
     preview.dataset.effect = values.designEffect;
+    preview.style.setProperty('--ppi-mobile-columns', values.mobileColumns);
     // The controls are presentation-only: never reset values when a picture hides a row.
     // The image replaces the full-page color in hero mode and the header color
     // in split mode; the lower tour area still needs its background color.
@@ -2400,6 +2503,23 @@
     queueDescriptionResize();
     ppiAutoSchedule();
   }
+  // Mobile layout is saved per start page, preview device is never saved.
+  const mobileColumnsButtons = [...byId('ppi-start-page-mobile-columns-choices').querySelectorAll('[data-mobile-cols]')];
+  function chooseMobileColumns(value, update=true) {
+    if (!['auto','1','2','3'].includes(value)) return;
+    byId('ppi-start-page-mobile-columns').value = value;
+    for (const button of mobileColumnsButtons) button.setAttribute('aria-pressed',String(button.dataset.mobileCols===value));
+    if (update) updateStartPagePreview();
+  }
+  for (const button of mobileColumnsButtons) button.addEventListener('click',()=>{ choosePreviewDevice('mobile'); chooseMobileColumns(button.dataset.mobileCols); });
+  const previewDeviceButtons = [...byId('ppi-startpage-preview-device-choices').querySelectorAll('[data-preview-device]')];
+  function choosePreviewDevice(value) {
+    if (!['desktop','mobile'].includes(value)) return;
+    byId('ppi-startpage-preview').dataset.ppiPreviewDevice = value;
+    for (const button of previewDeviceButtons) button.setAttribute('aria-pressed',String(button.dataset.previewDevice===value));
+  }
+  for (const button of previewDeviceButtons) button.addEventListener('click',()=>choosePreviewDevice(button.dataset.previewDevice));
+  choosePreviewDevice('desktop');
   const layoutPresetButtons = [...byId('ppi-start-page-tile-presets').querySelectorAll('[data-columns]')];
   function chooseTileLayout(value) {
     if (!['auto','2','3','4','5'].includes(value)) return;
@@ -2410,7 +2530,7 @@
     updateStartPagePreview();
   }
   for (const button of layoutPresetButtons) {
-    button.addEventListener('click', () => chooseTileLayout(button.dataset.columns));
+    button.addEventListener('click', () => { choosePreviewDevice('desktop'); chooseTileLayout(button.dataset.columns); });
   }
   function showStartPageTab(tab) {
     closeStartPageBackground();
@@ -2440,7 +2560,8 @@
     }
     // The share tab is a dedicated full-width form, not a visual design step.
     workspace.classList.toggle('ppi-startpage-share-only', tab === 'share');
-    byId('ppi-start-page-editor').querySelector('.ppi-startpage-preview-column').hidden = tab === 'share';
+    byId('ppi-start-page-editor').querySelector('.ppi-startpage-preview-column').hidden = tab === 'share' || tab === 'tours';
+    workspace.classList.toggle('ppi-startpage-link-editor', tab === 'tours');
     ppiAutoPositionStatus(tab);
     byId('ppi-start-page-editor').querySelector('.ppi-preset-preview-save').hidden = tab !== 'layout';
     if (tab === 'start') queueDescriptionResize();
@@ -2453,8 +2574,10 @@
   const startPageBgOverlay = byId('ppi-start-page-bg-browser');
   const startPageBgDialog = startPageBgOverlay.querySelector('.ppi-startpage-bg-dialog');
   let startPageBgReturnFocus = null;
+  let cleanupStartPageBgVirtual = () => {};
   function closeStartPageBackground() {
     if (startPageBgOverlay.hidden) return;
+    cleanupStartPageBgVirtual();
     ++startPageBgRequestSerial;
     startPageBgOverlay.hidden = true;
     if (startPageBgReturnFocus?.isConnected) startPageBgReturnFocus.focus();
@@ -2489,6 +2612,7 @@
     }
   });
   async function browseStartPageBackground(folderId = 0) {
+    cleanupStartPageBgVirtual();
     const serial = ++startPageBgRequestSerial;
     const results = byId('ppi-start-page-bg-files');
     results.replaceChildren(node('p','Bilder werden geladen …'));
@@ -2501,28 +2625,426 @@
       byId('ppi-start-page-bg-path').textContent = result.path || '/';
       byId('ppi-start-page-bg-up').disabled = !!result.isRoot;
       results.replaceChildren();
-      const items = (result.items || []).filter(item => item.type === 'folder' || item.type === 'image').slice(0,160);
-      for (const item of items) {
-        const button = node('button',undefined);
+      const items = (result.items || [])
+        .filter(item => item.type === 'folder' || item.type === 'image')
+        .slice(0,160);
+      const folders = items.filter(item => item.type === 'folder');
+      const images = items.filter(item => item.type === 'image');
+
+      for (const item of folders) {
+        const button = node('button', undefined, 'ppi-bg-folder-option');
         button.type = 'button';
-        if (item.type === 'folder') {
-          button.append(node('span','📁 ' + item.name));
-          button.addEventListener('click',()=>browseStartPageBackground(item.id));
-        } else {
-          const image = imageThumb(item.id,260,146);
+        button.append(node('span', '📁 ' + item.name));
+        button.title = item.name;
+        button.addEventListener('click', () => browseStartPageBackground(item.id));
+        results.append(button);
+      }
+
+      // Virtual scrolling: only visible image tiles and a small buffer
+      // exist in the DOM. No manual "load more" button is needed.
+      if (images.length) {
+        const gallery = node('div', undefined, 'ppi-bg-virtual-gallery');
+        const windowGrid = node('div', undefined, 'ppi-bg-virtual-window');
+        gallery.append(windowGrid);
+        results.append(gallery);
+
+        const rowHeight = 148;
+        const gap = 7;
+        const minColumnWidth = 135;
+        const bufferRows = 2;
+
+        let columns = 1;
+        let previousStart = -1;
+        let previousEnd = -1;
+        let previousColumns = -1;
+        let frame = 0;
+        let visibleCards = new Map();
+
+        // Prioritized and abortable Nextcloud preview requests.
+        // All thumbnails still come from Nextcloud /core/preview.
+        const MAX_PARALLEL_THUMBS = 3;
+        const thumbJobs = new Map();
+        let runningThumbs = 0;
+        let visibleFirst = 0;
+        let visibleLast = 0;
+        let thumbQueueClosed = false;
+
+        function isVisibleThumb(index) {
+          return index >= visibleFirst && index < visibleLast;
+        }
+
+        function discardThumb(index) {
+          const job = thumbJobs.get(index);
+          if (!job) return;
+
+          thumbJobs.delete(index);
+          job.disposed = true;
+          job.controller?.abort();
+
+          if (job.objectUrl) {
+            URL.revokeObjectURL(job.objectUrl);
+            job.objectUrl = null;
+          }
+
+          job.image.removeAttribute('src');
+        }
+
+        async function startThumb(job) {
+          if (job.disposed || thumbQueueClosed) return;
+
+          const controller = new AbortController();
+          job.controller = controller;
+          job.state = 'loading';
+          runningThumbs++;
+
+          try {
+            const response = await fetch(
+              previewUrl(job.item.id, 260, 146),
+              {
+                credentials: 'same-origin',
+                cache: 'default',
+                signal: controller.signal,
+                headers: {Accept: 'image/*'}
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error(
+                'Nextcloud-Vorschau HTTP ' + response.status
+              );
+            }
+
+            const blob = await response.blob();
+
+            if (!blob.type.startsWith('image/')) {
+              throw new Error('Keine Bilddaten erhalten');
+            }
+
+            if (
+              controller.signal.aborted ||
+              job.disposed ||
+              thumbQueueClosed ||
+              serial !== startPageBgRequestSerial ||
+              thumbJobs.get(job.index) !== job
+            ) return;
+
+            job.objectUrl = URL.createObjectURL(blob);
+            job.state = 'loaded';
+            job.image.src = job.objectUrl;
+
+          } catch (error) {
+            if (
+              error?.name === 'AbortError' ||
+              controller.signal.aborted
+            ) {
+              if (!job.disposed) job.state = 'queued';
+            } else if (!job.disposed) {
+              job.state = 'failed';
+              job.image.parentElement?.classList.add(
+                'ppi-bg-thumb-failed'
+              );
+              console.warn(
+                '[Photo Sphere] Nextcloud-Vorschau:',
+                job.item.id,
+                error
+              );
+            }
+          } finally {
+            runningThumbs = Math.max(0, runningThumbs - 1);
+
+            if (job.controller === controller) {
+              job.controller = null;
+            }
+
+            if (!thumbQueueClosed) pumpThumbQueue();
+          }
+        }
+
+        function pumpThumbQueue() {
+          if (
+            thumbQueueClosed ||
+            startPageBgOverlay.hidden ||
+            serial !== startPageBgRequestSerial
+          ) return;
+
+          const waitingVisible = [...thumbJobs.values()].some(
+            job => job.state === 'queued' &&
+              isVisibleThumb(job.index)
+          );
+
+          // If visible images are waiting, cancel requests
+          // for buffered images outside the viewport first.
+          if (
+            waitingVisible &&
+            runningThumbs >= MAX_PARALLEL_THUMBS
+          ) {
+            for (const job of thumbJobs.values()) {
+              if (
+                job.state === 'loading' &&
+                !isVisibleThumb(job.index) &&
+                job.controller &&
+                !job.controller.signal.aborted
+              ) {
+                job.state = 'canceling';
+                job.controller.abort();
+              }
+            }
+          }
+
+          const center = (visibleFirst + visibleLast) / 2;
+
+          const waiting = [...thumbJobs.values()]
+            .filter(job => job.state === 'queued')
+            .sort((a, b) => {
+              const aVisible = isVisibleThumb(a.index) ? 0 : 1;
+              const bVisible = isVisibleThumb(b.index) ? 0 : 1;
+
+              if (aVisible !== bVisible) {
+                return aVisible - bVisible;
+              }
+
+              return Math.abs(a.index - center) -
+                Math.abs(b.index - center);
+            });
+
+          while (
+            runningThumbs < MAX_PARALLEL_THUMBS &&
+            waiting.length
+          ) {
+            const job = waiting.shift();
+            if (!job.disposed && job.state === 'queued') {
+              void startThumb(job);
+            }
+          }
+        }
+
+        function makeBackgroundCard(item) {
+          const button = node('button', undefined, 'ppi-bg-image-option');
+          button.type = 'button';
+          button.title = item.name;
+          button.setAttribute(
+            'aria-label', 'Hintergrundbild wählen: ' + item.name
+          );
+
+          const preview = node('div', undefined, 'ppi-bg-preview');
+          const image = node('img');
+          image.alt = '';
           image.loading = 'lazy';
-          button.append(image,node('span',item.name));
-          button.addEventListener('click',()=>{
+          image.decoding = 'async';
+
+          const fallback = node(
+            'span', 'Bildvorschau nicht verfügbar', 'ppi-bg-thumb-fallback'
+          );
+          fallback.setAttribute('aria-hidden', 'true');
+
+          image.addEventListener('error', () => {
+            preview.classList.add('ppi-bg-thumb-failed');
+          });
+
+          preview.append(image, fallback);
+
+          const filename = node('span', item.name, 'ppi-bg-image-name');
+          button.append(preview, filename);
+
+          button.addEventListener('click', () => {
             startPageBackgroundFileId = Number(item.id);
-            byId('ppi-start-page-bg-selected').textContent = 'Ausgewählt: ' + item.name;
+            byId('ppi-start-page-bg-selected').textContent =
+              'Ausgewählt: ' + item.name;
             closeStartPageBackground();
             updateStartPagePreview();
           });
+
+          return button;
         }
-        results.append(button);
+
+        function renderVirtualBackground() {
+          if (
+            serial !== startPageBgRequestSerial ||
+            startPageBgOverlay.hidden
+          ) return;
+
+          const width = gallery.clientWidth;
+
+          if (width <= 0) return;
+
+          const nextColumns = Math.max(
+            1, Math.floor((width + gap) / (minColumnWidth + gap))
+          );
+
+          columns = nextColumns;
+
+          const rows = Math.ceil(images.length / columns);
+          const pitch = rowHeight + gap;
+
+          // The gallery has its full virtual height, keeping the
+          // scrollbar stable even though most tiles do not exist.
+          gallery.style.height =
+            Math.max(0, rows * pitch - gap) + 'px';
+
+          const resultsRect = results.getBoundingClientRect();
+          const galleryRect = gallery.getBoundingClientRect();
+
+          const galleryTop =
+            galleryRect.top - resultsRect.top + results.scrollTop;
+
+          const firstVisiblePixel = Math.max(
+            0, results.scrollTop - galleryTop
+          );
+
+          const lastVisiblePixel = Math.max(
+            0,
+            results.scrollTop + results.clientHeight - galleryTop
+          );
+
+          const firstRow = Math.max(
+            0, Math.floor(firstVisiblePixel / pitch) - bufferRows
+          );
+
+          const lastRow = Math.min(
+            rows,
+            Math.ceil(lastVisiblePixel / pitch) + bufferRows
+          );
+
+          const firstIndex = Math.min(
+            images.length, firstRow * columns
+          );
+
+          const lastIndex = Math.min(
+            images.length, lastRow * columns
+          );
+
+          visibleFirst = Math.min(
+            images.length,
+            Math.floor(firstVisiblePixel / pitch) * columns
+          );
+
+          visibleLast = Math.min(
+            images.length,
+            Math.ceil(lastVisiblePixel / pitch) * columns
+          );
+
+          if (
+            firstIndex === previousStart &&
+            lastIndex === previousEnd &&
+            columns === previousColumns
+          ) {
+            pumpThumbQueue();
+            return;
+          }
+
+          const nextCards = new Map();
+          const fragment = document.createDocumentFragment();
+
+          for (let index = firstIndex; index < lastIndex; index++) {
+            const card = visibleCards.get(index) ||
+              makeBackgroundCard(images[index]);
+
+            nextCards.set(index, card);
+            fragment.append(card);
+          }
+
+          // Reuse overlapping cards so their images are not restarted
+          // while scrolling by only a few pixels.
+          // Immediately abort and release previews whose cards
+          // are no longer in the virtual window.
+          for (const index of [...thumbJobs.keys()]) {
+            if (!nextCards.has(index)) discardThumb(index);
+          }
+
+          // New cards enter the queue without starting their
+          // own image request.
+          for (const [index, card] of nextCards) {
+            if (!thumbJobs.has(index)) {
+              thumbJobs.set(index, {
+                index,
+                item: images[index],
+                image: card.querySelector('img'),
+                state: 'queued',
+                controller: null,
+                objectUrl: null,
+                disposed: false
+              });
+            }
+          }
+
+          windowGrid.replaceChildren(fragment);
+          windowGrid.style.top = firstRow * pitch + 'px';
+
+          visibleCards = nextCards;
+          previousStart = firstIndex;
+          previousEnd = lastIndex;
+          previousColumns = columns;
+
+          // Visible images first; buffer images only when
+          // there is available request capacity.
+          pumpThumbQueue();
+        }
+
+        function scheduleVirtualBackground() {
+          if (frame) return;
+
+          frame = requestAnimationFrame(() => {
+            frame = 0;
+            renderVirtualBackground();
+          });
+        }
+
+        results.addEventListener(
+          'scroll', scheduleVirtualBackground, {passive:true}
+        );
+
+        const resizeObserver =
+          typeof ResizeObserver === 'function'
+            ? new ResizeObserver(scheduleVirtualBackground)
+            : null;
+
+        resizeObserver?.observe(results);
+
+        // Fallback for browsers without ResizeObserver, and
+        // additional safety for viewport orientation changes.
+        window.addEventListener(
+          'resize', scheduleVirtualBackground
+        );
+
+        cleanupStartPageBgVirtual = () => {
+          thumbQueueClosed = true;
+
+          for (const index of [...thumbJobs.keys()]) {
+            discardThumb(index);
+          }
+
+          if (frame) cancelAnimationFrame(frame);
+          frame = 0;
+
+          results.removeEventListener(
+            'scroll', scheduleVirtualBackground
+          );
+
+          window.removeEventListener(
+            'resize', scheduleVirtualBackground
+          );
+
+          resizeObserver?.disconnect();
+          visibleCards.clear();
+          cleanupStartPageBgVirtual = () => {};
+        };
+
+        scheduleVirtualBackground();
       }
-      if (!items.length) results.append(node('p','Keine JPEG-Bilder in diesem Ordner.'));
-      if (result.truncated) results.append(node('p','Ergebnis begrenzt. Bitte einen Unterordner öffnen.'));
+
+      if (!items.length) {
+        results.append(node('p', 'Keine Bilder in diesem Ordner.'));
+      }
+
+      if (result.truncated) {
+        const warning = node(
+          'p',
+          'Die Dateiliste ist serverseitig begrenzt. ' +
+          'Weitere Bilder findest du gegebenenfalls in einem Unterordner.',
+          'ppi-bg-limit-warning'
+        );
+        results.append(warning);
+      }
     } catch (error) {
       if (serial === startPageBgRequestSerial) results.replaceChildren(node('p','Bilder nicht verfügbar: '+error.message));
     }
@@ -2544,6 +3066,28 @@
     return [...byId('ppi-start-page-tours').querySelectorAll('input[type="checkbox"]:checked')]
       .map(el=>el.value);
   }
+  /* PPI STARTPAGE PASSWORD FILTER V26.2
+   * Same date-only rule as TourController::shareExpiryReached(): the first
+   * instant of expiresOn in the share owner's timezone is already expired.
+   * UI filtering is advisory; the server remains the access authority.
+   */
+  function ppiStartPageShareExpired(expiry, timeZone) {
+    if (!expiry) return false;
+    if (typeof expiry !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(expiry)) return true;
+    const parsed = new Date(expiry + 'T00:00:00Z');
+    if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0,10) !== expiry) return true;
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: timeZone || 'UTC', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).formatToParts(new Date());
+      const part = name => parts.find(item => item.type === name)?.value || '';
+      const today = part('year') + '-' + part('month') + '-' + part('day');
+      return expiry <= today;
+    } catch (error) {
+      // Fail closed on an invalid timezone rather than showing a stale grant.
+      return true;
+    }
+  }
   function refreshStartPageTourPasswordSelection() {
     const mode = byId('ppi-start-page-tour-password-mode').value;
     // PPI DYNAMIC STARTPAGE PASSWORD DESCRIPTION 2026-11-24
@@ -2564,9 +3108,17 @@
     for (const id of currentStartPageTourIds()) {
       const tour = tours.find(item => item.id === id);
       if (!tour) continue;
-      // PPI STARTPAGE PASSWORD-PROTECTED CHOICES ONLY 2026-11-24
-      // Nur Touren mit aktivem Hauptlink-Passwort brauchen eine Freigabeauswahl.
-      if (!tour.sharePasswordProtected) continue;
+      // The selected link, NOT the main link, defines whether a tour is protected.
+      const chosen = byId('ppi-start-page-tours').querySelector(
+        '.ppi-startpage-tour-option[data-tour-id="'+CSS.escape(id)+'"] .ppi-startpage-link-select');
+      const binding = chosen?.value || activeStartPage?.tourShareBindings?.[id] || 'main';
+      const chosenLink = binding === 'main' ? null : (tour.shareLinks || []).find(l=>('share:'+l.id)===binding);
+      const protectedLink = binding === 'main' ? !!tour.sharePasswordProtected : !!chosenLink?.passwordProtected;
+      const linkActive = binding === 'main'
+        ? !!tour.publicToken
+        : !!chosenLink && !!chosenLink.token && !chosenLink.disabled;
+      const linkExpiry = binding === 'main' ? (tour.shareExpiresOn || '') : (chosenLink?.expiresOn || '');
+      if (!protectedLink || !linkActive || ppiStartPageShareExpired(linkExpiry, tour.shareExpiryTimezone)) continue;
       const row = node('label',undefined,'ppi-startpage-tour-password-choice');
       const input = document.createElement('input');
       input.type='checkbox'; input.value=id;
@@ -2844,14 +3396,25 @@
   /* PPI STARTPAGE EXTRA LINKS TOUR DESIGN V1 2026-11-24 */
   function refreshStartPageExtraLinks(page) {
     const list = byId('ppi-startpage-extra-list');
+    const expandedLinkIds = new Set([...list.querySelectorAll('details[data-link-id][open]')].map(el=>el.dataset.linkId));
     list.replaceChildren();
     byId('ppi-start-page-main-rotate').hidden = !page?.publicToken;
     for (const link of page?.shareLinks || []) {
-      const card = node('article', undefined, 'ppi-extra-entry ppi-startpage-extra-entry');
+      const card = node('details', undefined, 'ppi-extra-entry ppi-startpage-extra-entry ppi-startpage-share-accordion');
+      card.dataset.linkId = link.id;
+      card.open = expandedLinkIds.has(String(link.id));
       const expired = shareExpiredOn(link.expiresOn, page);
       const state = expired ? 'Abgelaufen' : link.disabled ? 'Deaktiviert' :
         link.passwordProtected ? 'Mit Passwort' : 'Ohne Passwort';
-      const heading = node('strong', (link.name || 'Freigabelink') + ' · ' + state);
+      const heading = node('summary', undefined, 'ppi-startpage-share-accordion-heading');
+      // PPI STARTPAGE EXTRA AUTOSAVE V26.3.4: status in header, before link status.
+      const headerAutoStatus=node('span','Gespeichert ✓','ppi-startpage-extra-autosave');
+      headerAutoStatus.setAttribute('role','status');
+      headerAutoStatus.setAttribute('aria-live','polite');
+      heading.append(node('strong', link.name || 'Freigabelink'),
+        headerAutoStatus,
+        node('span', 'Link ' + String((page?.shareLinks || []).indexOf(link)+2) + ' · ' + state +
+          (link.expiresOn ? ' · Ablauf ' + link.expiresOn : ''), 'ppi-startpage-share-accordion-state'));
       card.append(heading);
 
       const url = node('input');
@@ -2947,6 +3510,129 @@
       addAction(link.passwordProtected ? 'Passwort ändern' : 'Passwort setzen', 'password', passwordFields);
       if (link.passwordProtected) addAction('Passwort entfernen', 'removePassword', passwordFields);
       card.append(passwordFields);
+      // PPI STARTPAGE PER-LINK POLICY V26.3: every extra startpage link has its own policy.
+      const policy = node('fieldset',undefined,'ppi-startpage-extra-policy');
+      const legend = node('legend','Passwortschutz eingebundener Touren · nur dieser Link');
+      const modeLabel = node('label','Tour-Passwortregel');
+      const policyMode = document.createElement('select');
+      for (const [value,caption] of [
+        ['keep','Passwörter beibehalten'],['all','Alle Touren freischalten'],
+        ['selected','Touren einzeln auswählen']]) {
+        const opt=document.createElement('option');opt.value=value;opt.textContent=caption;policyMode.append(opt);
+      }
+      policyMode.value=['keep','all','selected'].includes(link.tourPasswordMode)?link.tourPasswordMode:'keep';
+      modeLabel.append(policyMode);
+      const visibleLabel=node('label',undefined,'ppi-startpage-extra-visible');
+      const visibleInput=document.createElement('input');visibleInput.type='checkbox';
+      visibleInput.checked=link.showPasswordProtectedTours!==false;
+      visibleLabel.append(visibleInput,node('span','Passwortgeschützte Touren anzeigen'));
+      const choices=node('div',undefined,'ppi-startpage-extra-policy-choices');
+      const selected=new Set(link.tourPasswordSelected||[]);
+      for(const id of currentStartPageTourIds()) {
+        const tour=tours.find(t=>t.id===id);
+        if(!tour)continue;
+        const binding=byId('ppi-start-page-tours').querySelector(
+          '.ppi-startpage-tour-option[data-tour-id="'+CSS.escape(id)+'"] .ppi-startpage-link-select')?.value
+          ||activeStartPage?.tourShareBindings?.[id]||'main';
+        const chosenLink=binding==='main'?null:(tour.shareLinks||[]).find(l=>('share:'+l.id)===binding);
+        const protectedLink=binding==='main'?!!tour.sharePasswordProtected:!!chosenLink?.passwordProtected;
+        const active=binding==='main'?!!tour.publicToken:!!chosenLink?.token&&!chosenLink.disabled;
+        const expiry=binding==='main'?tour.shareExpiresOn:chosenLink?.expiresOn;
+        if(!protectedLink||!active||ppiStartPageShareExpired(expiry||'',tour.shareExpiryTimezone))continue;
+        const label=node('label',undefined,'ppi-startpage-extra-policy-choice');
+        // Force a horizontal label even with older Nextcloud global form styles.
+        label.style.setProperty('display','flex','important');
+        label.style.setProperty('flex-direction','row','important');
+        label.style.setProperty('align-items','center','important');
+        label.style.setProperty('justify-content','flex-start','important');
+        label.style.setProperty('gap','12px','important');
+        label.style.setProperty('width','100%','important');
+        const input=document.createElement('input');input.type='checkbox';input.value=id;
+        input.style.setProperty('width','18px','important');
+        input.style.setProperty('height','18px','important');
+        input.style.setProperty('flex','0 0 18px','important');
+        input.style.setProperty('margin','0','important');
+        input.checked=selected.has(id);
+        label.append(input,node('span',tour.name));choices.append(label);
+      }
+      if(!choices.children.length)choices.append(node('p','Keine gültigen passwortgeschützten Tourlinks ausgewählt.'));
+      const policyInfo=node('p',undefined,'ppi-startpage-extra-policy-info');
+      const policyStatus=node('small',undefined,'ppi-startpage-extra-policy-status');
+      const renderPolicy=()=>{
+        choices.hidden=policyMode.value!=='selected';
+        policyInfo.textContent = policyMode.value==='keep'
+          ? 'Die ausgewählten Tourlinks behalten ihre eigenen Passwörter. Der Startseitenlink ersetzt keine Tour-Passwörter.'
+          : policyMode.value==='all'
+            ? 'Nach Eingabe des Passworts für diesen Startseitenlink sind alle eingebundenen, gültigen Tourlinks ohne zusätzliches Tour-Passwort zugänglich. Direkte Tourlinks bleiben geschützt.'
+            : 'Nach Eingabe des Passworts für diesen Startseitenlink werden nur die hier ausgewählten, gültigen Tourlinks ohne eigenes Tour-Passwort geöffnet. Andere geschützte Tourlinks bleiben gesperrt.';
+        policyStatus.textContent=policyMode.value!=='keep'&&!link.passwordProtected
+          ? 'Für diese Freischaltregel zuerst ein Passwort für diesen Startseitenlink setzen.' : '';
+      };
+      policyMode.addEventListener('change',renderPolicy);
+      renderPolicy();
+      // PPI STARTPAGE EXTRA AUTOSAVE V26.3.4
+      // Only save policy fields; unfinished passwords, expiry and link name are NEVER sent.
+      // Do not rebuild the link card on successful save (keeps focus and unsaved input).
+      const visibilitySection=node('section',undefined,'ppi-startpage-extra-visibility-section');
+      visibilitySection.append(node('strong','Sichtbarkeit geschützter Touren'),visibleLabel);
+      const visibilityNote=node('p','Aus: Noch gesperrte Touren werden auf diesem Startseitenlink ausgeblendet. Freigeschaltete Touren bleiben sichtbar.','ppi-startpage-extra-visibility-help');
+      visibilitySection.append(visibilityNote);
+      let policyAutoTimer=null,policyAutoBusy=false;
+      const currentPolicy=()=>({
+        action:'tourPolicy',tourPasswordMode:policyMode.value,
+        tourPasswordSelected:JSON.stringify([...choices.querySelectorAll('input:checked')].map(e=>e.value)),
+        showPasswordProtectedTours:visibleInput.checked?'1':'0'
+      });
+      let savedPolicySignature=JSON.stringify({
+        action:'tourPolicy',tourPasswordMode:policyMode.value,
+        tourPasswordSelected:JSON.stringify([...selected]),
+        showPasswordProtectedTours:visibleInput.checked?'1':'0'
+      });
+      // The persisted selected IDs may include old/invalid IDs, but those are not
+      // present in the filtered choices; normalize only after a real user edit.
+      const savePolicyNow=async()=>{
+        if(policyAutoBusy||!card.isConnected)return;
+        policyAutoBusy=true;
+        try {
+          while(card.isConnected && activeStartPage?.id===page.id){
+            const payload=currentPolicy();
+            const signature=JSON.stringify(payload);
+            if(signature===savedPolicySignature)break;
+            if(policyMode.value!=='keep'&&!link.passwordProtected){
+              headerAutoStatus.textContent='Passwort erforderlich';
+              policyStatus.textContent='Für diese Freischaltregel zuerst ein Passwort für diesen Startseitenlink setzen.';
+              break;
+            }
+            headerAutoStatus.textContent='Speichern …';
+            policyStatus.textContent='';
+            try {
+              const result=await request(extraLinkApi(page.id,link.id),'POST',payload);
+              if(!card.isConnected||activeStartPage?.id!==page.id)break;
+              activeStartPage={...activeStartPage,...result.page};
+              savedPolicySignature=signature;
+              headerAutoStatus.textContent='Gespeichert ✓';
+            }catch(error){
+              headerAutoStatus.textContent='Speichern fehlgeschlagen';
+              policyStatus.textContent='Nicht gespeichert: '+error.message;
+              // Do not retry failed saves in a tight loop.
+              break;
+            }
+          }
+        }finally{policyAutoBusy=false;}
+      };
+      const queuePolicySave=()=>{
+        if(policyAutoTimer!==null)clearTimeout(policyAutoTimer);
+        headerAutoStatus.textContent='Ungespeichert …';
+        policyAutoTimer=setTimeout(()=>{
+          policyAutoTimer=null;
+          void savePolicyNow();
+        },450);
+      };
+      policyMode.addEventListener('change',queuePolicySave);
+      choices.addEventListener('change',queuePolicySave);
+      visibleInput.addEventListener('change',queuePolicySave);
+      policy.append(legend,modeLabel,policyInfo,choices,visibilitySection,policyStatus);
+      card.append(policy);
       if (!expired) addAction(link.disabled ? 'Link aktivieren' : 'Link deaktivieren', link.disabled ? 'enable' : 'disable', actions);
       addAction('Diesen Link widerrufen', 'revoke', actions);
       // Die Startseiten können ihre einzelnen Link-Tokens zusätzlich erneuern.
@@ -2987,6 +3673,21 @@
 
   const orderedTourChoices = byId('ppi-start-page-tours');
   let draggingStartPageTour = null;
+
+  // STARTPAGE GRID DROP FIX
+  function startPageDropBefore(event, target) {
+    const rect = target.getBoundingClientRect();
+    const origin = draggingStartPageTour.getBoundingClientRect();
+
+    // Gleiche Grid-Zeile: horizontale Reihenfolge
+    if (Math.abs(rect.top - origin.top) < 20) {
+      return origin.left > rect.left;
+    }
+
+    // Unterschiedliche Grid-Zeilen: vertikale Position
+    return event.clientY < rect.top + rect.height / 2;
+  }
+
   function updateStartPageTourMoveButtons() {
     const rows = [...orderedTourChoices.querySelectorAll('.ppi-startpage-tour-option')];
     rows.forEach((row,index) => {
@@ -3036,7 +3737,7 @@
     orderedTourChoices.querySelectorAll('.ppi-startpage-tour-option').forEach(el => {
       el.classList.remove('ppi-tour-drop-before','ppi-tour-drop-after');
     });
-    const before = event.clientY < row.getBoundingClientRect().top + row.getBoundingClientRect().height/2;
+    const before = startPageDropBefore(event,row);
     row.classList.add(before ? 'ppi-tour-drop-before' : 'ppi-tour-drop-after');
   });
   orderedTourChoices.addEventListener('drop',event => {
@@ -3044,7 +3745,7 @@
     if (!draggingStartPageTour || !row) return;
     event.preventDefault();
     if (row !== draggingStartPageTour) {
-      const before = event.clientY < row.getBoundingClientRect().top + row.getBoundingClientRect().height/2;
+      const before = startPageDropBefore(event,row);
       orderedTourChoices.insertBefore(draggingStartPageTour,before ? row : row.nextSibling);
       tourOrderChanged();
     }
@@ -3081,6 +3782,7 @@
     const savedColumns = ['auto','2','3','4','5'].includes(page.tileColumns) ? page.tileColumns : 'auto';
     byId('ppi-start-page-tile-columns').value = savedColumns;
     for (const button of layoutPresetButtons) button.setAttribute('aria-pressed', String(button.dataset.columns === savedColumns));
+    chooseMobileColumns(['auto','1','2','3'].includes(page.mobileColumns) ? page.mobileColumns : '1', false);
     startPageBackgroundFileId = Number(page.backgroundFileId) || 0;
     byId('ppi-start-page-bg-selected').textContent = startPageBackgroundFileId ? 'Bild aus Nextcloud ausgewählt (Datei-ID ' + startPageBackgroundFileId + ')' : 'Kein Bild ausgewählt';
     closeStartPageBackground();
@@ -3096,19 +3798,32 @@
       return ai-bi;
     });
     for (const tour of orderedTours) {
-      const row = node('label', undefined, 'ppi-startpage-tour-option');
+      const row = node('div', undefined, 'ppi-startpage-tour-option');
       row.dataset.tourId = tour.id;
       row.draggable = true;
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.value = tour.id;
+      checkbox.setAttribute('aria-label','Tour '+tour.name+' auf dieser Startseite anzeigen');
       checkbox.checked = (page.tourIds || []).includes(tour.id);
       if (tour.images?.length) {
-        const picture = imageThumb(tourCoverImage(tour).id,320,180);
-        picture.loading = 'lazy';
-        picture.alt = 'Vorschau: '+tour.name;
-        row.append(picture);
-      } else row.append(node('span','🌐','ppi-overview-placeholder'));
+        const cover = tourCoverImage(tour);
+        if (cover?.id) {
+          const picture = imageThumb(cover.id,480,320);
+          picture.loading = 'lazy';
+          picture.alt = 'Vorschau: '+tour.name;
+          picture.addEventListener('error', () => {
+            picture.replaceWith(
+              node('span','🌐','ppi-overview-placeholder')
+            );
+          }, {once:true});
+          row.append(picture);
+        } else {
+          row.append(node('span','🌐','ppi-overview-placeholder'));
+        }
+      } else {
+        row.append(node('span','🌐','ppi-overview-placeholder'));
+      }
       const info = node('span',undefined,'ppi-startpage-tour-info');
       info.append(node('strong',tour.name));
       info.append(node('small',tourShortDescription(tour) || 'Keine Beschreibung hinterlegt'));
@@ -3118,19 +3833,68 @@
       grip.setAttribute('aria-hidden','true');
       const up = node('button','↑','');
       up.type = 'button';
-      up.title = 'Tour nach oben';
+      up.title = 'Vorherige Position (links/oben)';
       up.setAttribute('aria-label',tour.name+' nach oben verschieben');
       const down = node('button','↓','');
       down.type = 'button';
-      down.title = 'Tour nach unten';
+      down.title = 'Nächste Position (rechts/unten)';
       down.setAttribute('aria-label',tour.name+' nach unten verschieben');
       mover.append(grip,up,down);
       row.prepend(mover);
       row.append(info,checkbox);
+      // Each start page binds one stable share ID, never a position or fallback.
+      const binding = page.tourShareBindings?.[tour.id] || 'main';
+      const controls = node('div',undefined,'ppi-startpage-link-controls');
+      const title = node('span','Freigabelink für diese Startseite','ppi-startpage-link-title');
+      const select = document.createElement('select');
+      select.className = 'ppi-startpage-link-select';
+      select.setAttribute('aria-label','Freigabelink für '+tour.name);
+      const links = [{value:'main',name:'Hauptlink',protected:!!tour.sharePasswordProtected,
+        active:!!tour.publicToken,expires:tour.shareExpiresOn||''},
+        ...(tour.shareLinks||[]).filter(l=>l&&l.id).map(l=>({
+          value:'share:'+l.id,name:l.name||'Zusätzlicher Link',
+          protected:!!l.passwordProtected,active:!l.disabled&&!!l.token,expires:l.expiresOn||''
+        }))];
+      const expired = value => ppiStartPageShareExpired(value, tour.shareExpiryTimezone);
+      const describe = l => {
+        const pass=l.protected?'🔒 Passwort':'🔓 Ohne Passwort';
+        const validity=!l.active?' · Deaktiviert':expired(l.expires)?' · Abgelaufen':l.expires?' · Bis '+l.expires:'';
+        return l.name+' · '+pass+validity;
+      };
+      for (const link of links) {
+        const option=document.createElement('option');option.value=link.value;
+        option.textContent=describe(link);select.append(option);
+      }
+      if (!links.some(l=>l.value===binding)) {
+        const option=document.createElement('option');option.value=binding;
+        option.textContent='⚠ Bisheriger Link entfernt – Tour nicht verfügbar';select.append(option);
+      }
+      select.value=binding;
+      const status=node('small',undefined,'ppi-startpage-link-status');
+      const updateLink = () => {
+        const link=links.find(l=>l.value===select.value);
+        status.textContent=link
+          ? (!link.active?'⚠ Link deaktiviert – Tour nicht verfügbar':expired(link.expires)?'⚠ Link abgelaufen – Tour nicht verfügbar':
+            (link.protected?'🔒 Passwortgeschützt':'🔓 Ohne Tour-Passwort')+(link.expires?' · Ablauf: '+link.expires:''))
+          : '⚠ Link gelöscht – kein automatischer Wechsel';
+        controls.hidden=!checkbox.checked;
+      };
+      select.addEventListener('change',()=>{
+        updateLink();refreshStartPageTourPasswordSelection();updateStartPagePreview();ppiAutoSchedule();
+      });
+      checkbox.addEventListener('change',updateLink);
+      controls.append(title,select,status);
+      row.append(controls);
       choices.append(row);
+      updateLink();
     }
     updateStartPageTourMoveButtons();
     refreshStartPageTourPasswordSelection();
+    // PPI EXTRA LINK INITIAL CHOICES V26.3.5
+    // refreshStartPageShareControls() ran before this tour list was populated;
+    // rebuild ONLY the additional-link cards now, using the real selected tours.
+    // This does not save, change credentials, or grant access.
+    refreshStartPageExtraLinks(activeStartPage);
     byId('ppi-start-pages-overview').hidden = true;
     byId('ppi-start-pages-overview').style.display = 'none';
     byId('ppi-start-page-editor').hidden = false;
@@ -3153,6 +3917,7 @@
     if (!startPages.length) container.append(node('p', 'Noch keine Startseiten erstellt.'));
     for (const page of startPages) {
       const tile = node('article', undefined, 'ppi-overview-tile');
+      tile.dataset.ppiName=page.name||'';tile.dataset.ppiModified=page.modified||page.created||'';tile.dataset.ppiOriginalIndex=String(container.querySelectorAll(':scope > .ppi-overview-tile').length);
       const cover = node('div',undefined,'ppi-startpage-overview-cover');
       if (Number(page.backgroundFileId) > 0) {
         const background = previewUrl(Number(page.backgroundFileId), 920, 520);
@@ -3220,6 +3985,7 @@
           notify('Startseite als privater Entwurf dupliziert.');
         } catch (e) { notify(e.message, true); }
       }));
+      decorateCompactActions(actions);
       body.append(actions);
       tile.append(body);
       container.append(tile);
@@ -3275,7 +4041,8 @@
     try {
       const result = await request(startPagesApi + '/' + encodeURIComponent(activeStartPage.id), 'POST', {
         ...values,
-        tourIds:JSON.stringify(values.tourIds)
+        tourIds:JSON.stringify(values.tourIds),
+         tourShareBindings:JSON.stringify(values.tourShareBindings)
       });
       activeStartPage = clone(result.page);
       refreshStartPageShareControls(activeStartPage);
@@ -3342,3 +4109,5 @@
   refresh().catch(e=>notify('Touren konnten nicht geladen werden: '+e.message,true));
   setManagementMode('tours');
 })();
+
+/* PPI DESKTOP FIXED GRID PREVIEW SWITCH V20 – selection buttons switch live-preview device before rendering. */
