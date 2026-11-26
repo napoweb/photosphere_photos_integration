@@ -525,4 +525,51 @@
   -webkit-mask-position:center!important;
   mask-position:center!important;
 }
+
+/* PPI PUBLIC PASSWORD MOBILE KEYBOARD V22
+   Scoped only to password forms: public tour and public startpage.
+   No layout changes to unlocked content or non-password errors. */
+@media (max-width: 700px), (pointer: coarse) and (max-height: 850px) {
+  #ppi-public-tour > #ppi-public-unavailable:has(.ppi-tour-password-form),
+  #ppi-public-startpage > #ppi-public-unavailable.ppi-public-password-state {
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: max(14px, env(safe-area-inset-top)) 12px
+             max(22px, env(safe-area-inset-bottom)) !important;
+    scroll-padding-top: 12px;
+  }
+  /* Keep the login centered until the keyboard is activated. */
+  #ppi-public-tour > #ppi-public-unavailable:has(.ppi-tour-password-form:focus-within),
+  #ppi-public-startpage > #ppi-public-unavailable.ppi-public-password-state:has(form:focus-within) {
+    align-items: flex-start !important;
+    justify-content: center !important;
+    /* Scroll area under an on-screen keyboard, even when 100dvh does not shrink. */
+    padding-top: max(12px, env(safe-area-inset-top)) !important;
+    padding-bottom: max(48vh, 220px) !important;
+  }
+  #ppi-public-tour > #ppi-public-unavailable:has(.ppi-tour-password-form:focus-within)
+    .ppi-public-unavailable-card,
+  #ppi-public-startpage > #ppi-public-unavailable.ppi-public-password-state:has(form:focus-within)
+    .ppi-public-password-stack {
+    flex-shrink: 0 !important;
+    margin-block: 0 auto !important;
+  }
+  #ppi-public-tour .ppi-tour-password-form input[type="password"],
+  #ppi-public-startpage .ppi-public-password-stack input[type="password"] {
+    font-size: 16px !important;
+    scroll-margin-top: 16px;
+    scroll-margin-bottom: 48vh;
+  }
+  #ppi-public-tour > #ppi-public-unavailable:has(.ppi-tour-password-form)
+    .ppi-public-unavailable-card,
+  #ppi-public-startpage > #ppi-public-unavailable.ppi-public-password-state
+    .ppi-public-password-stack {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
 </style>

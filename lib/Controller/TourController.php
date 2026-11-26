@@ -402,7 +402,7 @@ final class TourController extends Controller {
             'headingColor' => '#ffffff', 'descriptionColor' => '#ffffff', 'backgroundColor' => '#000000',
             'headerBackgroundColor' => '#000000',
             'designEffect' => 'subtle',
-            'backgroundFileId' => 0, 'tileColumns' => 'auto',
+            'backgroundFileId' => 0, 'tileColumns' => 'auto', 'mobileColumns' => '2',
             'tourIds' => [], 'created' => gmdate('c'), 'modified' => gmdate('c')];
         $pages[] = $page;
         $this->persistStartPages($uid, $pages);
@@ -425,6 +425,7 @@ final class TourController extends Controller {
         $backgroundFileIdRaw = $this->request->getParam('backgroundFileId', '0');
         $backgroundFileId = filter_var($backgroundFileIdRaw, FILTER_VALIDATE_INT);
         $tileColumns = (string)$this->request->getParam('tileColumns', 'auto');
+        $mobileColumns = (string)$this->request->getParam('mobileColumns', '1');
         if ($name === '' || mb_strlen($name) > 100 || mb_strlen($headline) > 120 ||
             mb_strlen($description) > 1000 || !in_array($layout, ['hero', 'split', 'gallery'], true) ||
             !preg_match('/^#[0-9a-fA-F]{6}$/D', $headingColor) ||
@@ -433,7 +434,8 @@ final class TourController extends Controller {
             !preg_match('/^#[0-9a-fA-F]{6}$/D', $backgroundColor) ||
             !preg_match('/^#[0-9a-fA-F]{6}$/D', $headerBackgroundColor) ||
             $backgroundFileId === false || $backgroundFileId < 0 ||
-            !in_array($tileColumns, ['auto', '2', '3', '4', '5'], true)) {
+            !in_array($tileColumns, ['auto', '2', '3', '4', '5'], true) ||
+            !in_array($mobileColumns, ['auto', '1', '2', '3'], true)) {
             return $this->error('Ungültige Startseiten-Einstellungen');
         }
         $requested = json_decode((string)$this->request->getParam('tourIds', '[]'), true);
@@ -465,6 +467,7 @@ final class TourController extends Controller {
             $page['headerBackgroundColor'] = $headerBackgroundColor;
             $page['backgroundFileId'] = $backgroundFileId;
             $page['tileColumns'] = $tileColumns;
+            $page['mobileColumns'] = $mobileColumns;
             $page['tourIds'] = $tourIds;
             $page['modified'] = gmdate('c');
             $this->persistStartPages($uid, $pages);
@@ -776,6 +779,40 @@ final class TourController extends Controller {
         return $this->error('Bild nicht verfügbar', 404);
     }
 
+    /** Public derivative only for active, explicitly unprotected start-page links. */
+    private function socialStartPageImageFile(array $found): ?File {
+        $id = (int)($found['page']['backgroundFileId'] ?? 0);
+        if ($id <= 0) { return null; }
+        try {
+            $home = $this->rootFolder->getUserFolder($found['owner']);
+            foreach ($home->getById($id) as $node) {
+                if ($node instanceof File && $node->isReadable() && $node->getMimetype() === 'image/jpeg' &&
+                    is_string($home->getRelativePath($node->getPath()))) { return $node; }
+            }
+        } catch (\Throwable $e) { /* Do not expose paths. */ }
+        return null;
+    }
+
+    #[PublicPage]
+    #[NoAdminRequired]
+    #[NoCSRFRequired]
+    public function publicStartPageSocialCover(string $token): Response {
+        $found = $this->findPublicStartPage($token);
+        if ($found === null || !empty($found['page']['sharePasswordHash']) ||
+            $this->globalOptions($found['owner'])['socialPreview'] !== 'cover') {
+            return $this->error('Vorschau nicht verfügbar', 404);
+        }
+        $file = $this->socialStartPageImageFile($found);
+        if ($file === null) { return $this->error('Vorschau nicht verfügbar', 404); }
+        try {
+            $preview = $this->previewManager->getPreview($file, 1200, 630, true);
+            $response = new FileDisplayResponse($preview, 200, ['Content-Type'=>$preview->getMimeType()]);
+            $response->addHeader('Cache-Control', 'public, max-age=300');
+            $response->addHeader('X-Content-Type-Options', 'nosniff');
+            return $response;
+        } catch (\Throwable $e) { return $this->error('Vorschau nicht verfügbar', 404); }
+    }
+
     #[PublicPage]
     #[NoAdminRequired]
     #[NoCSRFRequired]
@@ -786,6 +823,25 @@ final class TourController extends Controller {
             $response->setStatus(404);
             $response->addHeader('Cache-Control', 'no-store');
             return $response;
+        }
+        $page = $found['page'];
+        $mode = $this->globalOptions($found['owner'])['socialPreview'];
+        if ($mode !== 'off') {
+            $protected = !empty($page['sharePasswordHash']);
+            $imageUrl = $this->urlGenerator->getAbsoluteURL(
+                $this->urlGenerator->imagePath(self::APP_ID, 'social-tour-neutral.png')
+            );
+            $title = $protected ? 'Passwortgeschützte 360°-Startseite' : mb_substr(trim((string)(($page['headline'] ?? '') ?: ($page['name'] ?? '360°-Startseite'))), 0, 100);
+            $desc = $protected ? 'Diese 360°-Startseite ist mit einem Passwort geschützt.' : mb_substr(trim(preg_replace('/\s+/u', ' ', (string)($page['description'] ?? '')) ?? ''), 0, 250);
+            if ($desc === '') { $desc = 'Entdecke diese interaktive 360°-Startseite.'; }
+            if (!$protected && $mode === 'cover' && $this->socialStartPageImageFile($found) !== null) {
+                $imageUrl = $this->urlGenerator->getAbsoluteURL(
+                    $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.publicStartPageSocialCover', ['token'=>$token])
+                );
+            }
+            $this->socialTags($title, $desc, $imageUrl, $this->urlGenerator->getAbsoluteURL(
+                $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.publicStartPage', ['token'=>$token])
+            ));
         }
         if (!$this->startPageUnlocked($token, $found['page'])) {
             $errorKey = 'ppi_startpage_error_' . hash('sha256', $token);
@@ -861,7 +917,9 @@ final class TourController extends Controller {
     public function index(): TemplateResponse {
         Util::addScript(self::APP_ID, 'tour-sphere');
         Util::addScript(self::APP_ID, 'tour-editor');
+        Util::addScript(self::APP_ID, 'global-settings');
         return new TemplateResponse(self::APP_ID, 'tours', [
+            'globalSettingsUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.globalSettings'),
             'startPagesUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.listStartPages'),
             'apiUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.listTours'),
             'pickerPreferencesUrl' => $this->urlGenerator->linkToRoute(self::APP_ID . '.tour.savePickerPreferences'),
@@ -1609,6 +1667,41 @@ final class TourController extends Controller {
         return $this->error('Tour nicht gefunden', 404);
     }
 
+    /** Shared settings for all tours and start pages of one owner, never system-wide. */
+    private function globalOptions(string $uid): array {
+        $raw = json_decode($this->config->getUserValue($uid, self::APP_ID, 'global_ui_options', '{}'), true);
+        $raw = is_array($raw) ? $raw : [];
+        return [
+            'socialPreview' => in_array($raw['socialPreview'] ?? null, ['cover','neutral','off'], true) ? $raw['socialPreview'] : 'cover',
+            'tileLayout' => in_array($raw['tileLayout'] ?? null, ['adaptive','compact'], true) ? $raw['tileLayout'] : 'adaptive',
+            'tileSort' => in_array($raw['tileSort'] ?? null, ['original','name_asc','name_desc','newest','oldest'], true) ? $raw['tileSort'] : 'original',
+        ];
+    }
+
+    #[NoAdminRequired]
+    public function globalSettings(): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        return new JSONResponse(['success' => true, 'settings' => $this->globalOptions($uid)]);
+    }
+
+    #[NoAdminRequired]
+    public function saveGlobalSettings(): JSONResponse {
+        $uid = $this->userId();
+        if ($uid === null) { return $this->error('Anmeldung erforderlich', 401); }
+        $social = $this->request->getParam('socialPreview', null);
+        $layout = $this->request->getParam('tileLayout', null);
+        $sort = $this->request->getParam('tileSort', null);
+        if (!is_string($social) || !in_array($social, ['cover','neutral','off'], true) ||
+            !is_string($layout) || !in_array($layout, ['adaptive','compact'], true) ||
+            !is_string($sort) || !in_array($sort, ['original','name_asc','name_desc','newest','oldest'], true)) {
+            return $this->error('Ungültige globale Einstellungen');
+        }
+        $options = ['socialPreview'=>$social, 'tileLayout'=>$layout, 'tileSort'=>$sort];
+        $this->config->setUserValue($uid, self::APP_ID, 'global_ui_options', json_encode($options));
+        return new JSONResponse(['success'=>true, 'settings'=>$options]);
+    }
+
     /** Public visitor unlock: server-side session; no authorization in URLs or local storage. */
     #[PublicPage]
     #[NoAdminRequired]
@@ -1684,7 +1777,7 @@ final class TourController extends Controller {
     public function socialCover(string $token): Response {
         $found = $this->publicTour($token);
         if ($found === null) { return $this->error('Vorschau nicht verfügbar', 404); }
-        $mode = (string)($found['tour']['display']['socialPreviewMode'] ?? 'cover');
+        $mode = $this->globalOptions($found['owner'])['socialPreview'];
         if ($mode !== 'cover' || !empty($found['tour']['sharePasswordHash'])) {
             return $this->error('Vorschau nicht verfügbar', 404);
         }
@@ -1712,8 +1805,7 @@ final class TourController extends Controller {
         }
         $found = $this->publicTour($token);
         $tour = $found['tour'];
-        $mode = (string)($tour['display']['socialPreviewMode'] ?? 'cover');
-        if (!in_array($mode, ['cover', 'neutral', 'off'], true)) { $mode = 'cover'; }
+        $mode = $this->globalOptions($found['owner'])['socialPreview'];
         if ($mode !== 'off') {
             $protected = !empty($tour['sharePasswordHash']);
             $fallbackImage = $this->urlGenerator->getAbsoluteURL(
@@ -1984,7 +2076,6 @@ final class TourController extends Controller {
                 $style = (string)($input['hotspotStyle'] ?? 'classic');
                 if ($style === 'chat-pin') { $style = 'map-pin'; }
                 $svgPinColor = (string)($input['svgPinColor'] ?? ($tour['display']['svgPinColor'] ?? '#1687bc'));
-                $socialMode = (string)($input['socialPreviewMode'] ?? ($tour['display']['socialPreviewMode'] ?? 'cover'));
                 $watermarkEnabled = filter_var($input['watermarkEnabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
                 $watermarkId = (string)($input['watermarkId'] ?? 'none');
                 if ($watermarkEnabled && !$this->tourWatermarkAllowed($watermarkId)) {
@@ -1994,8 +2085,7 @@ final class TourController extends Controller {
                     $startYaw === false || $startYaw < -180 || $startYaw > 180 ||
                     !in_array($size, ['xsmall','small','medium','large','xlarge'], true) ||
                     !in_array($style, ['classic','blue','map-pin','label-pin','outline-pin','gps-pin','you-pin'], true) ||
-                    !preg_match('/^#[0-9a-fA-F]{6}$/D', $svgPinColor) ||
-                    !in_array($socialMode, ['cover','neutral','off'], true)) {
+                    !preg_match('/^#[0-9a-fA-F]{6}$/D', $svgPinColor)) {
                     return $this->error('Ungültige Startansicht oder Hotspot-Größe');
                 }
                 $tour['display'] = [
@@ -2004,7 +2094,7 @@ final class TourController extends Controller {
                     'hotspotSize' => $size,
                     'hotspotStyle' => $style,
                     'svgPinColor' => strtolower($svgPinColor),
-                    'socialPreviewMode' => $socialMode,
+                    // Legacy per-tour socialPreviewMode is superseded by global owner settings.
                     'showTitle' => filter_var($input['showTitle'] ?? true, FILTER_VALIDATE_BOOLEAN),
                     'showNavigation' => filter_var($input['showNavigation'] ?? true, FILTER_VALIDATE_BOOLEAN),
                     'showFullscreen' => filter_var($input['showFullscreen'] ?? true, FILTER_VALIDATE_BOOLEAN),

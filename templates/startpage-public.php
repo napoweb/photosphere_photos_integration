@@ -6,6 +6,7 @@ $locked = !empty($_['passwordRequired']);
 $layout = in_array($page['layout'] ?? 'hero', ['hero','split','gallery'], true) ? $page['layout'] : 'hero';
 $effect = in_array(($page['designEffect'] ?? 'subtle'), ['subtle', 'glass', 'glossy'], true) ? $page['designEffect'] : 'subtle';
 $columns = in_array((string)($page['tileColumns'] ?? 'auto'), ['auto','2','3','4','5'], true) ? (string)$page['tileColumns'] : 'auto';
+$mobileColumns = in_array((string)($page['mobileColumns'] ?? '1'), ['auto','1','2','3'], true) ? (string)($page['mobileColumns'] ?? '1') : '1';
 $color = static fn($v,$fallback) => is_string($v) && preg_match('/^#[0-9a-fA-F]{6}$/D',$v) ? $v : $fallback;
 $bg = $color($page['backgroundColor'] ?? null, '#000000');
 $headerBg = $color($page['headerBackgroundColor'] ?? ($page['backgroundColor'] ?? null), $bg);
@@ -17,7 +18,7 @@ $headingShadow = 'rgba(0,0,0,.40)';
 $descriptionShadow = 'rgba(0,0,0,.20)';
 $dividerColor = $light($headerBg) ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.60)';
 ?>
-<main id="ppi-public-startpage" data-layout="<?php p($layout); ?>" data-effect="<?php p($effect); ?>" data-cols="<?php p($columns); ?>"
+<main id="ppi-public-startpage" data-layout="<?php p($layout); ?>" data-effect="<?php p($effect); ?>" data-cols="<?php p($columns); ?>" data-mobile-cols="<?php p($mobileColumns); ?>"
  style="--page-bg:<?php p($bg); ?>;--header-bg:<?php p($headerBg); ?>;--title-color:<?php p($heading); ?>;--desc-color:<?php p($description); ?>;--title-shadow:<?php p($headingShadow); ?>;--title-stroke:<?php p($headingStroke); ?>;--desc-shadow:<?php p($descriptionShadow); ?>;--split-divider:<?php p($dividerColor); ?>;<?php if (!empty($_['backgroundUrl'])): ?>--bg-image:url('<?php p($_['backgroundUrl']); ?>');<?php endif; ?>">
 <?php if ($invalid): ?>
  <?php $ppiShareKind = 'startpage'; include __DIR__ . '/public-share-unavailable.php'; ?>
@@ -74,8 +75,8 @@ $dividerColor = $light($headerBg) ? 'rgba(0,0,0,.30)' : 'rgba(255,255,255,.60)';
        <?php else: ?><span aria-hidden="true"><?php echo !empty($tour['locked']) ? '🔑' : '🌐'; ?></span><?php endif; ?>
       </div>
       <div class="ppi-public-start-card-content"><strong><?php p($tour['name']); ?></strong>
-      <?php if (!empty($tour['description'])): ?><small><?php p($tour['description']); ?></small><?php endif; ?>
-      <?php if (!empty($tour['locked'])): ?><small>🔒 Tour-Passwort erforderlich</small><?php endif; ?>
+      <?php if (!empty($tour['description'])): ?><small class="ppi-public-start-card-description"><?php p($tour['description']); ?></small><?php endif; ?>
+      <?php if (!empty($tour['locked'])): ?><small class="ppi-public-start-password-status"><span class="ppi-password-status-full">🔒 Tour-Passwort erforderlich</span><span class="ppi-password-status-short">🔒 Geschützt</span></small><?php endif; ?>
       </div>
      </a>
     <?php endforeach; ?>
@@ -703,6 +704,466 @@ html:has(#ppi-public-startpage),body:has(#ppi-public-startpage) {overflow:hidden
  #ppi-public-startpage .ppi-public-nextcloud-logo{
   width:110px;
  }
+}
+
+
+/* PPI MOBILE STARTPAGE V10 — mobile columns are independent of desktop presets. */
+@media(max-width:650px){
+ #ppi-public-startpage[data-mobile-cols="2"] .ppi-public-start-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;grid-auto-flow:row!important}
+ #ppi-public-startpage[data-mobile-cols="2"] .ppi-public-start-grid>.ppi-public-start-card{grid-column:span 1!important;grid-row:span 1!important;width:100%!important;min-width:0!important;max-width:none!important;aspect-ratio:auto!important}
+ #ppi-public-startpage[data-mobile-cols="2"] .ppi-public-start-card-image{aspect-ratio:16/9!important;height:auto!important;min-height:0!important}
+ #ppi-public-startpage[data-mobile-cols="2"] .ppi-public-start-card-content{padding:8px 7px!important;min-height:55px!important}
+ #ppi-public-startpage[data-mobile-cols="2"] .ppi-public-start-card-content strong{font-size:13px!important;line-height:1.35!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;overflow:hidden!important}
+ #ppi-public-startpage[data-mobile-cols="2"] .ppi-public-start-card-content small{font-size:11px!important;line-height:1.4!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;overflow:hidden!important}
+}
+@media(max-width:340px){#ppi-public-startpage[data-mobile-cols="2"] .ppi-public-start-grid{grid-template-columns:1fr!important}}
+
+/* PPI MOBILE CARD HEIGHT V11 — two-column mobile only */
+@media screen and (max-width:650px) and (min-width:341px) {
+  /* Disable the square desktop mosaic and fixed card dimensions. */
+  #ppi-public-startpage[data-mobile-cols="2"] .ppi-public-start-grid {
+    --ppi-mosaic-columns:2!important;
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    grid-auto-rows:auto!important;
+    grid-auto-flow:row!important;
+    align-items:stretch!important;
+    gap:10px!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="2"] .ppi-public-start-grid > .ppi-public-start-card {
+    box-sizing:border-box!important;
+    grid-column:span 1!important;
+    grid-row:span 1!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    aspect-ratio:auto!important;
+    display:flex!important;
+    flex-direction:column!important;
+    align-self:stretch!important;
+    overflow:hidden!important;
+  }
+  /* The image should be a short landscape preview, never flex-grow. */
+  #ppi-public-startpage[data-mobile-cols="2"] .ppi-public-start-card-image {
+    display:block!important;
+    position:relative!important;
+    box-sizing:border-box!important;
+    flex:0 0 auto!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    aspect-ratio:16/9!important;
+    overflow:hidden!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="2"] .ppi-public-start-card-image img {
+    position:absolute!important;
+    inset:0!important;
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+  }
+  /* Remove old fixed text height, retain readable title and lock indication. */
+  #ppi-public-startpage[data-mobile-cols="2"] .ppi-public-start-card-content {
+    box-sizing:border-box!important;
+    flex:0 0 auto!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    padding:9px 7px 11px!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="2"] .ppi-public-start-card-content strong {
+    font-size:13px!important;
+    line-height:1.35!important;
+    display:-webkit-box!important;
+    -webkit-box-orient:vertical!important;
+    -webkit-line-clamp:2!important;
+    overflow:hidden!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="2"] .ppi-public-start-card-content small {
+    font-size:11px!important;
+    line-height:1.4!important;
+    display:-webkit-box!important;
+    -webkit-box-orient:vertical!important;
+    -webkit-line-clamp:2!important;
+    overflow:hidden!important;
+  }
+}
+
+/* PPI MOBILE STARTPAGE V12 — 3-column public tiles */
+@media screen and (max-width:650px) and (min-width:361px){
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-grid{
+    --ppi-mosaic-columns:3!important;display:grid!important;
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+    grid-auto-rows:auto!important;grid-auto-flow:row!important;
+    align-items:stretch!important;gap:8px!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-grid>.ppi-public-start-card{
+    box-sizing:border-box!important;grid-column:span 1!important;grid-row:span 1!important;
+    width:100%!important;min-width:0!important;max-width:none!important;
+    height:auto!important;min-height:0!important;max-height:none!important;
+    aspect-ratio:auto!important;display:flex!important;flex-direction:column!important;
+    align-self:stretch!important;overflow:hidden!important;
+    border-width:4px!important;border-radius:11px!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-card-image{
+    display:grid!important;place-items:center!important;position:relative!important;
+    box-sizing:border-box!important;flex:0 0 auto!important;
+    width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;
+    aspect-ratio:16/9!important;overflow:hidden!important;font-size:25px!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-card-image img{
+    position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+    object-fit:cover!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-card-content{
+    box-sizing:border-box!important;flex:0 0 auto!important;height:auto!important;
+    min-height:0!important;max-height:none!important;padding:7px 4px 8px!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-card-content strong{
+    display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:3!important;
+    overflow:hidden!important;font-size:11px!important;line-height:1.25!important;
+    overflow-wrap:anywhere!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-card-description{display:none!important}
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-card-content small:not(.ppi-public-start-card-description){
+    display:block!important;font-size:10px!important;line-height:1.25!important;
+    overflow-wrap:anywhere!important;margin-top:5px!important;
+  }
+}
+/* Avoid unreadably narrow tiles on very small phones: fall back to two. */
+@media screen and (max-width:360px){
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-grid{
+    --ppi-mosaic-columns:2!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    grid-auto-rows:auto!important;gap:8px!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-grid>.ppi-public-start-card{
+    grid-column:span 1!important;grid-row:span 1!important;height:auto!important;
+    min-height:0!important;aspect-ratio:auto!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-card-image{
+    flex:0 0 auto!important;aspect-ratio:16/9!important;height:auto!important;
+  }
+}
+
+/* PPI MOBILE THREE-COLUMN READABILITY V13 */
+/* Full label everywhere by default; narrow label only on 3-column mobile screens. */
+#ppi-public-startpage .ppi-password-status-short{display:none!important}
+@media screen and (min-width:361px) and (max-width:650px){
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-grid{
+    column-gap:7px!important;row-gap:10px!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-grid>.ppi-public-start-card{
+    border-width:3px!important;border-radius:11px!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-card-image{
+    font-size:19px!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-card-image>span{
+    font-size:19px!important;line-height:1!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-card-content{
+    padding:7px 3px 8px!important;
+    min-width:0!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-card-content strong{
+    display:-webkit-box!important;-webkit-box-orient:vertical!important;
+    -webkit-line-clamp:2!important;line-clamp:2;
+    min-height:2.5em!important;max-height:2.5em!important;
+    overflow:hidden!important;overflow-wrap:anywhere!important;
+    font-size:10.5px!important;line-height:1.25!important;
+    margin:0!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-card-content .ppi-password-status-full{
+    display:none!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-card-content .ppi-password-status-short{
+    display:inline!important;
+  }
+  #ppi-public-startpage[data-mobile-cols="3"] .ppi-public-start-card-content .ppi-public-start-password-status{
+    display:block!important;
+    margin-top:4px!important;
+    font-size:10px!important;
+    line-height:1.2!important;
+    text-align:center!important;
+    white-space:normal!important;
+  }
+}
+
+
+/* PPI MOBILE AUTO MOSAIC V17 - independent public mobile layout. */
+@media screen and (min-width:361px) and (max-width:650px){
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid{
+  --ppi-mosaic-columns:3!important;display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-auto-rows:clamp(95px,25cqw,132px)!important;
+  grid-auto-flow:row dense!important;gap:9px!important;align-items:stretch!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid>.ppi-public-start-card{
+  grid-column:span 1!important;grid-row:span 1!important;
+  box-sizing:border-box!important;display:flex!important;flex-direction:column!important;
+  width:100%!important;min-width:0!important;max-width:none!important;
+  height:100%!important;min-height:0!important;max-height:none!important;
+  aspect-ratio:auto!important;align-self:stretch!important;
+  overflow:hidden!important;border-width:3px!important;border-radius:11px!important;
+  box-shadow:0 1px 3px rgba(0,0,0,.11)!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid>.ppi-public-start-card:first-child:nth-last-child(n+3){
+  grid-column:span 2!important;grid-row:span 2!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-card-image{
+  display:grid!important;place-items:center!important;position:relative!important;
+  box-sizing:border-box!important;flex:0 0 auto!important;
+  width:100%!important;height:auto!important;min-height:0!important;max-height:none!important;
+  aspect-ratio:16/9!important;overflow:hidden!important;font-size:18px!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-card-image img{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-card-content{
+  box-sizing:border-box!important;flex:1 1 auto!important;height:auto!important;
+  min-height:0!important;max-height:none!important;padding:4px 3px!important;overflow:hidden!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-card-content strong{
+  display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;
+  overflow:hidden!important;font-size:10px!important;line-height:1.25!important;overflow-wrap:anywhere!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-card-description{display:none!important}
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-card-content small:not(.ppi-public-start-card-description){
+  display:block!important;font-size:0!important;line-height:1!important;margin-top:3px!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-card-content small:not(.ppi-public-start-card-description)::before{
+  content:"🔒";font-size:11px!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid>.ppi-public-start-card:first-child:nth-last-child(n+3) .ppi-public-start-card-content{
+  padding:8px 7px!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid>.ppi-public-start-card:first-child:nth-last-child(n+3) .ppi-public-start-card-content strong{font-size:13px!important}
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid>.ppi-public-start-card:first-child:nth-last-child(n+3) .ppi-public-start-card-content small:not(.ppi-public-start-card-description){font-size:11px!important;line-height:1.2!important}
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid>.ppi-public-start-card:first-child:nth-last-child(n+3) .ppi-public-start-card-content small:not(.ppi-public-start-card-description)::before{content:none}
+}
+/* On very small phones use two readable equal-width columns. */
+@media screen and (max-width:360px){
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid{
+  --ppi-mosaic-columns:2!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  grid-auto-rows:auto!important;gap:8px!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid>.ppi-public-start-card{
+  grid-column:span 1!important;grid-row:span 1!important;
+  height:auto!important;min-height:0!important;aspect-ratio:auto!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-card-image{flex:0 0 auto!important;height:auto!important;aspect-ratio:16/9!important}
+}
+
+
+/* PPI MOBILE MOSAIC REAL GRID V18
+   Auto only: three columns, first tile at most 2 x 2; fixed 1/2/3 unchanged.
+   The following selectors deliberately beat the earlier V10-V17 mobile rules. */
+@media screen and (min-width:361px) and (max-width:650px) {
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid {
+   display:grid!important;
+   --ppi-mosaic-columns:3!important;
+   grid-template-columns:repeat(3,minmax(0,1fr))!important;
+   grid-template-rows:none!important;
+   grid-auto-rows:clamp(95px,25cqw,132px)!important;
+   grid-auto-flow:row dense!important;
+   gap:9px!important;
+   align-items:stretch!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n) {
+   grid-column:span 1!important;
+   grid-row:span 1!important;
+   height:100%!important;min-height:0!important;max-height:none!important;
+   width:100%!important;min-width:0!important;max-width:none!important;
+   aspect-ratio:auto!important;
+   display:flex!important;flex-direction:column!important;
+   box-sizing:border-box!important;overflow:hidden!important;
+   border-width:3px!important;
+   position:relative!important;isolation:isolate!important;
+   box-shadow:0 1px 3px rgba(0,0,0,.11)!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:first-child:nth-last-child(n+3) {
+   grid-column:span 2!important;grid-row:span 2!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card .ppi-public-start-card-image {
+   display:grid!important;place-items:center!important;position:relative!important;
+   flex:0 0 auto!important;width:100%!important;height:auto!important;min-height:0!important;
+   aspect-ratio:16/9!important;overflow:hidden!important;font-size:18px!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:first-child:nth-last-child(n+3) .ppi-public-start-card-image {
+   flex:1 1 auto!important;aspect-ratio:auto!important;height:auto!important;min-height:0!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-card-image img {
+   display:block!important;position:absolute!important;inset:0!important;
+   width:100%!important;height:100%!important;object-fit:cover!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-card-content {
+   display:block!important;box-sizing:border-box!important;flex:1 1 auto!important;
+   height:auto!important;min-height:0!important;max-height:none!important;
+   padding:5px 3px!important;overflow:hidden!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:first-child:nth-last-child(n+3) .ppi-public-start-card-content {
+   flex:0 0 auto!important;padding:8px 7px!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-card-content strong {
+   display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;
+   overflow:hidden!important;font-size:10px!important;line-height:1.25!important;overflow-wrap:anywhere!important;
+ }
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:first-child:nth-last-child(n+3) .ppi-public-start-card-content strong {font-size:13px!important}
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-card-description {display:none!important}
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-card-content small:not(.ppi-public-start-card-description) {font-size:0!important;line-height:1!important;margin-top:3px!important}
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-card-content small:not(.ppi-public-start-card-description)::before {content:"🔒";font-size:11px!important}
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:first-child:nth-last-child(n+3) .ppi-public-start-card-content small:not(.ppi-public-start-card-description) {font-size:11px!important;line-height:1.2!important}
+ #ppi-public-startpage[data-mobile-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card:first-child:nth-last-child(n+3) .ppi-public-start-card-content small:not(.ppi-public-start-card-description)::before {content:none}
+}
+/* Small screens: preserve readable 2-column fallback from v17. */
+
+
+
+/* PPI DESKTOP FIXED GRID PREVIEW SWITCH V20 – public desktop, 3/4 columns. */
+@media screen and (min-width:901px) {
+ #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid {
+  display:grid!important;--ppi-mosaic-columns:3!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-auto-rows:auto!important;grid-auto-flow:row!important;
+ }
+ #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid {
+  display:grid!important;--ppi-mosaic-columns:4!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-auto-rows:auto!important;grid-auto-flow:row!important;
+ }
+ #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n),
+ #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card:nth-child(n) {
+  grid-column:auto!important;grid-row:auto!important;
+  height:auto!important;min-height:0!important;max-height:none!important;
+  aspect-ratio:auto!important;align-self:stretch!important;
+ }
+ #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card .ppi-public-start-card-image,
+ #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card .ppi-public-start-card-image {
+  flex:0 0 auto!important;aspect-ratio:16/9!important;height:auto!important;min-height:0!important;
+ }
+ #ppi-public-startpage[data-cols="3"] .ppi-public-start-grid > .ppi-public-start-card .ppi-public-start-card-content,
+ #ppi-public-startpage[data-cols="4"] .ppi-public-start-grid > .ppi-public-start-card .ppi-public-start-card-content {
+  flex:1 1 auto!important;height:auto!important;min-height:0!important;
+ }
+}
+
+
+
+/* PPI DESKTOP RESPONSIVE MOSAIC V21
+ * AUTO only. CSS container width defines 2/3/4/5 tracks.
+ * <=4 tours: equal sizes. 3 tracks: >=5; 4 tracks: >=7; 5 tracks: >=9.
+ * At most one featured 2x2 card. Explicit column presets not touched.
+ * Mobile rules from v10-v18 stay untouched. */
+@media screen and (min-width:901px) {
+ #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid-container {
+  container-type:inline-size!important;
+ }
+ #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid {
+  --ppi-v21-cols:2;
+  --ppi-v21-gap:clamp(12px,1.3vw,20px);
+  display:grid!important;
+  width:100%!important;
+  gap:var(--ppi-v21-gap)!important;
+  grid-template-columns:repeat(var(--ppi-v21-cols),minmax(0,1fr))!important;
+  grid-auto-rows:calc((100cqw - (var(--ppi-v21-cols) - 1)*var(--ppi-v21-gap))/var(--ppi-v21-cols))!important;
+  grid-auto-flow:row dense!important;
+  align-items:stretch!important;
+ }
+ #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(n)) > .ppi-public-start-card:nth-child(n):nth-child(n) {
+  grid-column:span 1!important;grid-row:span 1!important;
+  box-sizing:border-box!important;width:100%!important;min-width:0!important;
+  height:100%!important;min-height:0!important;max-height:none!important;
+  aspect-ratio:auto!important;display:flex!important;flex-direction:column!important;
+  overflow:hidden!important;
+ }
+ #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card .ppi-public-start-card-image {
+  flex:1 1 auto!important;min-height:0!important;aspect-ratio:auto!important;
+  width:100%!important;position:relative!important;overflow:hidden!important;
+ }
+ #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card .ppi-public-start-card-image img {
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;
+ }
+ #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card .ppi-public-start-card-content {
+  height:auto!important;min-height:0!important;max-height:none!important;
+  flex:0 0 auto!important;padding:clamp(8px,1vw,14px)!important;
+ }
+ #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid > .ppi-public-start-card .ppi-public-start-card-content strong {
+  font-size:clamp(12px,1.15vw,17px)!important;
+  overflow-wrap:anywhere!important;
+ }
+}
+@container (min-width:760px) {
+ #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid {--ppi-v21-cols:3!important;}
+ #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:first-child {
+  grid-column:span 2!important;grid-row:span 2!important;
+ }
+}
+@container (min-width:1060px) {
+ #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid {--ppi-v21-cols:4!important;}
+ #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:first-child:nth-child(n) {
+  grid-column:span 1!important;grid-row:span 1!important;
+ }
+ #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(7)) > .ppi-public-start-card:first-child {
+  grid-column:span 2!important;grid-row:span 2!important;
+ }
+}
+@container (min-width:1440px) {
+ #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid {--ppi-v21-cols:5!important;}
+ #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(5)) > .ppi-public-start-card:first-child:nth-child(n) {
+  grid-column:span 1!important;grid-row:span 1!important;
+ }
+ #ppi-public-startpage[data-cols="auto"] .ppi-public-start-grid:has(> .ppi-public-start-card:nth-child(9)) > .ppi-public-start-card:first-child {
+  grid-column:span 2!important;grid-row:span 2!important;
+ }
+}
+
+
+/* PPI PUBLIC PASSWORD MOBILE KEYBOARD V22
+   Scoped only to password forms: public tour and public startpage.
+   No layout changes to unlocked content or non-password errors. */
+@media (max-width: 700px), (pointer: coarse) and (max-height: 850px) {
+  #ppi-public-tour > #ppi-public-unavailable:has(.ppi-tour-password-form),
+  #ppi-public-startpage > #ppi-public-unavailable.ppi-public-password-state {
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: max(14px, env(safe-area-inset-top)) 12px
+             max(22px, env(safe-area-inset-bottom)) !important;
+    scroll-padding-top: 12px;
+  }
+  /* Keep the login centered until the keyboard is activated. */
+  #ppi-public-tour > #ppi-public-unavailable:has(.ppi-tour-password-form:focus-within),
+  #ppi-public-startpage > #ppi-public-unavailable.ppi-public-password-state:has(form:focus-within) {
+    align-items: flex-start !important;
+    justify-content: center !important;
+    /* Scroll area under an on-screen keyboard, even when 100dvh does not shrink. */
+    padding-top: max(12px, env(safe-area-inset-top)) !important;
+    padding-bottom: max(48vh, 220px) !important;
+  }
+  #ppi-public-tour > #ppi-public-unavailable:has(.ppi-tour-password-form:focus-within)
+    .ppi-public-unavailable-card,
+  #ppi-public-startpage > #ppi-public-unavailable.ppi-public-password-state:has(form:focus-within)
+    .ppi-public-password-stack {
+    flex-shrink: 0 !important;
+    margin-block: 0 auto !important;
+  }
+  #ppi-public-tour .ppi-tour-password-form input[type="password"],
+  #ppi-public-startpage .ppi-public-password-stack input[type="password"] {
+    font-size: 16px !important;
+    scroll-margin-top: 16px;
+    scroll-margin-bottom: 48vh;
+  }
+  #ppi-public-tour > #ppi-public-unavailable:has(.ppi-tour-password-form)
+    .ppi-public-unavailable-card,
+  #ppi-public-startpage > #ppi-public-unavailable.ppi-public-password-state
+    .ppi-public-password-stack {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
 }
 
 </style>

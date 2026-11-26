@@ -394,7 +394,6 @@
     return {...d,
       startImageId:Number(byId('ppi-design-start').value)||0,
       startYaw:Number(byId('ppi-design-yaw').value)||0,
-      socialPreviewMode:byId('ppi-design-social').value,
       hotspotSize:sizeSteps[Number(byId('ppi-design-size').value)]||'medium',
       hotspotStyle:byId('ppi-design-style').value,
       svgPinColor:byId('ppi-design-pin-color').value,
@@ -518,6 +517,61 @@
     try {await navigator.clipboard.writeText(tourPublicUrl(tour)); notify('Freigabelink kopiert.');}
     catch {window.prompt('Freigabelink kopieren:', tourPublicUrl(tour));}
   }
+  /* ppi-compact-actions-v5 */
+  // Keep the original action buttons, handlers and permission rules untouched.
+  function decorateCompactActions(actions) {
+    if (!actions || actions.dataset.ppiCompactActions) return;
+    const buttons = [...actions.children].filter(el => el.tagName === 'BUTTON');
+    if (buttons.length < 3 || buttons[0].textContent.trim() !== 'Bearbeiten' || buttons[1].textContent.trim() !== 'Vorschau') return;
+    const rest = buttons.slice(2);
+    const more = document.createElement('div');
+    more.className = 'ppi-compact-more';
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'ppi-compact-more-trigger';
+    toggle.setAttribute('aria-haspopup','true');
+    toggle.setAttribute('aria-expanded','false');
+    toggle.setAttribute('aria-label','Weitere Aktionen');
+    toggle.title = 'Weitere Aktionen';
+    toggle.textContent = '⋯ Mehr';
+    const panel = document.createElement('div');
+    panel.className = 'ppi-compact-more-panel';
+    for (const btn of rest) panel.append(btn); // Move real buttons; listeners remain intact.
+    more.append(toggle, panel);
+    actions.append(more);
+    actions.dataset.ppiCompactActions = '1';
+    const close = () => {
+      more.classList.remove('ppi-compact-more-open');
+      actions.closest('.ppi-overview-tile')?.classList.remove('ppi-compact-menu-visible');
+      toggle.setAttribute('aria-expanded', 'false');
+    };
+    toggle.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const opening = !more.classList.contains('ppi-compact-more-open');
+      document.querySelectorAll('.ppi-compact-more-open').forEach(el => {
+        el.classList.remove('ppi-compact-more-open');
+        el.querySelector('.ppi-compact-more-trigger')?.setAttribute('aria-expanded', 'false');
+        el.closest('.ppi-overview-tile')?.classList.remove('ppi-compact-menu-visible');
+      });
+      if (opening) {
+        more.classList.add('ppi-compact-more-open');
+        actions.closest('.ppi-overview-tile')?.classList.add('ppi-compact-menu-visible');
+        toggle.setAttribute('aria-expanded', 'true');
+      }
+    });
+    panel.addEventListener('click', event => { if (event.target.closest('button')) close(); });
+    more.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { event.preventDefault(); close(); toggle.focus(); }
+    });
+  }
+  document.addEventListener('click', event => {
+    if (event.target.closest('.ppi-compact-more')) return;
+    document.querySelectorAll('.ppi-compact-more-open').forEach(el => {
+      el.classList.remove('ppi-compact-more-open');
+      el.querySelector('.ppi-compact-more-trigger')?.setAttribute('aria-expanded','false');
+      el.closest('.ppi-overview-tile')?.classList.remove('ppi-compact-menu-visible');
+    });
+  });
   function tourAction(label, handler, primary=false) {
     const b=node('button',label);b.type='button';if(primary)b.classList.add('primary');
     b.addEventListener('click',handler);return b;
@@ -533,6 +587,7 @@
     if (!tours.length) container.append(node('p','Noch keine Touren erstellt.'));
     for (const tour of tours) {
       const tile=node('article',undefined,'ppi-overview-tile');
+      tile.dataset.ppiName=tour.name||'';tile.dataset.ppiModified=tour.modified||tour.created||'';tile.dataset.ppiOriginalIndex=String(container.querySelectorAll(':scope > .ppi-overview-tile').length);
       if (tour.images?.length) {
         const preview=imageThumb(tourCoverImage(tour).id,640,300);
         preview.className='ppi-overview-thumb';preview.alt='Tour-Vorschaubild: '+tour.name;
@@ -552,6 +607,7 @@
         actions.append(tourAction('Hauptlink deaktivieren',()=>quickShare(tour,false)));
       } else actions.append(tourAction('Freigeben',()=>quickShare(tour,true)));
       actions.append(tourAction('Freigabe verwalten',()=>openTour(tour,'share')));
+      decorateCompactActions(actions);
       body.append(actions);tile.append(body);container.append(tile);
     }
   }
@@ -708,7 +764,7 @@
     byId('ppi-design-size-label').textContent=sizeNames[n];
     root.querySelector('.ppi-design-hotspot-preview')?.style.setProperty('--ppi-mini-scale',String([.72,.8,1,1.2,1.28][n]));
   }
-  const designDefault = {watermarkEnabled:false,watermarkId:'none',startImageId:0,startYaw:0,showTitle:true,showNavigation:true,showFullscreen:true,hotspotSize:'medium',hotspotStyle:'label-pin',introText:'',socialPreviewMode:'cover',svgPinColor:'#1687bc'};
+  const designDefault = {watermarkEnabled:false,watermarkId:'none',startImageId:0,startYaw:0,showTitle:true,showNavigation:true,showFullscreen:true,hotspotSize:'medium',hotspotStyle:'label-pin',introText:'',svgPinColor:'#1687bc'};
   function currentDesign(){return {...designDefault,...(active?.display||{})};}
   /* PPI START PANORAMA CARD PICKER V1 2026-11-24 */
   // One persisted property for both editing tabs; no separate data model.
@@ -856,20 +912,6 @@
     if (!byId('ppi-step-edit').hidden) renderGraph();
   });
   ppiStartUpdatePickButton();
-  function updateSocialPreviewStatus(){
-    const indicator=byId('ppi-design-social-status');
-    if(!indicator)return;
-    const mode=byId('ppi-design-social').value;
-    if(mode==='off'){
-      indicator.textContent='Keine zusätzlichen Linkvorschau-Daten aktiviert.';
-    }else if(active?.sharePasswordProtected){
-      indicator.textContent='Passwortschutz aktiv: neutrales 360°-Motiv und allgemeiner Beschreibungstext.';
-    }else if(mode==='neutral'){
-      indicator.textContent='Neutrales 360°-Motiv; Tourtitel und Tourbeschreibung bleiben sichtbar.';
-    }else{
-      indicator.textContent='Ohne Passwort: Startpanorama, Tourname und Beschreibung werden automatisch verwendet.';
-    }
-  }
   function renderDesign(){
     const d=currentDesign();const select=byId('ppi-design-start');select.replaceChildren();
     for(const img of active.images){const opt=node('option',img.name);opt.value=String(img.id);select.append(opt);}
@@ -877,7 +919,6 @@
     byId('ppi-tour-name').value=String(active.name||'');
     byId('ppi-design-yaw').value=String(d.startYaw);byId('ppi-design-yaw-value').textContent=d.startYaw+'°';
     byId('ppi-design-intro').value=String(d.introText||'');
-    byId('ppi-design-social').value=['cover','neutral','off'].includes(d.socialPreviewMode)?d.socialPreviewMode:'cover';
     byId('ppi-design-size').value=String(Math.max(0,sizeSteps.indexOf(d.hotspotSize)));
     byId('ppi-design-pin-color').value=/^#[0-9a-fA-F]{6}$/.test(d.svgPinColor||'')?d.svgPinColor:'#1687bc';
     byId('ppi-design-style').value=d.hotspotStyle==='chat-pin'?'map-pin':(['classic','blue','map-pin','label-pin','outline-pin','gps-pin','you-pin'].includes(d.hotspotStyle)?d.hotspotStyle:'classic');
@@ -895,7 +936,6 @@
     byId('ppi-design-watermark-info').textContent=tourWatermarks.length?'Nur vom Administrator freigegebene Wasserzeichen sind auswählbar.':'Aktuell wurden keine Wasserzeichen für Touren freigegeben.';
     refreshDesignPreviews();
     refreshWatermarkThumbnail();
-    updateSocialPreviewStatus();
   }
   function refreshWatermarkThumbnail(){
     const enabled=byId('ppi-design-watermark-enabled').checked;
@@ -917,7 +957,6 @@
     refreshWatermarkThumbnail();
   });
   byId('ppi-design-watermark-id').addEventListener('change',refreshWatermarkThumbnail);
-  byId('ppi-design-social').addEventListener('change',updateSocialPreviewStatus);
   // Native color picker: Firefox may dispatch input, change or both.
   // Queue autosave only AFTER the input value is already updated.
   for (const eventType of ['input', 'change']) {
@@ -1056,7 +1095,7 @@
       if(descriptionField.value.trim().length>300){notify('Beschreibung: maximal 300 Zeichen. Bitte vorhandenen Text kürzen.',true);descriptionField.focus();return;}
       if(!byId('ppi-tour-name').value.trim()){notify('Bitte einen Namen für die Tour eingeben.',true);byId('ppi-tour-name').focus();return;}
       const display={startImageId:Number(byId('ppi-design-start').value)||0,startYaw:Number(byId('ppi-design-yaw').value),
-        introText:byId('ppi-design-intro').value.trim(),socialPreviewMode:byId('ppi-design-social').value,hotspotSize:sizeSteps[Number(byId('ppi-design-size').value)]||'medium',hotspotStyle:byId('ppi-design-style').value,svgPinColor:byId('ppi-design-pin-color').value,showTitle:byId('ppi-design-title').checked,
+        introText:byId('ppi-design-intro').value.trim(),hotspotSize:sizeSteps[Number(byId('ppi-design-size').value)]||'medium',hotspotStyle:byId('ppi-design-style').value,svgPinColor:byId('ppi-design-pin-color').value,showTitle:byId('ppi-design-title').checked,
         showNavigation:byId('ppi-design-nav').checked,showFullscreen:byId('ppi-design-fullscreen').checked,
         watermarkEnabled:byId('ppi-design-watermark-enabled').checked,watermarkId:byId('ppi-design-watermark-id').value};
       const result=await request(`${api}/${encodeURIComponent(active.id)}`,'POST',{
@@ -1137,7 +1176,6 @@
   function updateShareUi() {
     renderExtraShareLinks();
     byId('ppi-extra-expiry').min = earliestShareExpiry(active);
-    updateSocialPreviewStatus();
     const token = active?.publicToken || null;
     byId('ppi-share-state').textContent = token ? (shareExpiredOn(active?.shareExpiresOn, active) ? 'Abgelaufen' : 'Freigegeben') : 'Nicht freigegeben';
     byId('ppi-share-enable').hidden = Boolean(token);
@@ -1962,7 +2000,7 @@
   let ppiAutoError = false;
   let ppiAutoStatus = null;
   const ppiAutoDesignKeys = ['layout','headingColor','descriptionColor','designEffect',
-    'backgroundColor','headerBackgroundColor','backgroundFileId','tileColumns','tourIds'];
+    'backgroundColor','headerBackgroundColor','backgroundFileId','tileColumns','mobileColumns','tourIds'];
   function ppiAutoPayload() {
     const values = startPageFormValues();
     const payload = {};
@@ -2100,6 +2138,7 @@
       headerBackgroundColor:byId('ppi-start-page-header-color').value,
       backgroundFileId:startPageBackgroundFileId,
       tileColumns:byId('ppi-start-page-tile-columns').value,
+      mobileColumns:byId('ppi-start-page-mobile-columns').value,
       tourIds:[...byId('ppi-start-page-tours').querySelectorAll('input:checked')].map(input => input.value)
     };
   }
@@ -2369,6 +2408,7 @@
     const preview = byId('ppi-startpage-preview');
     preview.dataset.layout = values.layout;
     preview.dataset.effect = values.designEffect;
+    preview.style.setProperty('--ppi-mobile-columns', values.mobileColumns);
     // The controls are presentation-only: never reset values when a picture hides a row.
     // The image replaces the full-page color in hero mode and the header color
     // in split mode; the lower tour area still needs its background color.
@@ -2425,6 +2465,23 @@
     queueDescriptionResize();
     ppiAutoSchedule();
   }
+  // Mobile layout is saved per start page, preview device is never saved.
+  const mobileColumnsButtons = [...byId('ppi-start-page-mobile-columns-choices').querySelectorAll('[data-mobile-cols]')];
+  function chooseMobileColumns(value, update=true) {
+    if (!['auto','1','2','3'].includes(value)) return;
+    byId('ppi-start-page-mobile-columns').value = value;
+    for (const button of mobileColumnsButtons) button.setAttribute('aria-pressed',String(button.dataset.mobileCols===value));
+    if (update) updateStartPagePreview();
+  }
+  for (const button of mobileColumnsButtons) button.addEventListener('click',()=>{ choosePreviewDevice('mobile'); chooseMobileColumns(button.dataset.mobileCols); });
+  const previewDeviceButtons = [...byId('ppi-startpage-preview-device-choices').querySelectorAll('[data-preview-device]')];
+  function choosePreviewDevice(value) {
+    if (!['desktop','mobile'].includes(value)) return;
+    byId('ppi-startpage-preview').dataset.ppiPreviewDevice = value;
+    for (const button of previewDeviceButtons) button.setAttribute('aria-pressed',String(button.dataset.previewDevice===value));
+  }
+  for (const button of previewDeviceButtons) button.addEventListener('click',()=>choosePreviewDevice(button.dataset.previewDevice));
+  choosePreviewDevice('desktop');
   const layoutPresetButtons = [...byId('ppi-start-page-tile-presets').querySelectorAll('[data-columns]')];
   function chooseTileLayout(value) {
     if (!['auto','2','3','4','5'].includes(value)) return;
@@ -2435,7 +2492,7 @@
     updateStartPagePreview();
   }
   for (const button of layoutPresetButtons) {
-    button.addEventListener('click', () => chooseTileLayout(button.dataset.columns));
+    button.addEventListener('click', () => { choosePreviewDevice('desktop'); chooseTileLayout(button.dataset.columns); });
   }
   function showStartPageTab(tab) {
     closeStartPageBackground();
@@ -3507,6 +3564,7 @@
     const savedColumns = ['auto','2','3','4','5'].includes(page.tileColumns) ? page.tileColumns : 'auto';
     byId('ppi-start-page-tile-columns').value = savedColumns;
     for (const button of layoutPresetButtons) button.setAttribute('aria-pressed', String(button.dataset.columns === savedColumns));
+    chooseMobileColumns(['auto','1','2','3'].includes(page.mobileColumns) ? page.mobileColumns : '1', false);
     startPageBackgroundFileId = Number(page.backgroundFileId) || 0;
     byId('ppi-start-page-bg-selected').textContent = startPageBackgroundFileId ? 'Bild aus Nextcloud ausgewählt (Datei-ID ' + startPageBackgroundFileId + ')' : 'Kein Bild ausgewählt';
     closeStartPageBackground();
@@ -3579,6 +3637,7 @@
     if (!startPages.length) container.append(node('p', 'Noch keine Startseiten erstellt.'));
     for (const page of startPages) {
       const tile = node('article', undefined, 'ppi-overview-tile');
+      tile.dataset.ppiName=page.name||'';tile.dataset.ppiModified=page.modified||page.created||'';tile.dataset.ppiOriginalIndex=String(container.querySelectorAll(':scope > .ppi-overview-tile').length);
       const cover = node('div',undefined,'ppi-startpage-overview-cover');
       if (Number(page.backgroundFileId) > 0) {
         const background = previewUrl(Number(page.backgroundFileId), 920, 520);
@@ -3646,6 +3705,7 @@
           notify('Startseite als privater Entwurf dupliziert.');
         } catch (e) { notify(e.message, true); }
       }));
+      decorateCompactActions(actions);
       body.append(actions);
       tile.append(body);
       container.append(tile);
@@ -3768,3 +3828,5 @@
   refresh().catch(e=>notify('Touren konnten nicht geladen werden: '+e.message,true));
   setManagementMode('tours');
 })();
+
+/* PPI DESKTOP FIXED GRID PREVIEW SWITCH V20 – selection buttons switch live-preview device before rendering. */

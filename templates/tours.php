@@ -2,6 +2,7 @@
 /** @var array $_ */
 ?>
 <div id="ppi-tours-app"
+     data-global-settings-url="<?php p($_['globalSettingsUrl']); ?>"
      data-start-pages-url="<?php p($_['startPagesUrl']); ?>"
      data-api-url="<?php p($_['apiUrl']); ?>"
      data-files-url="<?php p($_['filesUrl']); ?>"
@@ -19,8 +20,36 @@
       <p id="ppi-section-subtitle" style="margin:4px 0 0;color:var(--color-text-maxcontrast)">Touren aus deinen Nextcloud-Panoramen zusammenstellen</p></div>
     <button class="primary" id="ppi-tour-create" type="button">+ Neue Tour erstellen</button>
     <button class="primary" id="ppi-start-page-create" type="button" hidden>+ Neue Startseite</button>
+    <button id="ppi-global-settings-open" type="button" aria-label="Globale Einstellungen öffnen" title="Globale Einstellungen" hidden>⚙</button>
   </header>
   <p id="ppi-tour-message" role="status" aria-live="polite" hidden></p>
+  </div>
+  <div id="ppi-global-settings-backdrop" class="ppi-global-settings-backdrop" hidden>
+    <section id="ppi-global-settings-dialog" class="ppi-global-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="ppi-global-settings-title" tabindex="-1">
+      <header class="ppi-global-settings-header">
+        <h2 id="ppi-global-settings-title">⚙ Globale Einstellungen</h2>
+        <button id="ppi-global-settings-close" type="button" aria-label="Einstellungen schließen" title="Schließen">✕</button>
+      </header>
+      <p>Diese Einstellungen gelten für alle deine 360°-Touren und Startseiten.</p>
+      <fieldset class="ppi-global-social-fields"><legend>WhatsApp- und Social-Media-Linkvorschau</legend>
+        <small>Passwortgeschützte Freigaben zeigen immer eine neutrale Vorschau. Messenger können frühere Vorschauen zwischenspeichern.</small>
+        <label><input type="radio" name="ppi-global-social" value="cover" checked> <span>Bildvorschau: Startpanorama oder Startseiten-Hintergrundbild</span></label>
+        <label><input type="radio" name="ppi-global-social" value="neutral"> <span>Neutrales Photo-Sphere-Vorschaubild</span></label>
+        <label><input type="radio" name="ppi-global-social" value="off"> <span>Keine eigenen Open-Graph-Metadaten</span></label>
+      </fieldset>
+      <fieldset class="ppi-global-layout-fields"><legend>Kachelansicht</legend>
+        <div class="ppi-global-layout-choices">
+          <label class="ppi-global-layout-choice"><input type="radio" name="ppi-global-layout" value="adaptive" checked><span class="ppi-global-layout-card"><span class="ppi-global-layout-preview ppi-global-preview-adaptive" aria-hidden="true"><i></i><i></i><i></i></span><span class="ppi-global-layout-label"><strong>Adaptiv</strong><small>Bisheriges Layout</small></span></span></label>
+          <label class="ppi-global-layout-choice"><input type="radio" name="ppi-global-layout" value="compact"><span class="ppi-global-layout-card"><span class="ppi-global-layout-preview ppi-global-preview-compact" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ppi-global-layout-label"><strong>Kompakt</strong><small>Kleinere Kacheln</small></span></span></label>
+        </div>
+      </fieldset>
+      <label for="ppi-global-sort"><strong>Sortierung beider Übersichten</strong></label>
+      <select id="ppi-global-sort"><option value="original">Bisherige Reihenfolge</option><option value="name_asc">Name A–Z</option><option value="name_desc">Name Z–A</option><option value="newest">Zuletzt geändert zuerst</option><option value="oldest">Älteste Änderung zuerst</option></select>
+      <footer class="ppi-global-settings-footer">
+        <span id="ppi-global-settings-status" role="status" aria-live="polite"></span>
+        <button id="ppi-global-settings-save" type="button" class="primary">Einstellungen speichern</button>
+      </footer>
+    </section>
   </div>
   <nav class="ppi-startpage-switch" id="ppi-overview-switch" aria-label="Verwaltungsbereich auswählen">
     <button type="button" id="ppi-mode-tours" aria-pressed="true">🌐 360°-Touren</button>
@@ -28,7 +57,7 @@
   </nav>
   <section class="ppi-tour-card" id="ppi-start-pages-overview" hidden>
     <h2>Meine Startseiten</h2>
-    <p>Eigene 360°-Startseiten mit einer Auswahl deiner Touren. Öffentliche Freigaben folgen nach dem Sicherheitstest.</p>
+
     <div id="ppi-start-pages-list" class="ppi-tour-list"></div>
   </section>
   <section class="ppi-tour-card" id="ppi-start-page-editor" hidden>
@@ -123,7 +152,7 @@
             <input type="hidden" id="ppi-start-page-effect" value="subtle">
           </fieldset>
           <fieldset class="ppi-startpage-layout-presets">
-            <legend>Tour-Kacheln anordnen</legend>
+            <legend>Tour-Kacheln anordnen · Desktop</legend>
             <p>Klicke auf eine Anordnung. Die Vorschau passt sich sofort an.</p>
             <div id="ppi-start-page-tile-presets" class="ppi-startpage-layout-presets-grid" role="group" aria-label="Kachelanordnung auswählen">
               <button type="button" class="ppi-startpage-layout-preset" data-columns="auto" aria-pressed="true" title="Automatisch: quadratisches Mosaik mit unterschiedlich großen Kacheln">
@@ -143,6 +172,28 @@
               </button>
             </div>
             <input id="ppi-start-page-tile-columns" type="hidden" value="auto">
+            <div class="ppi-mobile-columns-setting" role="group" aria-label="Mobile Tour-Kachelanordnung">
+              <span class="ppi-mobile-setting-label">Mobile Ansicht</span>
+              <div id="ppi-start-page-mobile-columns-choices" class="ppi-mobile-choices">
+                <button type="button" class="ppi-mobile-layout-preset" data-mobile-cols="auto" aria-pressed="false" title="Automatisch: mobiles Mosaik, große Kachel bis 2 × 2">
+                  <span class="ppi-mobile-layout-mini ppi-mobile-layout-mini-auto" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+                  <span>Autom.</span>
+                </button>
+                <button type="button" class="ppi-mobile-layout-preset" data-mobile-cols="1" aria-pressed="true" title="Eine Spalte: alle Tour-Kacheln untereinander">
+                  <span class="ppi-mobile-layout-mini ppi-mobile-layout-mini-1" aria-hidden="true"><i></i><i></i><i></i></span>
+                  <span>1 Spalte</span>
+                </button>
+                <button type="button" class="ppi-mobile-layout-preset" data-mobile-cols="2" aria-pressed="false" title="Zwei gleich breite Spalten">
+                  <span class="ppi-mobile-layout-mini ppi-mobile-layout-mini-2" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                  <span>2 Spalten</span>
+                </button>
+                <button type="button" class="ppi-mobile-layout-preset" data-mobile-cols="3" aria-pressed="false" title="Drei gleich breite Spalten">
+                  <span class="ppi-mobile-layout-mini ppi-mobile-layout-mini-3" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                  <span>3 Spalten</span>
+                </button>
+              </div>
+              <input id="ppi-start-page-mobile-columns" type="hidden" value="1">
+            </div>
           </fieldset>
           <div class="ppi-startpage-color-controls" aria-label="Farben der Startseite">
             <label id="ppi-start-page-header-color-row" hidden><span>Kopfbereich-Farbe (ohne Hintergrundbild)</span><input id="ppi-start-page-header-color" type="color" value="#000000"></label>
@@ -281,6 +332,10 @@
         <div class="ppi-preset-preview-save" hidden><button type="button" id="ppi-startpage-preset-save">＋ Vorlage speichern</button></div>
         <div class="ppi-startpage-preview-heading">
           <h3>Live-Vorschau</h3>
+          <div id="ppi-startpage-preview-device-choices" class="ppi-preview-device-choices" role="group" aria-label="Vorschaumodus">
+            <button type="button" data-preview-device="desktop" aria-pressed="true">Desktop</button>
+            <button type="button" data-preview-device="mobile" aria-pressed="false">Mobil</button>
+          </div>
           <span id="ppi-startpage-dirty" role="status">Gespeicherter Stand</span>
         </div>
         <div id="ppi-startpage-preview" class="ppi-startpage-live-preview" data-layout="hero">
@@ -346,7 +401,7 @@
       <div class="ppi-design-layout">
         <div class="ppi-design-group" aria-label="Ansicht und Bedienung">
           <div class="ppi-design-field"><label for="ppi-design-yaw">Startblickrichtung (horizontal)</label><div class="ppi-design-range"><input type="range" id="ppi-design-yaw" min="-180" max="180" step="1" value="0"><output id="ppi-design-yaw-value">0°</output></div></div>
-          <div class="ppi-design-field ppi-design-social"><label for="ppi-design-social">Linkvorschau in WhatsApp und anderen Messengern</label><select id="ppi-design-social"><option value="cover">Automatisch: Startpanorama oder neutrales Motiv</option><option value="neutral">Immer neutrale 360°-Vorschau</option><option value="off">Keine zusätzlichen Open-Graph-Metadaten</option></select><p id="ppi-design-social-status" role="status" aria-live="polite"></p><p>Bei Passwortschutz bleiben private Tourinhalte verborgen. Messenger können bereits geladene Vorschauen zwischenspeichern.</p></div>
+
           <div class="ppi-design-field ppi-design-options"><label><input type="checkbox" id="ppi-design-title" checked> Tour-Titel anzeigen</label><label><input type="checkbox" id="ppi-design-nav" checked> Panorama-Navigation anzeigen</label><label><input type="checkbox" id="ppi-design-fullscreen" checked> Vollbildschaltfläche anzeigen</label></div>
         </div>
         <div class="ppi-design-group" aria-label="Öffentliche Präsentation">
@@ -3061,5 +3116,796 @@
  #ppi-tours-app .ppi-startpage-extra-links .ppi-extra-link input{flex:1 1 100%;width:100%!important}
  #ppi-tours-app .ppi-startpage-extra-links .ppi-extra-fields label{flex:1 1 100%}
 }
+
+
+/* 0.4.64 global shared settings: visual overlay; no changes to tour hotspots. */
+#ppi-tours-app #ppi-global-settings-open{width:43px;height:43px;flex:0 0 43px;display:grid;place-items:center;font-size:24px;padding:0;border-radius:10px;background:var(--color-main-background);color:var(--color-main-text);border:1px solid var(--color-border);cursor:pointer}
+#ppi-tours-app #ppi-global-settings-open[hidden]{display:none!important}
+#ppi-global-settings-backdrop[hidden]{display:none!important}
+#ppi-global-settings-backdrop{position:fixed;inset:0;z-index:11000;display:flex;align-items:center;justify-content:center;background:rgba(4,13,24,.54);padding:20px;box-sizing:border-box;overflow-y:auto}
+#ppi-global-settings-dialog{width:min(100%,720px);max-height:calc(100dvh - 40px);overflow-y:auto;box-sizing:border-box;background:var(--color-main-background,#fff);color:var(--color-main-text,#1c1c1c);border:1px solid var(--color-border,#ddd);border-radius:18px;padding:clamp(20px,3vw,30px);box-shadow:0 24px 75px rgba(0,0,0,.38),0 6px 22px rgba(0,0,0,.22)}
+#ppi-global-settings-dialog .ppi-global-settings-header{display:flex;align-items:center;justify-content:space-between;gap:15px}
+#ppi-global-settings-dialog h2{font-size:22px;margin:0}
+#ppi-global-settings-close{font-size:22px;min-width:42px;min-height:42px;border-radius:9px}
+#ppi-global-settings-dialog p{color:var(--color-text-maxcontrast,#777);margin:10px 0 20px}
+#ppi-global-settings-dialog fieldset{border:1px solid var(--color-border,#ddd);border-radius:12px;margin:0 0 17px;padding:16px;display:grid;gap:13px;min-width:0}
+#ppi-global-settings-dialog legend{font-weight:700;padding:0 5px}
+#ppi-global-settings-dialog fieldset label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;line-height:1.4}
+#ppi-global-settings-dialog input[type=radio]{margin-top:4px;flex:0 0 auto}
+#ppi-global-settings-dialog small{color:var(--color-text-maxcontrast,#777);line-height:1.5}
+#ppi-global-sort{display:block;width:100%;margin:9px 0 20px;min-height:40px}
+#ppi-global-settings-dialog .ppi-global-settings-footer{display:flex;justify-content:flex-end;align-items:center;gap:12px;flex-wrap:wrap}
+#ppi-global-settings-status{margin-right:auto;font-size:13px}
+#ppi-tours-app.ppi-global-compact #ppi-tour-list,#ppi-tours-app.ppi-global-compact #ppi-start-pages-list{grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr))!important;gap:12px!important}
+#ppi-tours-app.ppi-global-compact #ppi-tour-list>.ppi-overview-tile,#ppi-tours-app.ppi-global-compact #ppi-start-pages-list>.ppi-overview-tile{grid-column:auto!important}
+#ppi-tours-app.ppi-global-compact .ppi-overview-thumb,#ppi-tours-app.ppi-global-compact .ppi-overview-placeholder{height:130px!important}
+#ppi-tours-app.ppi-global-compact #ppi-start-pages-list .ppi-startpage-overview-cover{min-height:130px!important;max-height:170px!important}
+@media(max-width:550px){#ppi-global-settings-backdrop{padding:10px}#ppi-global-settings-dialog{max-height:calc(100dvh - 20px);border-radius:14px}}
+
+
+/* ppi-global-settings-layout-v4: dialog-only visual refinements. No behavioral changes. */
+#ppi-global-settings-backdrop{padding:14px;overscroll-behavior:contain}
+#ppi-global-settings-dialog{width:min(100%,680px);max-height:calc(100dvh - 28px);padding:0;display:flex;flex-direction:column;overflow:hidden;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.18)}
+#ppi-global-settings-dialog>.ppi-global-settings-header{flex:0 0 auto;padding:19px 24px 6px}
+#ppi-global-settings-dialog>.ppi-global-settings-header h2{font-size:21px;line-height:1.25}
+#ppi-global-settings-dialog>.ppi-global-settings-header+#ppi-global-settings-dialog p{margin:0}
+#ppi-global-settings-dialog>.ppi-global-settings-header~p{flex:0 0 auto;margin:0;padding:0 24px 12px;font-size:13px;line-height:1.45}
+#ppi-global-settings-dialog fieldset{margin:0 24px 14px;padding:11px 14px 12px;gap:7px;display:grid;min-width:0;flex-shrink:1}
+#ppi-global-settings-dialog fieldset legend{font-size:14px;padding:0 5px}
+#ppi-global-settings-dialog .ppi-global-social-fields{gap:7px}
+#ppi-global-settings-dialog .ppi-global-social-fields>small{display:block;margin:0 0 4px;line-height:1.35;font-size:12px}
+#ppi-global-settings-dialog .ppi-global-social-fields>label{display:flex;align-items:center;min-height:25px;gap:10px;font-size:13px;line-height:1.35}
+#ppi-global-settings-dialog .ppi-global-social-fields>label input{margin:0;flex-shrink:0}
+#ppi-global-settings-dialog .ppi-global-layout-fields{padding:9px 12px 11px}
+#ppi-global-settings-dialog .ppi-global-layout-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#ppi-global-settings-dialog .ppi-global-layout-choice{position:relative;display:block;cursor:pointer;margin:0;min-width:0}
+#ppi-global-settings-dialog .ppi-global-layout-choice>input{position:absolute;left:10px;top:10px;z-index:1;margin:0;width:16px;height:16px;accent-color:var(--color-primary,#0075b9)}
+#ppi-global-settings-dialog .ppi-global-layout-card{display:flex;align-items:center;gap:12px;min-height:75px;padding:12px 12px 12px 34px;border:1px solid var(--color-border,#d6dce1);border-radius:10px;box-sizing:border-box;transition:border-color .15s,background-color .15s;min-width:0}
+#ppi-global-settings-dialog .ppi-global-layout-choice>input:checked+.ppi-global-layout-card{border:2px solid var(--color-primary,#0075b9);padding:11px 11px 11px 33px;background:var(--color-primary-element-light,rgba(0,117,185,.06))}
+#ppi-global-settings-dialog .ppi-global-layout-choice>input:focus-visible+.ppi-global-layout-card{outline:2px solid var(--color-primary,#0075b9);outline-offset:2px}
+#ppi-global-settings-dialog .ppi-global-layout-preview{width:61px;height:44px;flex-shrink:0;display:grid;align-content:center;gap:4px;padding:5px;border:1px solid var(--color-border,#cbd4db);border-radius:6px;box-sizing:border-box;background:var(--color-main-background,#fff)}
+#ppi-global-settings-dialog .ppi-global-layout-preview i{display:block;height:13px;border-radius:3px;background:var(--color-primary-element,#80b4d4);opacity:.7}
+#ppi-global-settings-dialog .ppi-global-preview-adaptive{grid-template-columns:1.15fr .85fr;grid-template-rows:repeat(2,13px)}
+#ppi-global-settings-dialog .ppi-global-preview-adaptive i:first-child{grid-row:span 2;height:30px}
+#ppi-global-settings-dialog .ppi-global-preview-adaptive i:nth-child(2),#ppi-global-settings-dialog .ppi-global-preview-adaptive i:nth-child(3){height:13px}
+#ppi-global-settings-dialog .ppi-global-preview-compact{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,13px)}
+#ppi-global-settings-dialog .ppi-global-layout-label{display:flex;flex-direction:column;gap:3px;min-width:0;font-size:13px}
+#ppi-global-settings-dialog .ppi-global-layout-label strong{font-size:13px}
+#ppi-global-settings-dialog .ppi-global-layout-label small{font-size:11px;line-height:1.25}
+#ppi-global-settings-dialog>label[for=ppi-global-sort]{font-size:14px;margin:0 24px 4px}
+#ppi-global-settings-dialog #ppi-global-sort{width:calc(100% - 48px);margin:0 24px 13px;min-height:38px;font-size:13px}
+#ppi-global-settings-dialog .ppi-global-settings-footer{padding:12px 24px 16px;border-top:1px solid var(--color-border,#ddd);flex:0 0 auto}
+#ppi-global-settings-dialog #ppi-global-settings-save{min-height:38px}
+@media(max-width:550px){#ppi-global-settings-backdrop{padding:8px}#ppi-global-settings-dialog{max-height:calc(100dvh - 16px);border-radius:13px}#ppi-global-settings-dialog>.ppi-global-settings-header{padding:15px 15px 7px}#ppi-global-settings-dialog>.ppi-global-settings-header~p{padding:0 15px 12px}#ppi-global-settings-dialog fieldset{margin:0 15px 12px}#ppi-global-settings-dialog .ppi-global-layout-choices{grid-template-columns:1fr}#ppi-global-settings-dialog .ppi-global-layout-card{min-height:55px}#ppi-global-settings-dialog>label[for=ppi-global-sort]{margin:0 15px 4px}#ppi-global-settings-dialog #ppi-global-sort{width:calc(100% - 30px);margin:0 15px 12px}#ppi-global-settings-dialog .ppi-global-settings-footer{padding:10px 15px 12px}}
+@media(max-height:690px){#ppi-global-settings-dialog{overflow-y:auto;display:block}#ppi-global-settings-dialog .ppi-global-settings-footer{position:sticky;bottom:0;background:var(--color-main-background,#fff)}}
+
+
+/* ppi-compact-actions-v5: original text actions in Adaptiv, 2+More in Kompakt. */
+#ppi-tours-app .ppi-compact-more{display:contents}
+#ppi-tours-app .ppi-compact-more-trigger{display:none}
+#ppi-tours-app .ppi-compact-more-panel{display:contents}
+#ppi-tours-app.ppi-global-compact .ppi-overview-tile{position:relative;overflow:visible!important}
+#ppi-tours-app.ppi-global-compact .ppi-overview-tile.ppi-compact-menu-visible{z-index:60}
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions{display:flex!important;flex-wrap:nowrap!important;align-items:center;gap:6px!important;min-width:0}
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions>button{flex:1 1 0;min-width:0;white-space:nowrap;padding:8px 7px!important;font-size:12px!important;line-height:1.3}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more{display:block;position:relative;flex:0 0 auto}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-trigger{display:inline-flex;align-items:center;justify-content:center;gap:3px;border-radius:8px;min-height:34px;padding:7px 9px;font-size:12px;white-space:nowrap;background:var(--color-background-dark,#e8eff4);color:var(--color-main-text,#111);border:1px solid var(--color-border,#d1dbe1);cursor:pointer}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-trigger:hover,#ppi-tours-app.ppi-global-compact .ppi-compact-more-trigger:focus-visible{background:var(--color-background-hover,#dce8f1);outline-offset:2px}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-panel{display:none;position:absolute;top:calc(100% + 6px);right:0;width:max-content;min-width:205px;max-width:min(300px,85vw);z-index:100;box-sizing:border-box;padding:6px;background:var(--color-main-background,#fff);border:1px solid var(--color-border,#dce2e5);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.20),0 3px 8px rgba(0,0,0,.12)}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more.ppi-compact-more-open .ppi-compact-more-panel{display:flex;flex-direction:column;gap:2px}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-panel>button{display:block!important;width:100%;margin:0!important;padding:10px 12px!important;text-align:left!important;white-space:normal;line-height:1.25;font-size:13px;background:transparent!important;color:var(--color-main-text,#171717)!important;border:0!important;border-radius:6px!important;cursor:pointer}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-panel>button:hover,#ppi-tours-app.ppi-global-compact .ppi-compact-more-panel>button:focus-visible{background:var(--color-background-hover,#e8eef2)!important}
+@media(max-width:370px){#ppi-tours-app.ppi-global-compact .ppi-overview-actions>button{font-size:11px!important;padding:7px 4px!important}#ppi-tours-app.ppi-global-compact .ppi-compact-more-trigger{padding:7px 6px;font-size:11px}}
+
+
+/* ppi-unified-overview-grid-v6: same responsive grid in both overview tabs.
+   Only overview presentation; action handlers, settings and DB stay unchanged. */
+/* Adaptive: both lists use the same available-width calculation, without
+   legacy tour featured-card and startpage 3-item spanning overrides. */
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-single,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-double,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-multi {
+  display:grid!important;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))!important;
+  gap:16px!important;
+  align-items:stretch;
+}
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list > .ppi-overview-tile,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list > .ppi-overview-tile,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:first-child:nth-last-child(3) {
+  grid-column:auto!important;
+  width:auto!important;
+  max-width:none;
+}
+/* Compact: fixed minimum card width, shared by both tabs.
+   Auto-fill keeps column widths consistent even when one tab has fewer items. */
+#ppi-tours-app.ppi-global-compact #ppi-tour-list,
+#ppi-tours-app.ppi-global-compact #ppi-start-pages-list.ppi-startpages-single,
+#ppi-tours-app.ppi-global-compact #ppi-start-pages-list.ppi-startpages-double,
+#ppi-tours-app.ppi-global-compact #ppi-start-pages-list.ppi-startpages-multi {
+  display:grid!important;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))!important;
+  gap:12px!important;
+  align-items:stretch;
+}
+#ppi-tours-app.ppi-global-compact #ppi-tour-list > .ppi-overview-tile,
+#ppi-tours-app.ppi-global-compact #ppi-start-pages-list > .ppi-overview-tile,
+#ppi-tours-app.ppi-global-compact #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:first-child:nth-last-child(3) {
+  grid-column:auto!important;
+  width:auto!important;
+}
+/* The v5 popup requires card overflow visible. Round the actual preview
+   surface as well, so the upper corners still look rounded in compact mode. */
+#ppi-tours-app #ppi-tour-list > .ppi-overview-tile,
+#ppi-tours-app #ppi-start-pages-list > .ppi-overview-tile {
+  border-radius:13px!important;
+}
+#ppi-tours-app .ppi-overview-tile > .ppi-overview-thumb,
+#ppi-tours-app .ppi-overview-tile > .ppi-overview-placeholder,
+#ppi-tours-app #ppi-start-pages-list .ppi-startpage-overview-cover {
+  border-radius:12px 12px 0 0!important;
+}
+#ppi-tours-app #ppi-start-pages-list .ppi-startpage-overview-cover {
+  overflow:hidden;
+}
+/* Compact actions: two readable buttons and icon-size 'more'. The button's
+   existing accessible label/title and click handlers remain untouched. */
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions {
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  align-items:center!important;
+  gap:6px!important;
+  min-width:0;
+}
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions > button {
+  flex:1 1 0!important;
+  width:0;
+  min-width:0!important;
+  min-height:36px;
+  padding:7px 5px!important;
+  font-size:11.5px!important;
+  font-weight:600;
+  line-height:1.2!important;
+  white-space:nowrap;
+  border-radius:8px!important;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more {
+  flex:0 0 36px!important;
+  min-width:36px;
+}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-trigger {
+  display:flex!important;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+  width:36px;
+  min-width:36px;
+  height:36px;
+  min-height:36px;
+  padding:0!important;
+  border-radius:8px!important;
+  font-size:0!important; /* visually hide 'Mehr', retain accessible label */
+  line-height:1!important;
+}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-trigger::before {
+  content:'⋯';
+  display:block;
+  font-size:23px;
+  font-weight:700;
+  line-height:1;
+  transform:translateY(-2px);
+}
+@media(max-width:460px) {
+  #ppi-tours-app.ppi-global-compact .ppi-overview-actions > button {
+    font-size:11px!important;
+  }
+}
+
+
+
+/* ppi-adaptive-featured-v7: restore original asymmetric overview logic.
+   Intentionally overrides only the grid rules from v6. */
+/* Original adaptive pattern: one large item with 1 tour, two evenly sized
+   items with 2, and a featured first card spanning the row for 3+ items. */
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-single,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-double,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-multi {
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:16px!important;
+  align-items:stretch!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list.ppi-tours-single,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-single {
+  grid-template-columns:minmax(0,1fr)!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:first-child,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:first-child {
+  grid-column:1/-1!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list.ppi-tours-single .ppi-overview-thumb,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list.ppi-tours-single .ppi-overview-placeholder,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:first-child .ppi-overview-thumb,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:first-child .ppi-overview-placeholder,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-single .ppi-startpage-overview-cover,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:first-child .ppi-startpage-overview-cover {
+  height:clamp(190px,28vw,300px)!important;
+  min-height:0!important;
+}
+/* v6 must continue to control compact cards; this branch only evens out
+   the action bar and ensures button text stays visible on narrow cards. */
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions {
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:6px!important;
+  align-items:center!important;
+  width:100%;
+}
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions > button {
+  flex:1 1 0!important;
+  width:auto!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  padding:7px 3px!important;
+  font-size:clamp(10px,0.85vw,12px)!important;
+  letter-spacing:-.15px;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis;
+}
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions > .ppi-compact-more {
+  flex:0 0 38px!important;
+  width:38px!important;
+  min-width:38px!important;
+}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-trigger {
+  width:38px!important;
+  min-width:38px!important;
+  height:36px!important;
+  font-size:0!important;
+  padding:0!important;
+}
+/* Small viewports: do not create tiny 2-column adaptive cards. */
+@media(max-width:700px){
+  #ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list,
+  #ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-single,
+  #ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-double,
+  #ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-multi {
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  #ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list > .ppi-overview-tile,
+  #ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list > .ppi-overview-tile {
+    grid-column:auto!important;
+  }
+}
+
+
+
+/* ppi-actions-bottom-v8: consistent button docks and small-adaptive menus.
+   The original buttons and their listeners remain inside the existing More panel.
+   Large featured adaptive card keeps all buttons visible. */
+/* Make cards fill their grid row so the action dock is always at the bottom.
+   Use overflow visible to avoid clipping a dropdown; round media separately. */
+#ppi-tours-app #ppi-tour-list > .ppi-overview-tile,
+#ppi-tours-app #ppi-start-pages-list > .ppi-overview-tile {
+  display:flex!important;
+  flex-direction:column!important;
+  min-width:0!important;
+  border-radius:13px!important;
+}
+#ppi-tours-app #ppi-tour-list > .ppi-overview-tile > .ppi-overview-body,
+#ppi-tours-app #ppi-start-pages-list > .ppi-overview-tile > .ppi-overview-body {
+  display:flex!important;
+  flex-direction:column!important;
+  flex:1 1 auto!important;
+  min-width:0!important;
+}
+#ppi-tours-app #ppi-tour-list .ppi-overview-body > .ppi-overview-actions,
+#ppi-tours-app #ppi-start-pages-list .ppi-overview-body > .ppi-overview-actions {
+  margin-top:auto!important;
+}
+#ppi-tours-app #ppi-tour-list .ppi-overview-thumb,
+#ppi-tours-app #ppi-tour-list .ppi-overview-placeholder,
+#ppi-tours-app #ppi-start-pages-list .ppi-startpage-overview-cover {
+  border-radius:12px 12px 0 0!important;
+  flex-shrink:0!important;
+}
+/* Small adaptive cards are identified by the pre-existing overview classes.
+   Two cards: both small. Three+ cards: first is the featured large card. */
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) { position:relative!important;overflow:visible!important; }
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+).ppi-compact-menu-visible { z-index:60!important; }
+/* For smaller adaptive cards, present the same two buttons + ellipsis as compact. */
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-overview-actions {
+  display:flex!important;flex-wrap:nowrap!important;align-items:center!important;
+  width:100%!important;gap:7px!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-overview-actions > button {
+  flex:1 1 0!important;width:0!important;min-width:0!important;
+  box-sizing:border-box!important;min-height:36px!important;
+  padding:7px 6px!important;font-size:clamp(11px,1vw,12px)!important;
+  line-height:1.2!important;white-space:nowrap!important;
+  overflow:hidden!important;text-overflow:ellipsis!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-compact-more {
+  display:block!important;position:relative!important;flex:0 0 38px!important;
+  width:38px!important;min-width:38px!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-compact-more-trigger {
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:38px!important;min-width:38px!important;height:36px!important;
+  min-height:36px!important;box-sizing:border-box!important;border-radius:8px!important;
+  padding:0!important;font-size:0!important;line-height:1!important;
+  background:var(--color-background-dark,#e8eff4)!important;
+  border:1px solid var(--color-border,#d1dbe1)!important;
+  color:var(--color-main-text,#111)!important;cursor:pointer;
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-compact-more-trigger::before {
+  content:'⋯';font-size:23px;font-weight:700;line-height:1;transform:translateY(-2px);
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-compact-more-panel {
+  display:none!important;position:absolute!important;top:calc(100% + 6px)!important;right:0!important;
+  width:max-content!important;min-width:205px!important;max-width:min(300px,85vw)!important;
+  z-index:100!important;box-sizing:border-box!important;padding:6px!important;
+  background:var(--color-main-background,#fff)!important;
+  border:1px solid var(--color-border,#dce2e5)!important;border-radius:10px!important;
+  box-shadow:0 12px 30px #0003,0 3px 8px #0002!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-compact-more.ppi-compact-more-open .ppi-compact-more-panel {
+  display:flex!important;flex-direction:column!important;gap:2px!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-compact-more-panel > button {
+  display:block!important;width:100%!important;margin:0!important;padding:10px 12px!important;
+  text-align:left!important;white-space:normal!important;line-height:1.25!important;
+  font-size:13px!important;color:var(--color-main-text,#171717)!important;
+  background:transparent!important;border:0!important;border-radius:6px!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-compact-more-panel > button:hover {
+  background:var(--color-background-hover,#e8eef2)!important;
+}
+/* Compact cards use equal height per grid row and retain their pop-up menu. */
+#ppi-tours-app.ppi-global-compact #ppi-tour-list > .ppi-overview-tile,
+#ppi-tours-app.ppi-global-compact #ppi-start-pages-list > .ppi-overview-tile {
+  overflow:visible!important;
+}
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions > button {
+  flex:1 1 0!important;min-width:0!important;box-sizing:border-box!important;
+  min-height:36px!important;font-size:clamp(11px,0.9vw,12px)!important;
+  padding:7px 5px!important;
+}
+/* Ensure the last open popup rises above adjacent cards, without affecting order. */
+#ppi-tours-app .ppi-overview-tile.ppi-compact-menu-visible {position:relative;z-index:60!important}
+
+
+
+/* ppi-card-hover-v9: unified, restrained shadows for Touren + Startseiten
+   in both adaptive and compact layout. Keep popover menus visible. */
+#ppi-tours-app :is(#ppi-tour-list,#ppi-start-pages-list) > .ppi-overview-tile {
+  border-radius:13px!important;
+  box-shadow:0 3px 12px rgba(0,0,0,.13),0 1px 3px rgba(0,0,0,.055)!important;
+  transition:box-shadow .21s ease,transform .21s ease,border-color .21s ease!important;
+  transform:translateY(0);
+  will-change:auto;
+}
+@media (hover:hover) and (pointer:fine) {
+  #ppi-tours-app :is(#ppi-tour-list,#ppi-start-pages-list) > .ppi-overview-tile:hover {
+    transform:translateY(-3px)!important;
+    box-shadow:0 13px 28px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.08)!important;
+    border-color:var(--color-border-maxcontrast,var(--color-border))!important;
+    position:relative;
+    z-index:3;
+  }
+}
+/* Open menus take precedence over neighboring hovered cards. */
+#ppi-tours-app :is(#ppi-tour-list,#ppi-start-pages-list) > .ppi-overview-tile.ppi-compact-menu-visible {
+  position:relative;
+  z-index:60!important;
+}
+@media (prefers-reduced-motion:reduce) {
+  #ppi-tours-app :is(#ppi-tour-list,#ppi-start-pages-list) > .ppi-overview-tile {
+    transition:none!important;
+  }
+  #ppi-tours-app :is(#ppi-tour-list,#ppi-start-pages-list) > .ppi-overview-tile:hover {
+    transform:none!important;
+  }
+}
+
+
+/* PPI MOBILE STARTPAGE V10 — keep existing preset designs and desktop layout unchanged. */
+#ppi-tours-app .ppi-mobile-columns-setting{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;margin-top:13px;padding-top:12px;border-top:1px solid var(--color-border)}
+#ppi-tours-app .ppi-mobile-setting-label{font-size:13px;font-weight:650}
+#ppi-tours-app .ppi-mobile-choices,#ppi-tours-app .ppi-preview-device-choices{display:inline-flex;gap:4px;flex-wrap:nowrap;padding:3px;background:var(--color-background-dark,var(--color-background-hover));border-radius:9px;border:1px solid var(--color-border)}
+#ppi-tours-app .ppi-mobile-choices button,#ppi-tours-app .ppi-preview-device-choices button{border:0!important;min-height:33px;padding:5px 11px!important;border-radius:7px;background:transparent!important;color:var(--color-main-text)!important;font-size:12px;font-weight:650;box-shadow:none!important}
+#ppi-tours-app .ppi-mobile-choices button[aria-pressed="true"],#ppi-tours-app .ppi-preview-device-choices button[aria-pressed="true"]{background:var(--color-primary-element,#0874a4)!important;color:var(--color-primary-element-text,#fff)!important}
+#ppi-tours-app .ppi-startpage-preview-heading{flex-wrap:wrap}
+#ppi-tours-app .ppi-preview-device-choices{margin-left:auto}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"]{width:min(100%,390px)!important;max-width:390px!important;margin-inline:auto!important;min-width:0!important;box-sizing:border-box!important;padding:14px 10px 22px!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-grid-container{container-type:inline-size!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-grid[data-cols]{--ppi-mosaic-columns:var(--ppi-mobile-columns,1)!important;grid-template-columns:repeat(var(--ppi-mobile-columns,1),minmax(0,1fr))!important;grid-auto-rows:auto!important;gap:9px!important;grid-auto-flow:row!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-grid[data-cols]>.ppi-startpage-preview-tile{grid-column:span 1!important;grid-row:span 1!important;aspect-ratio:auto!important;width:100%!important;height:auto!important;min-height:0!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-tile .ppi-startpage-tile-media{aspect-ratio:16/9!important;height:auto!important;max-height:none!important;flex:0 0 auto!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-tile .ppi-startpage-tile-copy{height:auto!important;min-height:65px!important;max-height:none!important;flex:1 1 auto!important;padding:7px!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-tile .ppi-startpage-tile-copy strong{font-size:12px!important;line-height:1.3!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;overflow:hidden!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-tile .ppi-startpage-tile-copy small{font-size:10px!important;line-height:1.3!important;-webkit-line-clamp:2!important}
+@media(max-width:480px){#ppi-tours-app .ppi-preview-device-choices{margin-left:0}#ppi-tours-app .ppi-mobile-columns-setting{align-items:flex-start}}
+
+/* PPI MOBILE STARTPAGE V12 — 3-column editor preview */
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-grid[style*="--ppi-mobile-columns: 3"],
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-grid[data-cols]{min-width:0}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: 3"] .ppi-startpage-preview-grid[data-cols]{
+  --ppi-mosaic-columns:3!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-auto-rows:auto!important;gap:7px!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: 3"] .ppi-startpage-preview-tile{
+  grid-column:span 1!important;grid-row:span 1!important;height:auto!important;aspect-ratio:auto!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: 3"] .ppi-startpage-tile-copy{padding:5px!important;min-height:0!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: 3"] .ppi-startpage-tile-copy strong{font-size:10px!important;line-height:1.25!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: 3"] .ppi-startpage-tile-copy small{display:none!important}
+
+/* PPI MOBILE AUTO MOSAIC V17 - live preview reflects saved mobile choice. */
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-grid[data-cols]{
+  --ppi-mosaic-columns:3!important;display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-auto-rows:clamp(77px,24cqw,115px)!important;
+  grid-auto-flow:row dense!important;gap:7px!important;align-items:stretch!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-grid[data-cols]>.ppi-startpage-preview-tile{
+  grid-column:span 1!important;grid-row:span 1!important;aspect-ratio:auto!important;
+  height:100%!important;min-height:0!important;max-height:none!important;
+  display:flex!important;flex-direction:column!important;overflow:hidden!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-grid[data-cols]>.ppi-startpage-preview-tile:first-child:nth-last-child(n+3){
+  grid-column:span 2!important;grid-row:span 2!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile .ppi-startpage-tile-media{
+  flex:0 0 auto!important;height:auto!important;min-height:0!important;aspect-ratio:16/9!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile .ppi-startpage-tile-copy{
+  height:auto!important;min-height:0!important;max-height:none!important;flex:1 1 auto!important;
+  padding:4px!important;overflow:hidden!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile .ppi-startpage-tile-copy strong{
+  font-size:9px!important;line-height:1.2!important;-webkit-line-clamp:2!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile .ppi-startpage-tile-copy small{display:none!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-grid[data-cols]>.ppi-startpage-preview-tile:first-child:nth-last-child(n+3) .ppi-startpage-tile-copy strong{font-size:11px!important}
+
+
+/* PPI MOBILE MOSAIC REAL GRID V18 - editor mobile AUTO uses same 3x3 lattice. */
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-grid[data-cols] {
+ display:grid!important;--ppi-mosaic-columns:3!important;
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ grid-template-rows:none!important;
+ grid-auto-rows:clamp(77px,24cqw,115px)!important;
+ grid-auto-flow:row dense!important;gap:7px!important;
+ align-items:stretch!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-grid[data-cols] > .ppi-startpage-preview-tile:nth-child(n) {
+ grid-column:span 1!important;grid-row:span 1!important;
+ display:flex!important;flex-direction:column!important;
+ width:100%!important;min-width:0!important;max-width:none!important;
+ height:100%!important;min-height:0!important;max-height:none!important;
+ aspect-ratio:auto!important;overflow:hidden!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-grid[data-cols] > .ppi-startpage-preview-tile:first-child:nth-last-child(n+3) {
+ grid-column:span 2!important;grid-row:span 2!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile .ppi-startpage-tile-media {
+ flex:0 0 auto!important;aspect-ratio:16/9!important;height:auto!important;min-height:0!important;overflow:hidden!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile:first-child:nth-last-child(n+3) .ppi-startpage-tile-media {
+ flex:1 1 auto!important;aspect-ratio:auto!important;height:auto!important;min-height:0!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile .ppi-startpage-tile-copy {
+ flex:1 1 auto!important;height:auto!important;min-height:0!important;max-height:none!important;
+ padding:4px!important;overflow:hidden!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile:first-child:nth-last-child(n+3) .ppi-startpage-tile-copy {flex:0 0 auto!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-tile-copy strong {font-size:9px!important;line-height:1.2!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;overflow:hidden!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile:first-child:nth-last-child(n+3) .ppi-startpage-tile-copy strong {font-size:11px!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-tile-copy small {display:none!important}
+
+
+/* PPI MOBILE PORTRAIT PRESETS V19 – visual only; no persistence, API or public view change. */
+#ppi-tours-app .ppi-mobile-columns-setting {
+  display:flex!important; flex-direction:column!important; align-items:stretch!important;
+  justify-content:flex-start!important; gap:9px!important;
+}
+#ppi-tours-app .ppi-mobile-columns-setting .ppi-mobile-setting-label {
+  display:block!important; font-size:13px!important; font-weight:650!important;
+}
+#ppi-tours-app .ppi-mobile-columns-setting .ppi-mobile-choices {
+  display:grid!important; grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  align-items:stretch!important; gap:7px!important; padding:0!important;
+  background:transparent!important; border:0!important; border-radius:0!important;
+  width:100%!important; min-width:0!important;
+}
+#ppi-tours-app .ppi-mobile-columns-setting .ppi-mobile-choices > .ppi-mobile-layout-preset {
+  display:flex!important; flex-direction:column!important; align-items:center!important;
+  justify-content:center!important; gap:7px!important; min-width:0!important;
+  min-height:107px!important; padding:9px 3px 8px!important;
+  border:2px solid var(--color-border,#dce1e6)!important;
+  border-radius:10px!important; background:var(--color-main-background,#fff)!important;
+  color:var(--color-main-text,#222)!important; box-shadow:none!important;
+  cursor:pointer!important; transition:border-color .15s ease,background-color .15s ease!important;
+}
+#ppi-tours-app .ppi-mobile-columns-setting .ppi-mobile-choices > .ppi-mobile-layout-preset[aria-pressed="true"] {
+  border-color:var(--color-primary-element,#0874a4)!important;
+  background:var(--color-primary-element-light,var(--color-main-background,#fff))!important;
+  color:var(--color-main-text,#222)!important;
+  box-shadow:0 0 0 1px var(--color-primary-element,#0874a4)!important;
+}
+#ppi-tours-app .ppi-mobile-columns-setting .ppi-mobile-choices > .ppi-mobile-layout-preset:focus-visible {
+  outline:3px solid var(--color-primary-element,#0874a4)!important; outline-offset:2px!important;
+}
+#ppi-tours-app .ppi-mobile-layout-preset > span:last-child {
+  font-size:11px!important; font-weight:650!important; line-height:1.2!important;
+  white-space:nowrap!important; text-align:center!important;
+}
+#ppi-tours-app .ppi-mobile-layout-mini {
+  box-sizing:border-box!important; width:39px!important; height:58px!important;
+  background:linear-gradient(145deg,#173b51,#244e68)!important;
+  border:3px solid #244357!important; border-radius:8px!important;
+  padding:6px 4px 5px!important; display:grid!important; gap:2px!important;
+  align-items:stretch!important; justify-items:stretch!important;
+  grid-auto-rows:minmax(0,1fr)!important; grid-auto-flow:row!important;
+  flex:0 0 auto!important; overflow:hidden!important;
+}
+#ppi-tours-app .ppi-mobile-layout-mini i {
+  display:block!important; min-width:0!important; min-height:0!important;
+  border-radius:2px!important; background:#98bfd7!important; opacity:1!important;
+}
+#ppi-tours-app .ppi-mobile-layout-mini-auto {
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-template-rows:repeat(3,minmax(0,1fr))!important;
+}
+#ppi-tours-app .ppi-mobile-layout-mini-auto i:first-child {
+  grid-column:span 2!important;grid-row:span 2!important;
+}
+#ppi-tours-app .ppi-mobile-layout-mini-1 {grid-template-columns:1fr!important;grid-template-rows:repeat(3,minmax(0,1fr))!important;}
+#ppi-tours-app .ppi-mobile-layout-mini-2 {grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(3,minmax(0,1fr))!important;}
+#ppi-tours-app .ppi-mobile-layout-mini-3 {grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:repeat(3,minmax(0,1fr))!important;}
+@media (max-width:380px) {
+ #ppi-tours-app .ppi-mobile-columns-setting .ppi-mobile-choices {gap:4px!important;}
+ #ppi-tours-app .ppi-mobile-columns-setting .ppi-mobile-choices>.ppi-mobile-layout-preset {padding-inline:1px!important;}
+ #ppi-tours-app .ppi-mobile-layout-preset>span:last-child {font-size:10px!important;}
+}
+
+
+
+/* PPI DESKTOP FIXED GRID PREVIEW SWITCH V20 – desktop preview ONLY. */
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="3"] {
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ grid-auto-rows:auto!important;grid-auto-flow:row!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="4"] {
+ display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;
+ grid-auto-rows:auto!important;grid-auto-flow:row!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(n),
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(n) {
+ grid-column:auto!important;grid-row:auto!important;
+ width:100%!important;min-width:0!important;max-width:none!important;
+ height:auto!important;min-height:0!important;max-height:none!important;
+ aspect-ratio:auto!important;
+}
+/* Previews can be narrower than actual desktops; keep four columns visible. */
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile .ppi-startpage-tile-copy strong {
+ overflow-wrap:anywhere!important;
+}
+
+
+
+/* PPI DESKTOP RESPONSIVE MOSAIC V21
+ * Live preview: scaled representation of responsive desktop grid.
+ * The editor's preview is narrow compared to a real desktop, therefore
+ * 3 tracks from 300px preview, 4 from 415px, 5 from 560px.
+ * Same item thresholds and maximum featured size (2x2). */
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid-container {
+ container-type:inline-size!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"] {
+ --ppi-v21-cols:2;--ppi-v21-gap:7px;
+ display:grid!important;width:100%!important;
+ gap:var(--ppi-v21-gap)!important;
+ grid-template-columns:repeat(var(--ppi-v21-cols),minmax(0,1fr))!important;
+ grid-auto-rows:calc((100cqw - (var(--ppi-v21-cols) - 1)*var(--ppi-v21-gap))/var(--ppi-v21-cols))!important;
+ grid-auto-flow:row dense!important;align-items:stretch!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(n)) > .ppi-startpage-preview-tile:nth-child(n):nth-child(n) {
+ grid-column:span 1!important;grid-row:span 1!important;
+ width:100%!important;min-width:0!important;max-width:none!important;
+ height:100%!important;min-height:0!important;max-height:none!important;
+ aspect-ratio:auto!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"] > .ppi-startpage-preview-tile .ppi-startpage-tile-media {
+ flex:1 1 auto!important;min-height:0!important;position:relative!important;overflow:hidden!important;aspect-ratio:auto!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"] > .ppi-startpage-preview-tile .ppi-startpage-tile-copy {
+ flex:0 0 auto!important;min-height:0!important;height:auto!important;padding:5px!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"] > .ppi-startpage-preview-tile .ppi-startpage-tile-copy strong {
+ font-size:11px!important;overflow-wrap:anywhere!important;
+}
+@container (min-width:300px) {
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"] {--ppi-v21-cols:3!important;}
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:first-child {
+  grid-column:span 2!important;grid-row:span 2!important;
+ }
+}
+@container (min-width:415px) {
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"] {--ppi-v21-cols:4!important;}
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:first-child:nth-child(n) {
+  grid-column:span 1!important;grid-row:span 1!important;
+ }
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(7)) > .ppi-startpage-preview-tile:first-child {
+  grid-column:span 2!important;grid-row:span 2!important;
+ }
+}
+@container (min-width:560px) {
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"] {--ppi-v21-cols:5!important;}
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:first-child:nth-child(n) {
+  grid-column:span 1!important;grid-row:span 1!important;
+ }
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(9)) > .ppi-startpage-preview-tile:first-child {
+  grid-column:span 2!important;grid-row:span 2!important;
+ }
+}
+
+
+/* PPI PREVIEW SVG SHADOW AND INNER FRAME V25
+   Fixed selector: the editor dialog is outside #ppi-tours-app at runtime.
+   No public viewer changes. The shadow rules replace v24, not append to it. */
+#ppi-tour-preview #ppi-preview-sphere {
+  position:relative!important;
+  isolation:isolate!important;
+  overflow:hidden!important;
+}
+#ppi-tour-preview #ppi-preview-sphere > canvas {
+  position:relative!important;
+  z-index:0!important;
+}
+/* Soft inset vignette above the WebGL panorama; never intercept mouse/touch. */
+#ppi-tour-preview #ppi-preview-sphere::after {
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  z-index:4!important;
+  border-radius:inherit!important;
+  box-shadow:inset 0 0 12px 3px rgba(0,0,0,.25),
+             inset 0 0 2px 1px rgba(0,0,0,.15)!important;
+  pointer-events:none!important;
+}
+/* Actual placed hotspots are above the decorative inset vignette. */
+#ppi-tour-preview #ppi-preview-sphere > .ppi-hotspot {
+  z-index:5!important;
+}
+/* Provisional + before target selection must have NO shadow. */
+#ppi-tour-preview #ppi-preview-sphere > .ppi-hotspot[data-pending="true"] {
+  box-shadow:none!important;
+  filter:none!important;
+  text-shadow:none!important;
+}
+/* Restrict real-pin shadow to the six mask-based SVG pin designs. */
+#ppi-tour-preview #ppi-preview-sphere
+  :is(.ppi-hotspot-map-pin,.ppi-hotspot-chat-pin,.ppi-hotspot-label-pin,
+      .ppi-hotspot-gps-pin,.ppi-hotspot-you-pin,.ppi-hotspot-outline-pin) {
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+/* The browser-tested shadow uses a separate layer with a masked ::before.
+   Blur its parent rather than the masked figure; keep SVG artwork crisp. */
+#ppi-tour-preview #ppi-preview-sphere
+  :is(.ppi-hotspot-map-pin,.ppi-hotspot-chat-pin,.ppi-hotspot-label-pin,
+      .ppi-hotspot-gps-pin,.ppi-hotspot-you-pin,.ppi-hotspot-outline-pin)
+  > .ppi-hotspot-pin-shadow {
+  display:block!important;
+  position:absolute!important;
+  left:50%!important;
+  bottom:0!important;
+  width:76px!important;
+  height:100px!important;
+  max-width:none!important;
+  overflow:visible!important;
+  background:transparent!important;
+  border:none!important;
+  border-radius:0!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+  mask-image:none!important;
+  -webkit-mask-image:none!important;
+  transform:translateX(-50%) translate(3px,5px)!important;
+  filter:blur(5px)!important;
+  opacity:.9!important;
+  z-index:1!important;
+  pointer-events:none!important;
+}
+#ppi-tour-preview #ppi-preview-sphere
+  :is(.ppi-hotspot-map-pin,.ppi-hotspot-chat-pin,.ppi-hotspot-label-pin,
+      .ppi-hotspot-gps-pin,.ppi-hotspot-you-pin,.ppi-hotspot-outline-pin)
+  > .ppi-hotspot-pin-shadow::before {
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  background:rgba(0,0,0,.9)!important;
+  mask-image:var(--ppi-shadow-mask,none)!important;
+  -webkit-mask-image:var(--ppi-shadow-mask,none)!important;
+  mask-position:center!important;
+  -webkit-mask-position:center!important;
+  mask-size:contain!important;
+  -webkit-mask-size:contain!important;
+  mask-repeat:no-repeat!important;
+  -webkit-mask-repeat:no-repeat!important;
+}
+/* Suppress duplicate drop-shadow from historical pin rules. */
+#ppi-tour-preview #ppi-preview-sphere
+  :is(.ppi-hotspot-map-pin,.ppi-hotspot-chat-pin,.ppi-hotspot-label-pin,
+      .ppi-hotspot-gps-pin,.ppi-hotspot-you-pin,.ppi-hotspot-outline-pin)
+  > .ppi-hotspot-pin-figure {
+  z-index:2!important;
+  filter:none!important;
+}
+/* End PPI PREVIEW SVG SHADOW AND INNER FRAME V25 */
 
 </style>
