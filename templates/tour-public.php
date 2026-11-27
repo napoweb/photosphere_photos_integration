@@ -7,7 +7,10 @@
   <?php if (!empty($_['passwordRequired'])): ?>
   <section id="ppi-public-unavailable" aria-labelledby="ppi-public-password-title">
     <div class="ppi-public-unavailable-card">
-      <div class="ppi-public-unavailable-icon" aria-hidden="true">◎</div>
+      <img class="ppi-public-brand-logo"
+       src="<?php p(\OC::$server->get(\OCP\IURLGenerator::class)->linkToRoute('theming.Theming.getImage', ['key' => 'logo'])); ?>"
+       alt="Nextcloud-Logo"
+       style="display:block;width:auto;max-width:min(100%,180px);height:58px;object-fit:contain;margin:0 auto 8px">
       <span class="ppi-public-unavailable-kicker">GESCHÜTZTE 360°-TOUR</span>
       <h1 id="ppi-public-password-title">Passwort erforderlich</h1>
       <p>Diese Tour ist mit einem Passwort geschützt.</p>
@@ -261,34 +264,34 @@
 
 
 /* 0.4.62.27: label-pin uses the same preview and keyboard/touch behavior as other pin designs. */
-.ppi-preview-sphere .ppi-hotspot-label-pin,#ppi-public-sphere .ppi-hotspot-label-pin{width:96px!important;height:116px!important}
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin),#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin){width:96px!important;height:116px!important}
 .ppi-preview-sphere .ppi-hotspot-outline-pin,#ppi-public-sphere .ppi-hotspot-outline-pin{width:96px!important;height:116px!important}
-.ppi-hotspot-label-pin .ppi-hotspot-figure,.ppi-hotspot-label-pin .ppi-hotspot-blue-figure{display:none!important}
+:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-figure,:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-blue-figure{display:none!important}
 .ppi-hotspot-outline-pin .ppi-hotspot-figure,.ppi-hotspot-outline-pin .ppi-hotspot-blue-figure{display:none!important}
-.ppi-hotspot-label-pin .ppi-hotspot-pin-figure{display:block!important;position:absolute;bottom:0;left:50%;width:76px!important;height:100px!important;max-width:none!important;transform:translateX(-50%);object-fit:contain;pointer-events:none;background:#fffef2;border-radius:13px;padding:5px;box-sizing:border-box;filter:drop-shadow(0 3px 5px #000a)}
+:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure{display:block!important;position:absolute;bottom:0;left:50%;width:76px!important;height:100px!important;max-width:none!important;transform:translateX(-50%);object-fit:contain;pointer-events:none;background:#fffef2;border-radius:13px;padding:5px;box-sizing:border-box;filter:drop-shadow(0 3px 5px #000a)}
 .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{display:block!important;position:absolute;bottom:0;left:50%;width:76px!important;height:100px!important;max-width:none!important;transform:translateX(-50%);object-fit:contain;pointer-events:none;background:#fffef2;border-radius:13px;padding:5px;box-sizing:border-box;filter:drop-shadow(0 3px 5px #000a)}
-.ppi-hotspot-label-pin .ppi-hotspot-photo{position:absolute!important;z-index:5;left:calc(50% + 31px);top:0;width:112px;height:69px;opacity:0;visibility:hidden;transform:translate(-7px,0) scale(.95) rotate(0);transition:opacity .2s ease,transform .2s ease,visibility .2s;border:2px solid #fff;background:#142b43;pointer-events:auto}
+:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo{position:absolute!important;z-index:5;left:calc(50% + 31px);top:0;width:112px;height:69px;opacity:0;visibility:hidden;transform:translate(-7px,0) scale(.95) rotate(0);transition:opacity .2s ease,transform .2s ease,visibility .2s;border:2px solid #fff;background:#142b43;pointer-events:auto}
 .ppi-hotspot-outline-pin .ppi-hotspot-photo{position:absolute!important;z-index:5;left:calc(50% + 31px);top:0;width:112px;height:69px;opacity:0;visibility:hidden;transform:translate(-7px,0) scale(.95) rotate(0);transition:opacity .2s ease,transform .2s ease,visibility .2s;border:2px solid #fff;background:#142b43;pointer-events:auto}
-.ppi-hotspot-label-pin::after{content:"";position:absolute;left:65px;top:0;width:69px;height:93px;pointer-events:auto;background:transparent}
+:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin)::after{content:"";position:absolute;left:65px;top:0;width:69px;height:93px;pointer-events:auto;background:transparent}
 .ppi-hotspot-outline-pin::after{content:"";position:absolute;left:65px;top:0;width:69px;height:93px;pointer-events:auto;background:transparent}
-.ppi-hotspot-label-pin:hover .ppi-hotspot-photo,.ppi-hotspot-label-pin:focus-visible .ppi-hotspot-photo{opacity:1;visibility:visible;transform:translate(0,0) scale(1)}
+:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin):hover .ppi-hotspot-photo,:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin):focus-visible .ppi-hotspot-photo{opacity:1;visibility:visible;transform:translate(0,0) scale(1)}
 .ppi-hotspot-outline-pin:hover .ppi-hotspot-photo,.ppi-hotspot-outline-pin:focus-visible .ppi-hotspot-photo{opacity:1;visibility:visible;transform:translate(0,0) scale(1)}
-@media(hover:none){.ppi-hotspot-label-pin .ppi-hotspot-photo{opacity:1;visibility:visible;transform:none}}
+@media(hover:none){:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo{opacity:1;visibility:visible;transform:none}}
 @media(hover:none){.ppi-hotspot-outline-pin .ppi-hotspot-photo{opacity:1;visibility:visible;transform:none}}
-@media(prefers-reduced-motion:reduce){.ppi-hotspot-label-pin .ppi-hotspot-photo{transition:none}}
+@media(prefers-reduced-motion:reduce){:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo{transition:none}}
 @media(prefers-reduced-motion:reduce){.ppi-hotspot-outline-pin .ppi-hotspot-photo{transition:none}}
 
 
 /* 0.4.62.29: Preserve SVG transparency instead of drawing a blue button or cream box. */
 #ppi-public-sphere .ppi-hotspot.ppi-hotspot-map-pin,
 #ppi-public-sphere .ppi-hotspot.ppi-hotspot-chat-pin,
-#ppi-public-sphere .ppi-hotspot.ppi-hotspot-label-pin,
+#ppi-public-sphere .ppi-hotspot:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin),
 #ppi-public-sphere .ppi-hotspot.ppi-hotspot-outline-pin{
   background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
 }
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-chat-pin .ppi-hotspot-pin-figure,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{
   background:transparent!important;border:0!important;border-radius:0!important;padding:0!important;
 }
@@ -296,7 +299,7 @@
 /* 0.4.62.30: recolorable SVG silhouettes only, preserving transparent cutouts. */
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-chat-pin .ppi-hotspot-pin-figure,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{background:var(--ppi-svg-pin-color,#1687bc)!important;padding:0!important;border:0!important;border-radius:0!important;-webkit-mask-position:center;-webkit-mask-size:contain;-webkit-mask-repeat:no-repeat;mask-position:center;mask-size:contain;mask-repeat:no-repeat}
 
 /* 0.4.62.32: On touch devices show a destination thumbnail only after the
@@ -318,23 +321,23 @@
     transform:translate(0,0) scale(1)!important;
   }
   /* The classic stick figure should not reserve an invisible image slot. */
-  .ppi-preview-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(.ppi-hotspot-label-pin):not(.ppi-hotspot-outline-pin) .ppi-hotspot-photo,
-  #ppi-public-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(.ppi-hotspot-label-pin):not(.ppi-hotspot-outline-pin) .ppi-hotspot-photo {
+  .ppi-preview-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin)):not(.ppi-hotspot-outline-pin) .ppi-hotspot-photo,
+  #ppi-public-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin)):not(.ppi-hotspot-outline-pin) .ppi-hotspot-photo {
     position:absolute!important;
     left:calc(50% + 30px);
     top:0;
     z-index:5;
     transition:opacity .2s ease,visibility .2s,transform .2s ease;
   }
-  .ppi-preview-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(.ppi-hotspot-label-pin):not(.ppi-hotspot-outline-pin) .ppi-hotspot-figure,
-  #ppi-public-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(.ppi-hotspot-label-pin):not(.ppi-hotspot-outline-pin) .ppi-hotspot-figure {margin-top:20px;}
+  .ppi-preview-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin)):not(.ppi-hotspot-outline-pin) .ppi-hotspot-figure,
+  #ppi-public-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin)):not(.ppi-hotspot-outline-pin) .ppi-hotspot-figure {margin-top:20px;}
 }
 
 /* 0.4.62.35: subtle contour shadow for SVG pin masks only.
    No rectangular background or shadow on the preview thumbnail. */
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-chat-pin .ppi-hotspot-pin-figure,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{
   filter:drop-shadow(0 3px 3px rgba(0,0,0,.48))!important;
 }
@@ -345,7 +348,7 @@
 #ppi-public-sphere .ppi-hotspot-pin-shadow{display:none!important;}
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-shadow,
 #ppi-public-sphere .ppi-hotspot-chat-pin .ppi-hotspot-pin-shadow,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-shadow,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-shadow,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-shadow{
   display:block!important;
   position:absolute;left:50%;bottom:0;
@@ -360,7 +363,7 @@
 }
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-shadow::before,
 #ppi-public-sphere .ppi-hotspot-chat-pin .ppi-hotspot-pin-shadow::before,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-shadow::before,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-shadow::before,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-shadow::before{
   content:"";position:absolute;inset:0;
   background:rgba(0,0,0,.8);
@@ -371,7 +374,7 @@
 }
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-chat-pin .ppi-hotspot-pin-figure,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{
   z-index:1;filter:none!important;
 }
@@ -384,10 +387,10 @@
   display:none!important;
 }
 .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-mini,
-.ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini,
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini,
 .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-mini,
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-mini,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-mini{
   display:block!important;position:absolute;z-index:2;pointer-events:none;
   left:50%;bottom:0;width:76px;height:100px;
@@ -403,8 +406,8 @@
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-mini img{
   left:29%;top:18%;width:42%;height:34%;border-radius:50%;
 }
-.ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini img,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini img{
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini img,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini img{
   left:23%;top:15%;width:54%;height:42%;border-radius:8px;
 }
 .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-mini img,
@@ -414,10 +417,10 @@
 /* Override older hover and touch-auto-show styles. Only an explicit click
    opens the SVG's enlarged preview; it grows from the centre of the pin. */
 .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-.ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
 .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo,
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo{
   position:absolute!important;left:50%!important;top:-92px!important;
   width:185px!important;height:111px!important;box-sizing:border-box!important;
@@ -429,40 +432,65 @@
   transition:transform .46s cubic-bezier(.22,1,.36,1),opacity .2s ease,visibility .2s!important;
 }
 .ppi-preview-sphere .ppi-hotspot-map-pin.ppi-hotspot-preview-open .ppi-hotspot-photo,
-.ppi-preview-sphere .ppi-hotspot-label-pin.ppi-hotspot-preview-open .ppi-hotspot-photo,
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin).ppi-hotspot-preview-open .ppi-hotspot-photo,
 .ppi-preview-sphere .ppi-hotspot-outline-pin.ppi-hotspot-preview-open .ppi-hotspot-photo,
 #ppi-public-sphere .ppi-hotspot-map-pin.ppi-hotspot-preview-open .ppi-hotspot-photo,
-#ppi-public-sphere .ppi-hotspot-label-pin.ppi-hotspot-preview-open .ppi-hotspot-photo,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin).ppi-hotspot-preview-open .ppi-hotspot-photo,
 #ppi-public-sphere .ppi-hotspot-outline-pin.ppi-hotspot-preview-open .ppi-hotspot-photo{
   opacity:1!important;visibility:visible!important;pointer-events:auto!important;
   transform:translate(-50%,-7px) scale(1)!important;
 }
 @media(prefers-reduced-motion:reduce){
   .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-  .ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+  .ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
   .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo,
   #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-  #ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+  #ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
   #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo{
     transition:none!important;
   }
 }
 
+
+/* Photo Sphere 0.4.64 – two additional transparent SVG pins (SVG Repo). */
+.ppi-preview-sphere .ppi-hotspot-gps-pin .ppi-hotspot-pin-mini img,
+#ppi-public-sphere .ppi-hotspot-gps-pin .ppi-hotspot-pin-mini img{
+  left:23%!important;
+  top:18%!important;
+  width:54%!important;
+  height:42%!important;
+  border-radius:50%!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  clip-path:circle(49% at 50% 50%)!important;
+}
+.ppi-preview-sphere .ppi-hotspot-you-pin .ppi-hotspot-pin-mini img,
+#ppi-public-sphere .ppi-hotspot-you-pin .ppi-hotspot-pin-mini img{
+  left:29%!important;
+  top:17%!important;
+  width:42%!important;
+  height:32%!important;
+  border-radius:50%!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  clip-path:circle(49% at 50% 50%)!important;
+}
+
 /* 0.4.62.44: Layer the inset panorama beneath the pin's colored outline,
    preserving the hollow SVG opening, shadow and shared hop animation. */
 .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
-.ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{
   z-index:3!important;
 }
 .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-mini,
-.ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini,
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini,
 .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-mini,
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-mini,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-mini{
   z-index:2!important;
 }
@@ -471,10 +499,10 @@
    Touch/coarse-pointer devices retain the approved 2px border. */
 @media (hover: hover) and (pointer: fine) {
   .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-  .ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+  .ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
   .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo,
   #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-  #ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+  #ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
   #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo {
     border-width:3px!important;
   }
@@ -485,10 +513,10 @@
    prevents tiling under the pin and aligns the inset destination preview.
    Kept in CSS as well as JS for immediately correct initial paint. */
 #ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
-#ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure {
   -webkit-mask-repeat:no-repeat!important;
   mask-repeat:no-repeat!important;
@@ -497,4 +525,51 @@
   -webkit-mask-position:center!important;
   mask-position:center!important;
 }
+
+/* PPI PUBLIC PASSWORD MOBILE KEYBOARD V22
+   Scoped only to password forms: public tour and public startpage.
+   No layout changes to unlocked content or non-password errors. */
+@media (max-width: 700px), (pointer: coarse) and (max-height: 850px) {
+  #ppi-public-tour > #ppi-public-unavailable:has(.ppi-tour-password-form),
+  #ppi-public-startpage > #ppi-public-unavailable.ppi-public-password-state {
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: max(14px, env(safe-area-inset-top)) 12px
+             max(22px, env(safe-area-inset-bottom)) !important;
+    scroll-padding-top: 12px;
+  }
+  /* Keep the login centered until the keyboard is activated. */
+  #ppi-public-tour > #ppi-public-unavailable:has(.ppi-tour-password-form:focus-within),
+  #ppi-public-startpage > #ppi-public-unavailable.ppi-public-password-state:has(form:focus-within) {
+    align-items: flex-start !important;
+    justify-content: center !important;
+    /* Scroll area under an on-screen keyboard, even when 100dvh does not shrink. */
+    padding-top: max(12px, env(safe-area-inset-top)) !important;
+    padding-bottom: max(48vh, 220px) !important;
+  }
+  #ppi-public-tour > #ppi-public-unavailable:has(.ppi-tour-password-form:focus-within)
+    .ppi-public-unavailable-card,
+  #ppi-public-startpage > #ppi-public-unavailable.ppi-public-password-state:has(form:focus-within)
+    .ppi-public-password-stack {
+    flex-shrink: 0 !important;
+    margin-block: 0 auto !important;
+  }
+  #ppi-public-tour .ppi-tour-password-form input[type="password"],
+  #ppi-public-startpage .ppi-public-password-stack input[type="password"] {
+    font-size: 16px !important;
+    scroll-margin-top: 16px;
+    scroll-margin-bottom: 48vh;
+  }
+  #ppi-public-tour > #ppi-public-unavailable:has(.ppi-tour-password-form)
+    .ppi-public-unavailable-card,
+  #ppi-public-startpage > #ppi-public-unavailable.ppi-public-password-state
+    .ppi-public-password-stack {
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+}
+
 </style>

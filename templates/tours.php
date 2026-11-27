@@ -2,6 +2,7 @@
 /** @var array $_ */
 ?>
 <div id="ppi-tours-app"
+     data-global-settings-url="<?php p($_['globalSettingsUrl']); ?>"
      data-start-pages-url="<?php p($_['startPagesUrl']); ?>"
      data-api-url="<?php p($_['apiUrl']); ?>"
      data-files-url="<?php p($_['filesUrl']); ?>"
@@ -19,8 +20,36 @@
       <p id="ppi-section-subtitle" style="margin:4px 0 0;color:var(--color-text-maxcontrast)">Touren aus deinen Nextcloud-Panoramen zusammenstellen</p></div>
     <button class="primary" id="ppi-tour-create" type="button">+ Neue Tour erstellen</button>
     <button class="primary" id="ppi-start-page-create" type="button" hidden>+ Neue Startseite</button>
+    <button id="ppi-global-settings-open" type="button" aria-label="Globale Einstellungen öffnen" title="Globale Einstellungen" hidden>⚙</button>
   </header>
   <p id="ppi-tour-message" role="status" aria-live="polite" hidden></p>
+  </div>
+  <div id="ppi-global-settings-backdrop" class="ppi-global-settings-backdrop" hidden>
+    <section id="ppi-global-settings-dialog" class="ppi-global-settings-dialog" role="dialog" aria-modal="true" aria-labelledby="ppi-global-settings-title" tabindex="-1">
+      <header class="ppi-global-settings-header">
+        <h2 id="ppi-global-settings-title">⚙ Globale Einstellungen</h2>
+        <button id="ppi-global-settings-close" type="button" aria-label="Einstellungen schließen" title="Schließen">✕</button>
+      </header>
+      <p>Diese Einstellungen gelten für alle deine 360°-Touren und Startseiten.</p>
+      <fieldset class="ppi-global-social-fields"><legend>WhatsApp- und Social-Media-Linkvorschau</legend>
+        <small>Passwortgeschützte Freigaben zeigen immer eine neutrale Vorschau. Messenger können frühere Vorschauen zwischenspeichern.</small>
+        <label><input type="radio" name="ppi-global-social" value="cover" checked> <span>Bildvorschau: Startpanorama oder Startseiten-Hintergrundbild</span></label>
+        <label><input type="radio" name="ppi-global-social" value="neutral"> <span>Neutrales Photo-Sphere-Vorschaubild</span></label>
+        <label><input type="radio" name="ppi-global-social" value="off"> <span>Keine eigenen Open-Graph-Metadaten</span></label>
+      </fieldset>
+      <fieldset class="ppi-global-layout-fields"><legend>Kachelansicht</legend>
+        <div class="ppi-global-layout-choices">
+          <label class="ppi-global-layout-choice"><input type="radio" name="ppi-global-layout" value="adaptive" checked><span class="ppi-global-layout-card"><span class="ppi-global-layout-preview ppi-global-preview-adaptive" aria-hidden="true"><i></i><i></i><i></i></span><span class="ppi-global-layout-label"><strong>Adaptiv</strong><small>Bisheriges Layout</small></span></span></label>
+          <label class="ppi-global-layout-choice"><input type="radio" name="ppi-global-layout" value="compact"><span class="ppi-global-layout-card"><span class="ppi-global-layout-preview ppi-global-preview-compact" aria-hidden="true"><i></i><i></i><i></i><i></i></span><span class="ppi-global-layout-label"><strong>Kompakt</strong><small>Kleinere Kacheln</small></span></span></label>
+        </div>
+      </fieldset>
+      <label for="ppi-global-sort"><strong>Sortierung beider Übersichten</strong></label>
+      <select id="ppi-global-sort"><option value="original">Bisherige Reihenfolge</option><option value="name_asc">Name A–Z</option><option value="name_desc">Name Z–A</option><option value="newest">Zuletzt geändert zuerst</option><option value="oldest">Älteste Änderung zuerst</option></select>
+      <footer class="ppi-global-settings-footer">
+        <span id="ppi-global-settings-status" role="status" aria-live="polite"></span>
+        <button id="ppi-global-settings-save" type="button" class="primary">Einstellungen speichern</button>
+      </footer>
+    </section>
   </div>
   <nav class="ppi-startpage-switch" id="ppi-overview-switch" aria-label="Verwaltungsbereich auswählen">
     <button type="button" id="ppi-mode-tours" aria-pressed="true">🌐 360°-Touren</button>
@@ -28,7 +57,7 @@
   </nav>
   <section class="ppi-tour-card" id="ppi-start-pages-overview" hidden>
     <h2>Meine Startseiten</h2>
-    <p>Eigene 360°-Startseiten mit einer Auswahl deiner Touren. Öffentliche Freigaben folgen nach dem Sicherheitstest.</p>
+    
     <div id="ppi-start-pages-list" class="ppi-tour-list"></div>
   </section>
   <section class="ppi-tour-card" id="ppi-start-page-editor" hidden>
@@ -123,7 +152,7 @@
             <input type="hidden" id="ppi-start-page-effect" value="subtle">
           </fieldset>
           <fieldset class="ppi-startpage-layout-presets">
-            <legend>Tour-Kacheln anordnen</legend>
+            <legend>Tour-Kacheln anordnen · Desktop</legend>
             <p>Klicke auf eine Anordnung. Die Vorschau passt sich sofort an.</p>
             <div id="ppi-start-page-tile-presets" class="ppi-startpage-layout-presets-grid" role="group" aria-label="Kachelanordnung auswählen">
               <button type="button" class="ppi-startpage-layout-preset" data-columns="auto" aria-pressed="true" title="Automatisch: quadratisches Mosaik mit unterschiedlich großen Kacheln">
@@ -143,6 +172,28 @@
               </button>
             </div>
             <input id="ppi-start-page-tile-columns" type="hidden" value="auto">
+            <div class="ppi-mobile-columns-setting" role="group" aria-label="Mobile Tour-Kachelanordnung">
+              <span class="ppi-mobile-setting-label">Mobile Ansicht</span>
+              <div id="ppi-start-page-mobile-columns-choices" class="ppi-mobile-choices">
+                <button type="button" class="ppi-mobile-layout-preset" data-mobile-cols="auto" aria-pressed="false" title="Automatisch: mobiles Mosaik, große Kachel bis 2 × 2">
+                  <span class="ppi-mobile-layout-mini ppi-mobile-layout-mini-auto" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span>
+                  <span>Autom.</span>
+                </button>
+                <button type="button" class="ppi-mobile-layout-preset" data-mobile-cols="1" aria-pressed="true" title="Eine Spalte: alle Tour-Kacheln untereinander">
+                  <span class="ppi-mobile-layout-mini ppi-mobile-layout-mini-1" aria-hidden="true"><i></i><i></i><i></i></span>
+                  <span>1 Spalte</span>
+                </button>
+                <button type="button" class="ppi-mobile-layout-preset" data-mobile-cols="2" aria-pressed="false" title="Zwei gleich breite Spalten">
+                  <span class="ppi-mobile-layout-mini ppi-mobile-layout-mini-2" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                  <span>2 Spalten</span>
+                </button>
+                <button type="button" class="ppi-mobile-layout-preset" data-mobile-cols="3" aria-pressed="false" title="Drei gleich breite Spalten">
+                  <span class="ppi-mobile-layout-mini ppi-mobile-layout-mini-3" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+                  <span>3 Spalten</span>
+                </button>
+              </div>
+              <input id="ppi-start-page-mobile-columns" type="hidden" value="1">
+            </div>
           </fieldset>
           <div class="ppi-startpage-color-controls" aria-label="Farben der Startseite">
             <label id="ppi-start-page-header-color-row" hidden><span>Kopfbereich-Farbe (ohne Hintergrundbild)</span><input id="ppi-start-page-header-color" type="color" value="#000000"></label>
@@ -185,7 +236,7 @@
               <summary aria-label="Hilfe zur Startseiten-Freigabe öffnen">ⓘ Hilfe zur Freigabe</summary>
               <div class="ppi-share-help-page">
                 <h4>So funktioniert die Freigabe deiner Startseite</h4>
-                <p>Mit dem Startseiten-Link teilst du eine Auswahl deiner bereits freigegebenen 360°-Touren. Startseiten und Touren haben eigenständige Freigaben. Alle Einstellungen in diesem Bereich gelten für diese Startseite.</p>
+                <p>Jede Startseite kann einen Hauptlink und zusätzliche Freigabelinks haben. Jeder Startseitenlink besitzt sein eigenes Passwort, Ablaufdatum und seine eigene Tour-Passwortregel. Die Tourauswahl und die fest zugeordneten Tour-Freigabelinks legst du gemeinsam für diese Startseite unter „Touren wählen“ fest.</p>
                 <h5>1. Link erstellen und verwalten</h5>
                 <p>Mit <strong>Freigabeeinstellungen speichern</strong> erstellst oder aktualisierst du den öffentlichen Startseiten-Link. <strong>Link kopieren</strong> übernimmt ihn zum Weitergeben. Über <strong>Freigabelink deaktivieren</strong> sperrst du den Zugriff auf diese Startseite, ohne die Startseite selbst zu löschen.</p>
                 <h5>2. Passwort der Startseite</h5>
@@ -194,17 +245,19 @@
                 <p>Das Ablaufdatum bezeichnet den Beginn des Tages, an dem der Link nicht mehr zugänglich ist: 00:00 Uhr in deiner Nextcloud-Zeitzone. Ab diesem Zeitpunkt kann die öffentliche Startseite nicht mehr geöffnet werden. Ohne Ablaufdatum bleibt der Link gültig, bis du ihn deaktivierst oder die Freigabe anderweitig endet.</p>
                 <h5>4. Passwortschutz eingebundener Touren</h5>
                 <ul>
-                  <li><strong>Tour-Passwörter beibehalten:</strong> Jede geschützte Tour verlangt weiterhin ihr eigenes Passwort (empfohlen).</li>
-                  <li><strong>Alle eingebundenen Touren freischalten:</strong> Nach erfolgreicher Anmeldung an der passwortgeschützten Startseite können dort eingebundene, berechtigte Touren ohne zusätzliche Passworteingabe geöffnet werden.</li>
-                  <li><strong>Touren einzeln auswählen:</strong> Nur die markierten Touren dürfen über diese passwortgeschützte Startseite ohne erneute Passworteingabe geöffnet werden.</li>
+                  <li><strong>Tour-Passwörter beibehalten:</strong> Der für diese Startseite ausgewählte Tourlink bleibt geschützt und verlangt sein eigenes Passwort, sofern er ein Passwort besitzt (empfohlen).</li>
+                  <li><strong>Alle eingebundenen Touren freischalten:</strong> Nach Eingabe des Passworts für genau diesen Startseitenlink werden alle eingebundenen, gültigen Tourlinks ohne zusätzliche Tour-Passworteingabe geöffnet.</li>
+                  <li><strong>Touren einzeln auswählen:</strong> Nur die markierten, gültigen und passwortgeschützten Tourlinks werden nach Eingabe des jeweiligen Startseitenlink-Passworts ohne weitere Tour-Passworteingabe geöffnet.</li>
                 </ul>
-                <p>Die Freischaltung setzt eine gültige passwortgeschützte Startseite voraus. Tour-Passwörter werden nicht entfernt oder geändert. <strong>Direkte Tour-Links</strong> behalten ihren eigenen Passwortschutz. Deaktivierte oder abgelaufene Tour-Freigaben werden durch die Startseite nicht wieder aktiviert.</p>
+                <p>„Alle freischalten“ und „Touren einzeln auswählen“ setzen für den jeweiligen Startseitenlink ein eigenes Passwort voraus. Die Freischaltung gilt ausschließlich in der Besuchersitzung dieses Startseitenlinks; direkte Tour-Links behalten ihren Passwortschutz. Ein deaktivierter oder abgelaufener fest zugeordneter Tourlink wird nicht durch einen anderen Tourlink ersetzt. „Passwortgeschützte Touren anzeigen“ steuert nur, ob noch gesperrte Touren als Kacheln sichtbar sind, und vergibt keine Zugriffsrechte.</p>
                 <h5>5. Änderungen und bereits geöffnete Seiten</h5>
                 <p>Nach einer Passwortänderung oder Deaktivierung müssen neue Anfragen erneut berechtigt sein. Inhalte, die ein Browser zuvor bereits geladen hat, können dadurch nicht nachträglich aus seinem Speicher entfernt werden. Teste Änderungen am besten in einem neuen privaten Browserfenster.</p>
-                <p class="ppi-share-help-tip"><strong>Tipp:</strong> Verwende für jede Startseite bewusst gewählte Freigaberegeln. Die sichere Standardeinstellung lautet „Tour-Passwörter beibehalten“.</p>
+                <p class="ppi-share-help-tip"><strong>Tipp:</strong> Hauptlink und Zusatzlinks werden unabhängig konfiguriert. Neue Zusatzlinks starten sicher mit „Passwörter beibehalten“. Teste die einzelnen Links in privaten Browserfenstern.</p>
               </div>
             </details>
           </div>
+          <section class="ppi-startpage-main-share-card" aria-label="Hauptfreigabelink dieser Startseite">
+            <h4>Hauptlink · eigene Freigaberegeln</h4>
           <p class="ppi-startpage-private-note">Ein eigener Startseiten-Link kann optional mit Passwort und Ablaufdatum geschützt werden. Touren behalten ihre bisherigen Freigaberegeln. Nur bereits freigegebene Touren erscheinen für Besucher.</p>
           <div class="ppi-startpage-share-field-row">
             <label for="ppi-start-page-share-expiry">Ablaufdatum (optional, 00:00 Uhr)</label>
@@ -259,6 +312,7 @@
             <button type="button" id="ppi-start-page-share-open">Startseite im neuen Tab öffnen</button>
             <button type="button" id="ppi-start-page-main-rotate">Token erneuern</button>
           </div>
+          </section>
           <!-- PPI STARTPAGE MULTISHARE V1 2026-11-24 -->
           <section class="ppi-tour-share-box ppi-startpage-extra-links" aria-label="Zusätzliche Freigabelinks">
             <div class="ppi-share-heading">
@@ -281,6 +335,10 @@
         <div class="ppi-preset-preview-save" hidden><button type="button" id="ppi-startpage-preset-save">＋ Vorlage speichern</button></div>
         <div class="ppi-startpage-preview-heading">
           <h3>Live-Vorschau</h3>
+          <div id="ppi-startpage-preview-device-choices" class="ppi-preview-device-choices" role="group" aria-label="Vorschaumodus">
+            <button type="button" data-preview-device="desktop" aria-pressed="true">Desktop</button>
+            <button type="button" data-preview-device="mobile" aria-pressed="false">Mobil</button>
+          </div>
           <span id="ppi-startpage-dirty" role="status">Gespeicherter Stand</span>
         </div>
         <div id="ppi-startpage-preview" class="ppi-startpage-live-preview" data-layout="hero">
@@ -341,12 +399,12 @@
           <div class="ppi-svg-color-swatches" aria-label="Voreingestellte Farben"><button type="button" data-pin-color="#1687bc" aria-label="Blau" title="Blau" style="--swatch:#1687bc"></button><button type="button" data-pin-color="#e54848" aria-label="Rot" title="Rot" style="--swatch:#e54848"></button><button type="button" data-pin-color="#32a36b" aria-label="Grün" title="Grün" style="--swatch:#32a36b"></button><button type="button" data-pin-color="#f09629" aria-label="Orange" title="Orange" style="--swatch:#f09629"></button><button type="button" data-pin-color="#ffffff" aria-label="Weiß" title="Weiß" style="--swatch:#ffffff"></button><button type="button" data-pin-color="#111111" aria-label="Schwarz" title="Schwarz" style="--swatch:#111111"></button></div>
           <p class="ppi-design-color-note">Nur für SVG-Pins</p>
         </div>
-        <div class="ppi-design-mini"><label for="ppi-design-style">Hotspot-Design</label><div class="ppi-design-mini-image ppi-design-hotspot-preview"><img id="ppi-design-style-preview" alt="Vorschau des ausgewählten Hotspot-Designs"><span id="ppi-design-pin-preview" role="img" aria-label="Vorschau des ausgewählten SVG-Pins" hidden></span><svg id="ppi-design-classic-preview" viewBox="0 0 90 66" aria-label="Klassisches Wechselpunkt-Männchen"><path d="M 13 8 Q 20 28 33 31 L 40 39 M 77 8 Q 68 27 56 31 L 50 39 M 40 39 Q 32 49 31 66 M 50 39 Q 59 49 60 66" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="6 4"/><ellipse cx="45" cy="24" rx="10" ry="13" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="6 3"/></svg></div><select id="ppi-design-style" aria-label="Hotspot-Design auswählen"><option value="classic">Klassisches Männchen</option><option value="blue">Blauer 360°-Guide – Zielbild bei Hover</option><option value="map-pin">Map-Pin – mit Zielpanorama</option><option value="label-pin">Label-Pin – mit Zielpanorama</option><option value="outline-pin">Kontur-Pin – mit Zielpanorama</option></select></div>
+        <div class="ppi-design-mini"><label for="ppi-design-style">Hotspot-Design</label><div class="ppi-design-mini-image ppi-design-hotspot-preview"><img id="ppi-design-style-preview" alt="Vorschau des ausgewählten Hotspot-Designs"><span id="ppi-design-pin-preview" role="img" aria-label="Vorschau des ausgewählten SVG-Pins" hidden></span><svg id="ppi-design-classic-preview" viewBox="0 0 90 66" aria-label="Klassisches Wechselpunkt-Männchen"><path d="M 13 8 Q 20 28 33 31 L 40 39 M 77 8 Q 68 27 56 31 L 50 39 M 40 39 Q 32 49 31 66 M 50 39 Q 59 49 60 66" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-dasharray="6 4"/><ellipse cx="45" cy="24" rx="10" ry="13" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="6 3"/></svg></div><select id="ppi-design-style" aria-label="Hotspot-Design auswählen"><option value="classic">Klassisches Männchen</option><option value="blue">Blauer 360°-Guide – Zielbild bei Hover</option><option value="map-pin">Map-Pin – mit Zielpanorama</option><option value="label-pin">Label-Pin – mit Zielpanorama</option><option value="outline-pin">Kontur-Pin – mit Zielpanorama</option><option value="gps-pin">GPS-Pin – mit Zielpanorama</option><option value="you-pin">Standort-Pin – mit Zielpanorama</option></select></div>
       </div>
       <div class="ppi-design-layout">
         <div class="ppi-design-group" aria-label="Ansicht und Bedienung">
           <div class="ppi-design-field"><label for="ppi-design-yaw">Startblickrichtung (horizontal)</label><div class="ppi-design-range"><input type="range" id="ppi-design-yaw" min="-180" max="180" step="1" value="0"><output id="ppi-design-yaw-value">0°</output></div></div>
-          <div class="ppi-design-field ppi-design-social"><label for="ppi-design-social">Linkvorschau in WhatsApp und anderen Messengern</label><select id="ppi-design-social"><option value="cover">Automatisch: Startpanorama oder neutrales Motiv</option><option value="neutral">Immer neutrale 360°-Vorschau</option><option value="off">Keine zusätzlichen Open-Graph-Metadaten</option></select><p id="ppi-design-social-status" role="status" aria-live="polite"></p><p>Bei Passwortschutz bleiben private Tourinhalte verborgen. Messenger können bereits geladene Vorschauen zwischenspeichern.</p></div>
+
           <div class="ppi-design-field ppi-design-options"><label><input type="checkbox" id="ppi-design-title" checked> Tour-Titel anzeigen</label><label><input type="checkbox" id="ppi-design-nav" checked> Panorama-Navigation anzeigen</label><label><input type="checkbox" id="ppi-design-fullscreen" checked> Vollbildschaltfläche anzeigen</label></div>
         </div>
         <div class="ppi-design-group" aria-label="Öffentliche Präsentation">
@@ -447,7 +505,7 @@
           <button type="button" id="ppi-share-open">Testlink öffnen</button><button type="button" id="ppi-share-rotate">Token erneuern</button></div>
       </div>
     </section>
-    <section class="ppi-tour-share-box" aria-label="Zusätzliche Freigabelinks">
+    <section class="ppi-tour-share-box ppi-startpage-extra-links" aria-label="Zusätzliche Freigabelinks">
       <div class="ppi-share-heading"><strong>Weitere Freigabelinks</strong><span>Unabhängige Links pro Tour</span></div>
       <p>Erstelle zusätzliche Links mit eigener Bezeichnung, Ablaufdatum (00:00 Uhr in deiner Nextcloud-Zeitzone) und eigenem Passwort. Bestehende Links bleiben unverändert.</p>
       <div class="ppi-extra-create">
@@ -551,7 +609,7 @@
 #ppi-tours-app .ppi-tour-graph-thumb:focus-visible{outline:3px solid var(--color-primary-element);outline-offset:2px}
 #ppi-tours-app .ppi-tour-graph-thumb img{width:100%;height:100%;object-fit:cover}
 #ppi-tours-app .ppi-tour-graph-name{font-size:12px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-height:18px}
-#ppi-tours-app .ppi-tour-card-delete{position:absolute;top:13px;right:13px;z-index:4;display:grid;place-items:center;appearance:none;padding:0!important;width:30px;min-width:30px;height:30px;min-height:30px;border-radius:50%!important;border:1px solid rgba(150,30,30,.4)!important;background:var(--color-main-background)!important;color:#b92d2d!important;font-size:22px!important;line-height:1!important;box-shadow:0 2px 8px #0005;opacity:0;pointer-events:none;transition:opacity .14s ease}
+#ppi-tours-app .ppi-tour-card-delete{position:absolute;top:13px;right:13px;z-index:4;appearance:none;padding:0!important;width:30px;min-width:30px;height:30px;min-height:30px;border-radius:50%!important;border:1px solid rgba(150,30,30,.4)!important;background:var(--color-main-background)!important;color:#b92d2d!important;font-size:22px!important;line-height:1!important;box-shadow:0 2px 8px #0005;opacity:0;pointer-events:none;transition:opacity .14s ease}
 #ppi-tours-app .ppi-tour-graph-card:hover .ppi-tour-card-delete,#ppi-tours-app .ppi-tour-graph-card:focus-within .ppi-tour-card-delete{opacity:1;pointer-events:auto}
 #ppi-tours-app .ppi-tour-card-delete:hover{background:#bd3434!important;color:#fff!important}
 @media (hover:none){#ppi-tours-app .ppi-tour-card-delete{opacity:1;pointer-events:auto}}
@@ -1162,9 +1220,9 @@
 
 /* 0.4.62.23: move size control opposite the description and fill available vertical space. */
 #ppi-tours-app #ppi-step-design .ppi-design-layout{align-items:stretch}
-#ppi-tours-app #ppi-step-design .ppi-design-layout>.ppi-design-group{align-self:stretch;min-height:0}
-#ppi-tours-app #ppi-step-design .ppi-design-intro{display:flex;flex-direction:column;flex:1 1 auto;min-height:175px}
-#ppi-tours-app #ppi-step-design .ppi-design-intro textarea{flex:1 1 auto;min-height:128px;height:100%;box-sizing:border-box;resize:vertical}
+#ppi-tours-app #ppi-step-design .ppi-design-layout>.ppi-design-group{min-height:0}
+#ppi-tours-app #ppi-step-design .ppi-design-intro{display:flex;flex-direction:column;min-height:175px}
+#ppi-tours-app #ppi-step-design .ppi-design-intro textarea{min-height:128px;height:100%;box-sizing:border-box;resize:vertical}
 #ppi-tours-app #ppi-step-design .ppi-design-intro>p{flex-shrink:0}
 @media(max-width:700px){
  #ppi-tours-app #ppi-step-design .ppi-design-intro{min-height:0;flex:0 1 auto}
@@ -1179,8 +1237,7 @@
 #ppi-tours-app #ppi-step-design .ppi-design-intro textarea{flex:1 1 auto;min-height:145px;height:100%;width:100%;box-sizing:border-box}
 @media(max-width:700px){
  #ppi-tours-app #ppi-step-design .ppi-design-layout{grid-template-columns:minmax(0,1fr)}
- #ppi-tours-app #ppi-step-design .ppi-design-intro{flex:0 1 auto;min-height:0}
- #ppi-tours-app #ppi-step-design .ppi-design-intro textarea{flex:0 1 auto;height:auto;min-height:140px}
+ #ppi-tours-app #ppi-step-design .ppi-design-intro textarea{flex:0 1 auto}
 }
 
 
@@ -1214,34 +1271,34 @@
 
 
 /* 0.4.62.27: label-pin uses the same preview and keyboard/touch behavior as other pin designs. */
-.ppi-preview-sphere .ppi-hotspot-label-pin,#ppi-public-sphere .ppi-hotspot-label-pin{width:96px!important;height:116px!important}
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin),#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin){width:96px!important;height:116px!important}
 .ppi-preview-sphere .ppi-hotspot-outline-pin,#ppi-public-sphere .ppi-hotspot-outline-pin{width:96px!important;height:116px!important}
-.ppi-hotspot-label-pin .ppi-hotspot-figure,.ppi-hotspot-label-pin .ppi-hotspot-blue-figure{display:none!important}
+:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-figure,:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-blue-figure{display:none!important}
 .ppi-hotspot-outline-pin .ppi-hotspot-figure,.ppi-hotspot-outline-pin .ppi-hotspot-blue-figure{display:none!important}
-.ppi-hotspot-label-pin .ppi-hotspot-pin-figure{display:block!important;position:absolute;bottom:0;left:50%;width:76px!important;height:100px!important;max-width:none!important;transform:translateX(-50%);object-fit:contain;pointer-events:none;background:#fffef2;border-radius:13px;padding:5px;box-sizing:border-box;filter:drop-shadow(0 3px 5px #000a)}
+:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure{display:block!important;position:absolute;bottom:0;left:50%;width:76px!important;height:100px!important;max-width:none!important;transform:translateX(-50%);object-fit:contain;pointer-events:none;background:#fffef2;border-radius:13px;padding:5px;box-sizing:border-box;filter:drop-shadow(0 3px 5px #000a)}
 .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{display:block!important;position:absolute;bottom:0;left:50%;width:76px!important;height:100px!important;max-width:none!important;transform:translateX(-50%);object-fit:contain;pointer-events:none;background:#fffef2;border-radius:13px;padding:5px;box-sizing:border-box;filter:drop-shadow(0 3px 5px #000a)}
-.ppi-hotspot-label-pin .ppi-hotspot-photo{position:absolute!important;z-index:5;left:calc(50% + 31px);top:0;width:112px;height:69px;opacity:0;visibility:hidden;transform:translate(-7px,0) scale(.95) rotate(0);transition:opacity .2s ease,transform .2s ease,visibility .2s;border:2px solid #fff;background:#142b43;pointer-events:auto}
+:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo{position:absolute!important;z-index:5;left:calc(50% + 31px);top:0;width:112px;height:69px;opacity:0;visibility:hidden;transform:translate(-7px,0) scale(.95) rotate(0);transition:opacity .2s ease,transform .2s ease,visibility .2s;border:2px solid #fff;background:#142b43;pointer-events:auto}
 .ppi-hotspot-outline-pin .ppi-hotspot-photo{position:absolute!important;z-index:5;left:calc(50% + 31px);top:0;width:112px;height:69px;opacity:0;visibility:hidden;transform:translate(-7px,0) scale(.95) rotate(0);transition:opacity .2s ease,transform .2s ease,visibility .2s;border:2px solid #fff;background:#142b43;pointer-events:auto}
-.ppi-hotspot-label-pin::after{content:"";position:absolute;left:65px;top:0;width:69px;height:93px;pointer-events:auto;background:transparent}
+:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin)::after{content:"";position:absolute;left:65px;top:0;width:69px;height:93px;pointer-events:auto;background:transparent}
 .ppi-hotspot-outline-pin::after{content:"";position:absolute;left:65px;top:0;width:69px;height:93px;pointer-events:auto;background:transparent}
-.ppi-hotspot-label-pin:hover .ppi-hotspot-photo,.ppi-hotspot-label-pin:focus-visible .ppi-hotspot-photo{opacity:1;visibility:visible;transform:translate(0,0) scale(1)}
+:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin):hover .ppi-hotspot-photo,:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin):focus-visible .ppi-hotspot-photo{opacity:1;visibility:visible;transform:translate(0,0) scale(1)}
 .ppi-hotspot-outline-pin:hover .ppi-hotspot-photo,.ppi-hotspot-outline-pin:focus-visible .ppi-hotspot-photo{opacity:1;visibility:visible;transform:translate(0,0) scale(1)}
-@media(hover:none){.ppi-hotspot-label-pin .ppi-hotspot-photo{opacity:1;visibility:visible;transform:none}}
+@media(hover:none){:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo{opacity:1;visibility:visible;transform:none}}
 @media(hover:none){.ppi-hotspot-outline-pin .ppi-hotspot-photo{opacity:1;visibility:visible;transform:none}}
-@media(prefers-reduced-motion:reduce){.ppi-hotspot-label-pin .ppi-hotspot-photo{transition:none}}
+@media(prefers-reduced-motion:reduce){:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo{transition:none}}
 @media(prefers-reduced-motion:reduce){.ppi-hotspot-outline-pin .ppi-hotspot-photo{transition:none}}
 
 
 /* 0.4.62.29: SVG pins retain genuine transparency in editor (including the button underneath). */
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot.ppi-hotspot-map-pin,
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot.ppi-hotspot-chat-pin,
-#ppi-tours-app .ppi-preview-sphere .ppi-hotspot.ppi-hotspot-label-pin,
+#ppi-tours-app .ppi-preview-sphere .ppi-hotspot:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin),
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot.ppi-hotspot-outline-pin{
   background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;
 }
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-chat-pin .ppi-hotspot-pin-figure,
-#ppi-tours-app .ppi-preview-window .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-tours-app .ppi-preview-window :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{
   background:transparent!important;border:0!important;border-radius:0!important;padding:0!important;
 }
@@ -1256,7 +1313,7 @@
 #ppi-tours-app #ppi-design-pin-preview[hidden]{display:none!important}
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-chat-pin .ppi-hotspot-pin-figure,
-#ppi-tours-app .ppi-preview-window .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-tours-app .ppi-preview-window :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{background:var(--ppi-svg-pin-color,#1687bc)!important;padding:0!important;border:0!important;border-radius:0!important;-webkit-mask-position:center;-webkit-mask-size:contain;-webkit-mask-repeat:no-repeat;mask-position:center;mask-size:contain;mask-repeat:no-repeat}
 
 /* 0.4.62.32: On touch devices show a destination thumbnail only after the
@@ -1278,23 +1335,23 @@
     transform:translate(0,0) scale(1)!important;
   }
   /* The classic stick figure should not reserve an invisible image slot. */
-  .ppi-preview-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(.ppi-hotspot-label-pin):not(.ppi-hotspot-outline-pin) .ppi-hotspot-photo,
-  #ppi-public-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(.ppi-hotspot-label-pin):not(.ppi-hotspot-outline-pin) .ppi-hotspot-photo {
+  .ppi-preview-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin)):not(.ppi-hotspot-outline-pin) .ppi-hotspot-photo,
+  #ppi-public-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin)):not(.ppi-hotspot-outline-pin) .ppi-hotspot-photo {
     position:absolute!important;
     left:calc(50% + 30px);
     top:0;
     z-index:5;
     transition:opacity .2s ease,visibility .2s,transform .2s ease;
   }
-  .ppi-preview-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(.ppi-hotspot-label-pin):not(.ppi-hotspot-outline-pin) .ppi-hotspot-figure,
-  #ppi-public-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(.ppi-hotspot-label-pin):not(.ppi-hotspot-outline-pin) .ppi-hotspot-figure {margin-top:20px;}
+  .ppi-preview-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin)):not(.ppi-hotspot-outline-pin) .ppi-hotspot-figure,
+  #ppi-public-sphere .ppi-hotspot-person:not(.ppi-hotspot-blue):not(.ppi-hotspot-map-pin):not(.ppi-hotspot-chat-pin):not(:is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin)):not(.ppi-hotspot-outline-pin) .ppi-hotspot-figure {margin-top:20px;}
 }
 
 /* 0.4.62.35: subtle contour shadow for SVG pin masks only.
    No rectangular background or shadow on the preview thumbnail. */
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-chat-pin .ppi-hotspot-pin-figure,
-#ppi-tours-app .ppi-preview-window .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-tours-app .ppi-preview-window :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{
   filter:drop-shadow(0 3px 3px rgba(0,0,0,.48))!important;
 }
@@ -1305,7 +1362,7 @@
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-pin-shadow{display:none!important;}
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-map-pin .ppi-hotspot-pin-shadow,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-chat-pin .ppi-hotspot-pin-shadow,
-#ppi-tours-app .ppi-preview-window .ppi-hotspot-label-pin .ppi-hotspot-pin-shadow,
+#ppi-tours-app .ppi-preview-window :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-shadow,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-outline-pin .ppi-hotspot-pin-shadow{
   display:block!important;
   position:absolute;left:50%;bottom:0;
@@ -1320,7 +1377,7 @@
 }
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-map-pin .ppi-hotspot-pin-shadow::before,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-chat-pin .ppi-hotspot-pin-shadow::before,
-#ppi-tours-app .ppi-preview-window .ppi-hotspot-label-pin .ppi-hotspot-pin-shadow::before,
+#ppi-tours-app .ppi-preview-window :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-shadow::before,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-outline-pin .ppi-hotspot-pin-shadow::before{
   content:"";position:absolute;inset:0;
   background:rgba(0,0,0,.8);
@@ -1331,7 +1388,7 @@
 }
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-chat-pin .ppi-hotspot-pin-figure,
-#ppi-tours-app .ppi-preview-window .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-tours-app .ppi-preview-window :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-window .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{
   z-index:1;filter:none!important;
 }
@@ -1344,10 +1401,10 @@
   display:none!important;
 }
 .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-mini,
-.ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini,
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini,
 .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-mini,
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-mini,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-mini{
   display:block!important;position:absolute;z-index:2;pointer-events:none;
   left:50%;bottom:0;width:76px;height:100px;
@@ -1363,8 +1420,8 @@
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-mini img{
   left:29%;top:18%;width:42%;height:34%;border-radius:50%;
 }
-.ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini img,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini img{
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini img,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini img{
   left:23%;top:15%;width:54%;height:42%;border-radius:8px;
 }
 .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-mini img,
@@ -1374,10 +1431,10 @@
 /* Override older hover and touch-auto-show styles. Only an explicit click
    opens the SVG's enlarged preview; it grows from the centre of the pin. */
 .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-.ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
 .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo,
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo{
   position:absolute!important;left:50%!important;top:-92px!important;
   width:185px!important;height:111px!important;box-sizing:border-box!important;
@@ -1389,40 +1446,65 @@
   transition:transform .46s cubic-bezier(.22,1,.36,1),opacity .2s ease,visibility .2s!important;
 }
 .ppi-preview-sphere .ppi-hotspot-map-pin.ppi-hotspot-preview-open .ppi-hotspot-photo,
-.ppi-preview-sphere .ppi-hotspot-label-pin.ppi-hotspot-preview-open .ppi-hotspot-photo,
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin).ppi-hotspot-preview-open .ppi-hotspot-photo,
 .ppi-preview-sphere .ppi-hotspot-outline-pin.ppi-hotspot-preview-open .ppi-hotspot-photo,
 #ppi-public-sphere .ppi-hotspot-map-pin.ppi-hotspot-preview-open .ppi-hotspot-photo,
-#ppi-public-sphere .ppi-hotspot-label-pin.ppi-hotspot-preview-open .ppi-hotspot-photo,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin).ppi-hotspot-preview-open .ppi-hotspot-photo,
 #ppi-public-sphere .ppi-hotspot-outline-pin.ppi-hotspot-preview-open .ppi-hotspot-photo{
   opacity:1!important;visibility:visible!important;pointer-events:auto!important;
   transform:translate(-50%,-7px) scale(1)!important;
 }
 @media(prefers-reduced-motion:reduce){
   .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-  .ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+  .ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
   .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo,
   #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-  #ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+  #ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
   #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo{
     transition:none!important;
   }
 }
 
+
+/* Photo Sphere 0.4.64 – two additional transparent SVG pins (SVG Repo). */
+.ppi-preview-sphere .ppi-hotspot-gps-pin .ppi-hotspot-pin-mini img,
+#ppi-public-sphere .ppi-hotspot-gps-pin .ppi-hotspot-pin-mini img{
+  left:23%!important;
+  top:18%!important;
+  width:54%!important;
+  height:42%!important;
+  border-radius:50%!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  clip-path:circle(49% at 50% 50%)!important;
+}
+.ppi-preview-sphere .ppi-hotspot-you-pin .ppi-hotspot-pin-mini img,
+#ppi-public-sphere .ppi-hotspot-you-pin .ppi-hotspot-pin-mini img{
+  left:29%!important;
+  top:17%!important;
+  width:42%!important;
+  height:32%!important;
+  border-radius:50%!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  clip-path:circle(49% at 50% 50%)!important;
+}
+
 /* 0.4.62.44: Layer the inset panorama beneath the pin's colored outline,
    preserving the hollow SVG opening, shadow and shared hop animation. */
 .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
-.ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure{
   z-index:3!important;
 }
 .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-mini,
-.ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini,
+.ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini,
 .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-mini,
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-mini,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-mini,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-mini,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-mini{
   z-index:2!important;
 }
@@ -1431,10 +1513,10 @@
    Touch/coarse-pointer devices retain the approved 2px border. */
 @media (hover: hover) and (pointer: fine) {
   .ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-  .ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+  .ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
   .ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo,
   #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-photo,
-  #ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-photo,
+  #ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-photo,
   #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-photo {
     border-width:3px!important;
   }
@@ -1447,7 +1529,7 @@
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot .ppi-hotspot-figure[hidden],
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot .ppi-hotspot-blue-figure[hidden],
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot-map-pin > .ppi-hotspot-figure,
-#ppi-tours-app .ppi-preview-sphere .ppi-hotspot-label-pin > .ppi-hotspot-figure,
+#ppi-tours-app .ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) > .ppi-hotspot-figure,
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot-outline-pin > .ppi-hotspot-figure{
   display:none!important;
 }
@@ -1456,10 +1538,10 @@
    repeat on either mask layer produces the upper arch again below the tip.
    Scope the override to the editor only; the public tour is unchanged. */
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot-map-pin > .ppi-hotspot-pin-figure,
-#ppi-tours-app .ppi-preview-sphere .ppi-hotspot-label-pin > .ppi-hotspot-pin-figure,
+#ppi-tours-app .ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) > .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot-outline-pin > .ppi-hotspot-pin-figure,
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot-map-pin > .ppi-hotspot-pin-shadow::before,
-#ppi-tours-app .ppi-preview-sphere .ppi-hotspot-label-pin > .ppi-hotspot-pin-shadow::before,
+#ppi-tours-app .ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) > .ppi-hotspot-pin-shadow::before,
 #ppi-tours-app .ppi-preview-sphere .ppi-hotspot-outline-pin > .ppi-hotspot-pin-shadow::before {
   -webkit-mask-repeat:no-repeat!important;
   mask-repeat:no-repeat!important;
@@ -1473,10 +1555,10 @@
    prevents tiling under the pin and aligns the inset destination preview.
    Kept in CSS as well as JS for immediately correct initial paint. */
 #ppi-preview-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
-#ppi-preview-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-preview-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-preview-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-map-pin .ppi-hotspot-pin-figure,
-#ppi-public-sphere .ppi-hotspot-label-pin .ppi-hotspot-pin-figure,
+#ppi-public-sphere :is(.ppi-hotspot-label-pin,.ppi-hotspot-gps-pin,.ppi-hotspot-you-pin) .ppi-hotspot-pin-figure,
 #ppi-public-sphere .ppi-hotspot-outline-pin .ppi-hotspot-pin-figure {
   -webkit-mask-repeat:no-repeat!important;
   mask-repeat:no-repeat!important;
@@ -1490,25 +1572,22 @@
    The tour title stays above; previews have identical heights. */
 #ppi-tours-app #ppi-step-design .ppi-design-name-row{margin:12px 0 10px}
 #ppi-tours-app #ppi-step-design .ppi-design-name-row .ppi-design-name{width:100%;box-sizing:border-box}
-#ppi-tours-app #ppi-step-design .ppi-design-top{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:stretch;margin:0 0 10px}
-#ppi-tours-app #ppi-step-design .ppi-design-top>.ppi-design-mini{min-width:0;display:flex;flex-direction:column;gap:7px;align-self:stretch}
-#ppi-tours-app #ppi-step-design .ppi-design-top .ppi-design-mini-image{height:74px;min-height:74px;box-sizing:border-box}
-#ppi-tours-app #ppi-step-design .ppi-design-top .ppi-design-mini>label:first-child{font-size:12px;font-weight:650;line-height:18px}
+
 #ppi-tours-app #ppi-step-design #ppi-design-pin-colors{display:flex!important}
 #ppi-tours-app #ppi-step-design .ppi-design-color-preview{position:relative;cursor:pointer}
 #ppi-tours-app #ppi-step-design #ppi-design-color-chip{display:block;position:absolute;inset:0;background:var(--ppi-svg-pin-color,#1687bc);border-radius:6px}
 #ppi-tours-app #ppi-step-design #ppi-design-pin-color{position:absolute;inset:0;width:100%;height:100%;padding:0;opacity:0;cursor:pointer;z-index:1}
 #ppi-tours-app #ppi-step-design #ppi-design-pin-color:focus-visible{opacity:.25;outline:2px solid var(--color-primary-element);outline-offset:-3px}
-#ppi-tours-app #ppi-step-design .ppi-svg-color-swatches{display:flex;flex-wrap:nowrap;gap:5px;justify-content:space-between;margin:0;min-height:27px}
-#ppi-tours-app #ppi-step-design .ppi-svg-color-swatches button{width:24px;height:24px;min-width:0;min-height:24px;flex:1 1 0;max-width:26px;border-radius:50%}
-#ppi-tours-app #ppi-step-design #ppi-design-pin-color-hex{display:block;text-align:center;font-size:11px;line-height:17px}
+#ppi-tours-app #ppi-step-design .ppi-svg-color-swatches{display:flex;flex-wrap:nowrap;justify-content:space-between;margin:0;min-height:27px}
+#ppi-tours-app #ppi-step-design .ppi-svg-color-swatches button{min-width:0;flex:1 1 0;max-width:26px;border-radius:50%}
+#ppi-tours-app #ppi-step-design #ppi-design-pin-color-hex{display:block;text-align:center}
 #ppi-tours-app #ppi-step-design .ppi-design-color-note{margin:0;text-align:center;font-size:10px;opacity:.75}
-#ppi-tours-app #ppi-step-design .ppi-design-watermark-preview{position:relative;background:repeating-conic-gradient(#d8dce0 0% 25%,#fff 0% 50%) 50%/16px 16px}
+#ppi-tours-app #ppi-step-design .ppi-design-watermark-preview{position:relative}
 #ppi-tours-app #ppi-step-design .ppi-design-watermark-preview>img{width:100%;height:100%;object-fit:contain;padding:5px;box-sizing:border-box;position:relative;z-index:1}
 #ppi-tours-app #ppi-step-design .ppi-design-watermark-preview>img[hidden]{display:none!important}
 #ppi-tours-app #ppi-step-design #ppi-design-watermark-placeholder{font-size:11px;text-align:center;background:var(--color-main-background);padding:3px 6px;border-radius:5px;color:var(--color-text-maxcontrast);position:relative}
 #ppi-tours-app #ppi-step-design #ppi-design-watermark-placeholder[hidden]{display:none!important}
-#ppi-tours-app #ppi-step-design .ppi-design-watermark-toggle{display:flex;align-items:center;gap:6px;font-size:12px!important;line-height:22px;min-height:23px}
+#ppi-tours-app #ppi-step-design .ppi-design-watermark-toggle{display:flex;align-items:center;gap:6px;font-size:12px!important;line-height:22px}
 #ppi-tours-app #ppi-step-design .ppi-design-watermark-toggle input{margin:0}
 #ppi-tours-app #ppi-step-design #ppi-design-watermark-choice{width:100%;min-width:0}
 #ppi-tours-app #ppi-step-design #ppi-design-watermark-choice[hidden]{display:none!important}
@@ -1520,10 +1599,10 @@
 /* 0.4.62.57 – aligned presentation cards with framed previews. Keep native
    form elements and IDs unchanged so all persistence and permissions survive. */
 #ppi-tours-app #ppi-step-design .ppi-design-top{
-  grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:stretch;
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;align-items:stretch;margin:0 0 10px;
 }
 #ppi-tours-app #ppi-step-design .ppi-design-top>.ppi-design-mini{
-  display:flex;flex-direction:column;align-self:stretch;box-sizing:border-box;
+  display:flex;flex-direction:column;align-self:stretch;box-sizing:border-box;min-width:0;
   padding:10px;gap:9px;min-height:223px;
   border:1px solid var(--color-border,#d6d6d6);
   border-radius:10px;background:var(--color-main-background,#fff);
@@ -1573,9 +1652,7 @@
 #ppi-tours-app #ppi-step-design .ppi-design-watermark-preview{
   background:repeating-conic-gradient(#d9dde0 0% 25%,#fff 0% 50%) 50%/16px 16px;
 }
-#ppi-tours-app #ppi-step-design .ppi-design-watermark-preview>img{
-  object-fit:contain;padding:5px;
-}
+
 #ppi-tours-app #ppi-step-design .ppi-design-watermark-toggle{
   min-height:22px;flex:none;margin:0;
 }
@@ -1591,12 +1668,8 @@
 #ppi-tours-app #ppi-step-design .ppi-design-hotspot-preview>img{
   max-height:90px;
 }
-@media(max-width:800px){
-  #ppi-tours-app #ppi-step-design .ppi-design-top{grid-template-columns:repeat(2,minmax(0,1fr))}
-}
-@media(max-width:440px){
-  #ppi-tours-app #ppi-step-design .ppi-design-top{grid-template-columns:minmax(0,1fr)}
-}
+
+
 
 
 /* 0.4.62.58 – larger four-card headings, watermark toggle alongside title,
@@ -2552,10 +2625,117 @@
 #ppi-tours-app .ppi-startpage-bg-dialog .ppi-startpage-bg-files button{
  cursor:pointer;text-align:left;
 }
+
+/* Photo Sphere 0.4.64: stable background-image picker tiles. */
+#ppi-tours-app .ppi-startpage-bg-dialog .ppi-startpage-bg-files .ppi-bg-image-option{
+ min-width:0!important;
+ min-height:122px!important;
+ display:flex!important;
+ flex-direction:column!important;
+ gap:7px!important;
+ padding:7px!important;
+ overflow:hidden!important;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-preview{
+ width:100%;
+ aspect-ratio:16/9;
+ flex:0 0 auto;
+ min-height:75px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ position:relative;
+ overflow:hidden;
+ border-radius:6px;
+ background:var(--color-background-dark);
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-preview img{
+ display:block;
+ width:100%!important;
+ height:100%!important;
+ position:absolute;
+ inset:0;
+ object-fit:cover!important;
+ border-radius:6px;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-thumb-fallback{
+ display:none;
+ padding:8px;
+ font-size:11px;
+ line-height:1.35;
+ text-align:center;
+ color:var(--color-text-maxcontrast);
+ overflow-wrap:anywhere;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-thumb-failed img{
+ display:none!important;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-thumb-failed .ppi-bg-thumb-fallback{
+ display:block;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-image-name{
+ display:-webkit-box;
+ -webkit-line-clamp:2;
+ -webkit-box-orient:vertical;
+ overflow:hidden;
+ overflow-wrap:anywhere;
+ line-height:1.35;
+ font-size:12px;
+ font-weight:500;
+ min-width:0;
+ width:100%;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-folder-option{
+ min-height:48px;
+ align-items:flex-start;
+ justify-content:center;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-load-more,
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-limit-warning{
+ grid-column:1/-1;
+ width:100%;
+}
+
 @media(max-width:520px){
  #ppi-tours-app #ppi-start-page-bg-browser.ppi-startpage-bg-overlay{padding:9px!important}
  #ppi-tours-app .ppi-startpage-bg-dialog{padding:12px!important;max-height:88vh!important}
 }
+/* Photo Sphere 0.4.64: virtualized background-image gallery. */
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-virtual-gallery{
+ position:relative;
+ grid-column:1/-1;
+ width:100%;
+ min-width:0;
+ padding:0;
+ margin:0;
+}
+#ppi-tours-app .ppi-startpage-bg-files .ppi-bg-virtual-window{
+ position:absolute;
+ top:0;
+ left:0;
+ right:0;
+ display:grid;
+ grid-template-columns:repeat(auto-fill,minmax(min(100%,135px),1fr));
+ grid-auto-rows:148px;
+ gap:7px;
+ align-content:start;
+}
+#ppi-tours-app .ppi-startpage-bg-dialog
+.ppi-startpage-bg-files .ppi-bg-virtual-window .ppi-bg-image-option{
+ height:148px!important;
+ min-height:0!important;
+ max-height:148px!important;
+ box-sizing:border-box!important;
+ overflow:hidden!important;
+}
+#ppi-tours-app .ppi-bg-virtual-window .ppi-bg-preview{
+ min-height:0;
+ flex-shrink:0;
+}
+#ppi-tours-app .ppi-bg-virtual-window .ppi-bg-image-name{
+ min-height:0;
+}
+
 /* Exactly the same text sizing for both upper create actions. */
 #ppi-tours-app .ppi-tour-intro-header #ppi-tour-create,
 #ppi-tours-app .ppi-tour-intro-header #ppi-start-page-create{
@@ -2679,6 +2859,42 @@
  }
  #ppi-tours-app .ppi-startpage-share-inline button{width:100%}
 }
+
+
+/* PPI EXTRA LINK CHECKBOX LAYOUT FIX V26.3.3 */
+#ppi-tours-app .ppi-startpage-extra-entry
+.ppi-startpage-tour-password-choice,
+#ppi-tours-app .ppi-startpage-extra-entry
+label:has(> input[type="checkbox"]) {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 12px !important;
+    padding: 8px 10px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+#ppi-tours-app .ppi-startpage-extra-entry
+.ppi-startpage-tour-password-choice input[type="checkbox"],
+#ppi-tours-app .ppi-startpage-extra-entry
+label > input[type="checkbox"] {
+    flex: 0 0 18px !important;
+    width: 18px !important;
+    min-width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#ppi-tours-app .ppi-startpage-extra-entry
+.ppi-startpage-tour-password-choice span {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow-wrap: anywhere;
+}
+/* END PPI EXTRA LINK CHECKBOX LAYOUT FIX */
 
 </style>
 
@@ -2826,18 +3042,7 @@
 
 
 
-/* PPI EXTRA SHARE BUTTON ALIGNMENT V2 2026-11-24
-   Only offset the button to align with labelled input controls.
-   No grid, no stretching, no modification of input sizing. */
-#ppi-tours-app .ppi-startpage-extra-links #ppi-startpage-extra-create {
-  position: relative;
-  top: 15px;
-}
-@media (max-width: 620px) {
-  #ppi-tours-app .ppi-startpage-extra-links #ppi-startpage-extra-create {
-    top: 0;
-  }
-}
+
 
 
 /* PPI START PANORAMA CARD PICKER CSS V1 2026-11-24 */
@@ -2848,12 +3053,29 @@
   border-color:#448f68!important;color:#246e43!important;
 }
 /* Background of the complete card around the thumbnail; no extra outline. */
+/* PPI 0.4.64: Startpanorama mit weichem Tuerkisverlauf */
+/* PPI 0.4.64: Weiche Startpanorama-Hervorhebung ohne Kontur */
+/* PPI 0.4.64: Dezente Startpanorama-Hervorhebung */
 #ppi-tours-app .ppi-tour-graph-card.ppi-tour-start-selected,
 #ppi-tours-app .ppi-mobile-pano.ppi-tour-start-selected{
-  /* PPI TOUR STARTPANORAMA SANDFARBE V1 2026-11-24 */
-  background-color:#F0F0F0!important;
-  border:1px solid var(--color-border)!important;
+  background:#F0F0F0!important;
+  
+  box-shadow:0 5px 16px rgba(0,0,0,.18)!important;
+
+  border:none!important;
+  outline:none!important;
 }
+
+/* PPI STARTPANORAMA DARKMODE CONTRAST V2
+   Dunkler Dateiname auf heller Startpanorama-Kachel.
+   Gilt im hellen und dunklen Nextcloud-Theme.
+   Normale Panorama-Kacheln bleiben unveraendert. */
+#ppi-tours-app
+.ppi-tour-graph-card.ppi-tour-start-selected
+.ppi-tour-graph-name {
+  color:#1f1f1f!important;
+}
+
 #ppi-tours-app .ppi-tour-graph-card .ppi-tour-card-delete.ppi-tour-start-check,
 #ppi-tours-app .ppi-mobile-pano .ppi-tour-card-delete.ppi-tour-start-check{
   position:absolute!important;z-index:5!important;
@@ -2875,7 +3097,7 @@
 /* Mobile image begins after the card's 10px padding. Keep the same corner placement. */
 #ppi-tours-app .ppi-mobile-pano{position:relative}
 #ppi-tours-app .ppi-mobile-pano .ppi-tour-card-delete.ppi-tour-start-check{
-  top:18px!important;left:18px!important;
+  top:18px!important;left:18px!important;right:auto!important;
 }
 @media (hover:none){
   #ppi-tours-app .ppi-tour-graph-card .ppi-tour-card-delete.ppi-tour-start-check,
@@ -2922,6 +3144,1197 @@
 @media (max-width:620px){
  #ppi-tours-app .ppi-startpage-extra-links .ppi-extra-link input{flex:1 1 100%;width:100%!important}
  #ppi-tours-app .ppi-startpage-extra-links .ppi-extra-fields label{flex:1 1 100%}
+}
+
+
+/* 0.4.64 global shared settings: visual overlay; no changes to tour hotspots. */
+#ppi-tours-app #ppi-global-settings-open{width:43px;height:43px;flex:0 0 43px;display:grid;place-items:center;font-size:24px;padding:0;border-radius:10px;background:var(--color-main-background);color:var(--color-main-text);border:1px solid var(--color-border);cursor:pointer}
+#ppi-tours-app #ppi-global-settings-open[hidden]{display:none!important}
+#ppi-global-settings-backdrop[hidden]{display:none!important}
+#ppi-global-settings-backdrop{position:fixed;inset:0;z-index:11000;display:flex;align-items:center;justify-content:center;background:rgba(4,13,24,.54);padding:20px;box-sizing:border-box;overflow-y:auto}
+#ppi-global-settings-dialog{width:min(100%,720px);max-height:calc(100dvh - 40px);overflow-y:auto;box-sizing:border-box;background:var(--color-main-background,#fff);color:var(--color-main-text,#1c1c1c);border:1px solid var(--color-border,#ddd);border-radius:18px;padding:clamp(20px,3vw,30px);box-shadow:0 24px 75px rgba(0,0,0,.38),0 6px 22px rgba(0,0,0,.22)}
+#ppi-global-settings-dialog .ppi-global-settings-header{display:flex;align-items:center;justify-content:space-between;gap:15px}
+#ppi-global-settings-dialog h2{font-size:22px;margin:0}
+#ppi-global-settings-close{font-size:22px;min-width:42px;min-height:42px;border-radius:9px}
+#ppi-global-settings-dialog p{color:var(--color-text-maxcontrast,#777);margin:10px 0 20px}
+#ppi-global-settings-dialog fieldset{border:1px solid var(--color-border,#ddd);border-radius:12px;margin:0 0 17px;padding:16px;display:grid;gap:13px;min-width:0}
+#ppi-global-settings-dialog legend{font-weight:700;padding:0 5px}
+#ppi-global-settings-dialog fieldset label{display:flex;align-items:flex-start;gap:10px;cursor:pointer;line-height:1.4}
+#ppi-global-settings-dialog input[type=radio]{margin-top:4px;flex:0 0 auto}
+#ppi-global-settings-dialog small{color:var(--color-text-maxcontrast,#777);line-height:1.5}
+#ppi-global-sort{display:block;width:100%;margin:9px 0 20px;min-height:40px}
+#ppi-global-settings-dialog .ppi-global-settings-footer{display:flex;justify-content:flex-end;align-items:center;gap:12px;flex-wrap:wrap}
+#ppi-global-settings-status{margin-right:auto;font-size:13px}
+#ppi-tours-app.ppi-global-compact #ppi-tour-list,#ppi-tours-app.ppi-global-compact #ppi-start-pages-list{grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr))!important;gap:12px!important}
+#ppi-tours-app.ppi-global-compact #ppi-tour-list>.ppi-overview-tile,#ppi-tours-app.ppi-global-compact #ppi-start-pages-list>.ppi-overview-tile{grid-column:auto!important}
+#ppi-tours-app.ppi-global-compact .ppi-overview-thumb,#ppi-tours-app.ppi-global-compact .ppi-overview-placeholder{height:130px!important}
+#ppi-tours-app.ppi-global-compact #ppi-start-pages-list .ppi-startpage-overview-cover{min-height:130px!important;max-height:170px!important}
+@media(max-width:550px){#ppi-global-settings-backdrop{padding:10px}#ppi-global-settings-dialog{max-height:calc(100dvh - 20px);border-radius:14px}}
+
+
+/* ppi-global-settings-layout-v4: dialog-only visual refinements. No behavioral changes. */
+#ppi-global-settings-backdrop{padding:14px;overscroll-behavior:contain}
+#ppi-global-settings-dialog{width:min(100%,680px);max-height:calc(100dvh - 28px);padding:0;display:flex;flex-direction:column;overflow:hidden;border-radius:16px;box-shadow:0 20px 60px rgba(0,0,0,.3),0 4px 16px rgba(0,0,0,.18)}
+#ppi-global-settings-dialog>.ppi-global-settings-header{flex:0 0 auto;padding:19px 24px 6px}
+#ppi-global-settings-dialog>.ppi-global-settings-header h2{font-size:21px;line-height:1.25}
+#ppi-global-settings-dialog>.ppi-global-settings-header+#ppi-global-settings-dialog p{margin:0}
+#ppi-global-settings-dialog>.ppi-global-settings-header~p{flex:0 0 auto;margin:0;padding:0 24px 12px;font-size:13px;line-height:1.45}
+#ppi-global-settings-dialog fieldset{margin:0 24px 14px;padding:11px 14px 12px;gap:7px;display:grid;min-width:0;flex-shrink:1}
+#ppi-global-settings-dialog fieldset legend{font-size:14px;padding:0 5px}
+#ppi-global-settings-dialog .ppi-global-social-fields{gap:7px}
+#ppi-global-settings-dialog .ppi-global-social-fields>small{display:block;margin:0 0 4px;line-height:1.35;font-size:12px}
+#ppi-global-settings-dialog .ppi-global-social-fields>label{display:flex;align-items:center;min-height:25px;gap:10px;font-size:13px;line-height:1.35}
+#ppi-global-settings-dialog .ppi-global-social-fields>label input{margin:0;flex-shrink:0}
+#ppi-global-settings-dialog .ppi-global-layout-fields{padding:9px 12px 11px}
+#ppi-global-settings-dialog .ppi-global-layout-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+#ppi-global-settings-dialog .ppi-global-layout-choice{position:relative;display:block;cursor:pointer;margin:0;min-width:0}
+#ppi-global-settings-dialog .ppi-global-layout-choice>input{position:absolute;left:10px;top:10px;z-index:1;margin:0;width:16px;height:16px;accent-color:var(--color-primary,#0075b9)}
+#ppi-global-settings-dialog .ppi-global-layout-card{display:flex;align-items:center;gap:12px;min-height:75px;padding:12px 12px 12px 34px;border:1px solid var(--color-border,#d6dce1);border-radius:10px;box-sizing:border-box;transition:border-color .15s,background-color .15s;min-width:0}
+#ppi-global-settings-dialog .ppi-global-layout-choice>input:checked+.ppi-global-layout-card{border:2px solid var(--color-primary,#0075b9);padding:11px 11px 11px 33px;background:var(--color-primary-element-light,rgba(0,117,185,.06))}
+#ppi-global-settings-dialog .ppi-global-layout-choice>input:focus-visible+.ppi-global-layout-card{outline:2px solid var(--color-primary,#0075b9);outline-offset:2px}
+#ppi-global-settings-dialog .ppi-global-layout-preview{width:61px;height:44px;flex-shrink:0;display:grid;align-content:center;gap:4px;padding:5px;border:1px solid var(--color-border,#cbd4db);border-radius:6px;box-sizing:border-box;background:var(--color-main-background,#fff)}
+#ppi-global-settings-dialog .ppi-global-layout-preview i{display:block;height:13px;border-radius:3px;background:var(--color-primary-element,#80b4d4);opacity:.7}
+#ppi-global-settings-dialog .ppi-global-preview-adaptive{grid-template-columns:1.15fr .85fr;grid-template-rows:repeat(2,13px)}
+#ppi-global-settings-dialog .ppi-global-preview-adaptive i:first-child{grid-row:span 2;height:30px}
+#ppi-global-settings-dialog .ppi-global-preview-adaptive i:nth-child(2),#ppi-global-settings-dialog .ppi-global-preview-adaptive i:nth-child(3){height:13px}
+#ppi-global-settings-dialog .ppi-global-preview-compact{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(2,13px)}
+#ppi-global-settings-dialog .ppi-global-layout-label{display:flex;flex-direction:column;gap:3px;min-width:0;font-size:13px}
+#ppi-global-settings-dialog .ppi-global-layout-label strong{font-size:13px}
+#ppi-global-settings-dialog .ppi-global-layout-label small{font-size:11px;line-height:1.25}
+#ppi-global-settings-dialog>label[for=ppi-global-sort]{font-size:14px;margin:0 24px 4px}
+#ppi-global-settings-dialog #ppi-global-sort{width:calc(100% - 48px);margin:0 24px 13px;min-height:38px;font-size:13px}
+#ppi-global-settings-dialog .ppi-global-settings-footer{padding:12px 24px 16px;border-top:1px solid var(--color-border,#ddd);flex:0 0 auto}
+#ppi-global-settings-dialog #ppi-global-settings-save{min-height:38px}
+@media(max-width:550px){#ppi-global-settings-backdrop{padding:8px}#ppi-global-settings-dialog{max-height:calc(100dvh - 16px);border-radius:13px}#ppi-global-settings-dialog>.ppi-global-settings-header{padding:15px 15px 7px}#ppi-global-settings-dialog>.ppi-global-settings-header~p{padding:0 15px 12px}#ppi-global-settings-dialog fieldset{margin:0 15px 12px}#ppi-global-settings-dialog .ppi-global-layout-choices{grid-template-columns:1fr}#ppi-global-settings-dialog .ppi-global-layout-card{min-height:55px}#ppi-global-settings-dialog>label[for=ppi-global-sort]{margin:0 15px 4px}#ppi-global-settings-dialog #ppi-global-sort{width:calc(100% - 30px);margin:0 15px 12px}#ppi-global-settings-dialog .ppi-global-settings-footer{padding:10px 15px 12px}}
+@media(max-height:690px){#ppi-global-settings-dialog{overflow-y:auto;display:block}#ppi-global-settings-dialog .ppi-global-settings-footer{position:sticky;bottom:0;background:var(--color-main-background,#fff)}}
+
+
+/* ppi-compact-actions-v5: original text actions in Adaptiv, 2+More in Kompakt. */
+#ppi-tours-app .ppi-compact-more{display:contents}
+#ppi-tours-app .ppi-compact-more-trigger{display:none}
+#ppi-tours-app .ppi-compact-more-panel{display:contents}
+#ppi-tours-app.ppi-global-compact .ppi-overview-tile{position:relative;overflow:visible!important}
+#ppi-tours-app.ppi-global-compact .ppi-overview-tile.ppi-compact-menu-visible{z-index:60}
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions{display:flex!important;flex-wrap:nowrap!important;align-items:center;gap:6px!important;min-width:0}
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions>button{flex:1 1 0;min-width:0;white-space:nowrap;padding:8px 7px!important;font-size:12px!important;line-height:1.3}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more{display:block;position:relative;flex:0 0 auto}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-trigger{display:inline-flex;align-items:center;justify-content:center;gap:3px;border-radius:8px;min-height:34px;padding:7px 9px;font-size:12px;white-space:nowrap;background:var(--color-background-dark,#e8eff4);color:var(--color-main-text,#111);border:1px solid var(--color-border,#d1dbe1);cursor:pointer}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-trigger:hover,#ppi-tours-app.ppi-global-compact .ppi-compact-more-trigger:focus-visible{background:var(--color-background-hover,#dce8f1);outline-offset:2px}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-panel{display:none;position:absolute;top:calc(100% + 6px);right:0;width:max-content;min-width:205px;max-width:min(300px,85vw);z-index:100;box-sizing:border-box;padding:6px;background:var(--color-main-background,#fff);border:1px solid var(--color-border,#dce2e5);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.20),0 3px 8px rgba(0,0,0,.12)}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more.ppi-compact-more-open .ppi-compact-more-panel{display:flex;flex-direction:column;gap:2px}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-panel>button{display:block!important;width:100%;margin:0!important;padding:10px 12px!important;text-align:left!important;white-space:normal;line-height:1.25;font-size:13px;background:transparent!important;color:var(--color-main-text,#171717)!important;border:0!important;border-radius:6px!important;cursor:pointer}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-panel>button:hover,#ppi-tours-app.ppi-global-compact .ppi-compact-more-panel>button:focus-visible{background:var(--color-background-hover,#e8eef2)!important}
+@media(max-width:370px){#ppi-tours-app.ppi-global-compact .ppi-overview-actions>button{font-size:11px!important;padding:7px 4px!important}#ppi-tours-app.ppi-global-compact .ppi-compact-more-trigger{padding:7px 6px;font-size:11px}}
+
+
+/* ppi-unified-overview-grid-v6: same responsive grid in both overview tabs.
+   Only overview presentation; action handlers, settings and DB stay unchanged. */
+/* Adaptive: both lists use the same available-width calculation, without
+   legacy tour featured-card and startpage 3-item spanning overrides. */
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-single,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-double,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-multi {
+  display:grid!important;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))!important;
+  gap:16px!important;
+  align-items:stretch;
+}
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list > .ppi-overview-tile,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list > .ppi-overview-tile,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:first-child:nth-last-child(3) {
+  grid-column:auto!important;
+  width:auto!important;
+  max-width:none;
+}
+/* Compact: fixed minimum card width, shared by both tabs.
+   Auto-fill keeps column widths consistent even when one tab has fewer items. */
+#ppi-tours-app.ppi-global-compact #ppi-tour-list,
+#ppi-tours-app.ppi-global-compact #ppi-start-pages-list.ppi-startpages-single,
+#ppi-tours-app.ppi-global-compact #ppi-start-pages-list.ppi-startpages-double,
+#ppi-tours-app.ppi-global-compact #ppi-start-pages-list.ppi-startpages-multi {
+  display:grid!important;
+  grid-template-columns:repeat(auto-fill,minmax(min(100%,220px),1fr))!important;
+  gap:12px!important;
+  align-items:stretch;
+}
+#ppi-tours-app.ppi-global-compact #ppi-tour-list > .ppi-overview-tile,
+#ppi-tours-app.ppi-global-compact #ppi-start-pages-list > .ppi-overview-tile,
+#ppi-tours-app.ppi-global-compact #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:first-child:nth-last-child(3) {
+  grid-column:auto!important;
+  width:auto!important;
+}
+/* The v5 popup requires card overflow visible. Round the actual preview
+   surface as well, so the upper corners still look rounded in compact mode. */
+#ppi-tours-app #ppi-tour-list > .ppi-overview-tile,
+#ppi-tours-app #ppi-start-pages-list > .ppi-overview-tile {
+  border-radius:13px!important;
+}
+#ppi-tours-app .ppi-overview-tile > .ppi-overview-thumb,
+#ppi-tours-app .ppi-overview-tile > .ppi-overview-placeholder,
+#ppi-tours-app #ppi-start-pages-list .ppi-startpage-overview-cover {
+  border-radius:12px 12px 0 0!important;
+}
+#ppi-tours-app #ppi-start-pages-list .ppi-startpage-overview-cover {
+  overflow:hidden;
+}
+/* Compact actions: two readable buttons and icon-size 'more'. The button's
+   existing accessible label/title and click handlers remain untouched. */
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions {
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  align-items:center!important;
+  gap:6px!important;
+  min-width:0;
+}
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions > button {
+  flex:1 1 0!important;
+  width:0;
+  min-width:0!important;
+  min-height:36px;
+  padding:7px 5px!important;
+  font-size:11.5px!important;
+  font-weight:600;
+  line-height:1.2!important;
+  white-space:nowrap;
+  border-radius:8px!important;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more {
+  flex:0 0 36px!important;
+  min-width:36px;
+}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-trigger {
+  display:flex!important;
+  align-items:center;
+  justify-content:center;
+  box-sizing:border-box;
+  width:36px;
+  min-width:36px;
+  height:36px;
+  min-height:36px;
+  padding:0!important;
+  border-radius:8px!important;
+  font-size:0!important; /* visually hide 'Mehr', retain accessible label */
+  line-height:1!important;
+}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-trigger::before {
+  content:'⋯';
+  display:block;
+  font-size:23px;
+  font-weight:700;
+  line-height:1;
+  transform:translateY(-2px);
+}
+@media(max-width:460px) {
+  #ppi-tours-app.ppi-global-compact .ppi-overview-actions > button {
+    font-size:11px!important;
+  }
+}
+
+
+
+/* ppi-adaptive-featured-v7: restore original asymmetric overview logic.
+   Intentionally overrides only the grid rules from v6. */
+/* Original adaptive pattern: one large item with 1 tour, two evenly sized
+   items with 2, and a featured first card spanning the row for 3+ items. */
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-single,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-double,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-multi {
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:16px!important;
+  align-items:stretch!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list.ppi-tours-single,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-single {
+  grid-template-columns:minmax(0,1fr)!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:first-child,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:first-child {
+  grid-column:1/-1!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list.ppi-tours-single .ppi-overview-thumb,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list.ppi-tours-single .ppi-overview-placeholder,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:first-child .ppi-overview-thumb,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:first-child .ppi-overview-placeholder,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-single .ppi-startpage-overview-cover,
+#ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:first-child .ppi-startpage-overview-cover {
+  height:clamp(190px,28vw,300px)!important;
+  min-height:0!important;
+}
+/* v6 must continue to control compact cards; this branch only evens out
+   the action bar and ensures button text stays visible on narrow cards. */
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions {
+  display:flex!important;
+  flex-wrap:nowrap!important;
+  gap:6px!important;
+  align-items:center!important;
+  width:100%;
+}
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions > button {
+  flex:1 1 0!important;
+  width:auto!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  padding:7px 3px!important;
+  font-size:clamp(10px,0.85vw,12px)!important;
+  letter-spacing:-.15px;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis;
+}
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions > .ppi-compact-more {
+  flex:0 0 38px!important;
+  width:38px!important;
+  min-width:38px!important;
+}
+#ppi-tours-app.ppi-global-compact .ppi-compact-more-trigger {
+  width:38px!important;
+  min-width:38px!important;
+  height:36px!important;
+  font-size:0!important;
+  padding:0!important;
+}
+/* Small viewports: do not create tiny 2-column adaptive cards. */
+@media(max-width:700px){
+  #ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list,
+  #ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-single,
+  #ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-double,
+  #ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list.ppi-startpages-multi {
+    grid-template-columns:minmax(0,1fr)!important;
+  }
+  #ppi-tours-app:not(.ppi-global-compact) #ppi-tour-list > .ppi-overview-tile,
+  #ppi-tours-app:not(.ppi-global-compact) #ppi-start-pages-list > .ppi-overview-tile {
+    grid-column:auto!important;
+  }
+}
+
+
+
+/* ppi-actions-bottom-v8: consistent button docks and small-adaptive menus.
+   The original buttons and their listeners remain inside the existing More panel.
+   Large featured adaptive card keeps all buttons visible. */
+/* Make cards fill their grid row so the action dock is always at the bottom.
+   Use overflow visible to avoid clipping a dropdown; round media separately. */
+#ppi-tours-app #ppi-tour-list > .ppi-overview-tile,
+#ppi-tours-app #ppi-start-pages-list > .ppi-overview-tile {
+  display:flex!important;
+  flex-direction:column!important;
+  min-width:0!important;
+  border-radius:13px!important;
+}
+#ppi-tours-app #ppi-tour-list > .ppi-overview-tile > .ppi-overview-body,
+#ppi-tours-app #ppi-start-pages-list > .ppi-overview-tile > .ppi-overview-body {
+  display:flex!important;
+  flex-direction:column!important;
+  flex:1 1 auto!important;
+  min-width:0!important;
+}
+#ppi-tours-app #ppi-tour-list .ppi-overview-body > .ppi-overview-actions,
+#ppi-tours-app #ppi-start-pages-list .ppi-overview-body > .ppi-overview-actions {
+  margin-top:auto!important;
+}
+#ppi-tours-app #ppi-tour-list .ppi-overview-thumb,
+#ppi-tours-app #ppi-tour-list .ppi-overview-placeholder,
+#ppi-tours-app #ppi-start-pages-list .ppi-startpage-overview-cover {
+  border-radius:12px 12px 0 0!important;
+  flex-shrink:0!important;
+}
+/* Small adaptive cards are identified by the pre-existing overview classes.
+   Two cards: both small. Three+ cards: first is the featured large card. */
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) { position:relative!important;overflow:visible!important; }
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+).ppi-compact-menu-visible { z-index:60!important; }
+/* For smaller adaptive cards, present the same two buttons + ellipsis as compact. */
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-overview-actions {
+  display:flex!important;flex-wrap:nowrap!important;align-items:center!important;
+  width:100%!important;gap:7px!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-overview-actions > button {
+  flex:1 1 0!important;width:0!important;min-width:0!important;
+  box-sizing:border-box!important;min-height:36px!important;
+  padding:7px 6px!important;font-size:clamp(11px,1vw,12px)!important;
+  line-height:1.2!important;white-space:nowrap!important;
+  overflow:hidden!important;text-overflow:ellipsis!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-compact-more {
+  display:block!important;position:relative!important;flex:0 0 38px!important;
+  width:38px!important;min-width:38px!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-compact-more-trigger {
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  width:38px!important;min-width:38px!important;height:36px!important;
+  min-height:36px!important;box-sizing:border-box!important;border-radius:8px!important;
+  padding:0!important;font-size:0!important;line-height:1!important;
+  background:var(--color-background-dark,#e8eff4)!important;
+  border:1px solid var(--color-border,#d1dbe1)!important;
+  color:var(--color-main-text,#111)!important;cursor:pointer;
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-compact-more-trigger::before {
+  content:'⋯';font-size:23px;font-weight:700;line-height:1;transform:translateY(-2px);
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-compact-more-panel {
+  display:none!important;position:absolute!important;top:calc(100% + 6px)!important;right:0!important;
+  width:max-content!important;min-width:205px!important;max-width:min(300px,85vw)!important;
+  z-index:100!important;box-sizing:border-box!important;padding:6px!important;
+  background:var(--color-main-background,#fff)!important;
+  border:1px solid var(--color-border,#dce2e5)!important;border-radius:10px!important;
+  box-shadow:0 12px 30px #0003,0 3px 8px #0002!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-compact-more.ppi-compact-more-open .ppi-compact-more-panel {
+  display:flex!important;flex-direction:column!important;gap:2px!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-compact-more-panel > button {
+  display:block!important;width:100%!important;margin:0!important;padding:10px 12px!important;
+  text-align:left!important;white-space:normal!important;line-height:1.25!important;
+  font-size:13px!important;color:var(--color-main-text,#171717)!important;
+  background:transparent!important;border:0!important;border-radius:6px!important;
+}
+#ppi-tours-app:not(.ppi-global-compact) :is(
+ #ppi-tour-list.ppi-tours-double > .ppi-overview-tile,
+ #ppi-tour-list.ppi-tours-featured > .ppi-overview-tile:not(:first-child),
+ #ppi-start-pages-list.ppi-startpages-double > .ppi-overview-tile,
+ #ppi-start-pages-list.ppi-startpages-multi > .ppi-overview-tile:not(:first-child)
+) .ppi-compact-more-panel > button:hover {
+  background:var(--color-background-hover,#e8eef2)!important;
+}
+/* Compact cards use equal height per grid row and retain their pop-up menu. */
+#ppi-tours-app.ppi-global-compact #ppi-tour-list > .ppi-overview-tile,
+#ppi-tours-app.ppi-global-compact #ppi-start-pages-list > .ppi-overview-tile {
+  overflow:visible!important;
+}
+#ppi-tours-app.ppi-global-compact .ppi-overview-actions > button {
+  flex:1 1 0!important;min-width:0!important;box-sizing:border-box!important;
+  min-height:36px!important;font-size:clamp(11px,0.9vw,12px)!important;
+  padding:7px 5px!important;
+}
+/* Ensure the last open popup rises above adjacent cards, without affecting order. */
+#ppi-tours-app .ppi-overview-tile.ppi-compact-menu-visible {position:relative;z-index:60!important}
+
+
+
+/* ppi-card-hover-v9: unified, restrained shadows for Touren + Startseiten
+   in both adaptive and compact layout. Keep popover menus visible. */
+#ppi-tours-app :is(#ppi-tour-list,#ppi-start-pages-list) > .ppi-overview-tile {
+  border-radius:13px!important;
+  box-shadow:0 3px 12px rgba(0,0,0,.13),0 1px 3px rgba(0,0,0,.055)!important;
+  transition:box-shadow .21s ease,transform .21s ease,border-color .21s ease!important;
+  transform:translateY(0);
+  will-change:auto;
+}
+@media (hover:hover) and (pointer:fine) {
+  #ppi-tours-app :is(#ppi-tour-list,#ppi-start-pages-list) > .ppi-overview-tile:hover {
+    transform:translateY(-3px)!important;
+    box-shadow:0 13px 28px rgba(0,0,0,.18),0 4px 10px rgba(0,0,0,.08)!important;
+    border-color:var(--color-border-maxcontrast,var(--color-border))!important;
+    position:relative;
+    z-index:3;
+  }
+}
+/* Open menus take precedence over neighboring hovered cards. */
+#ppi-tours-app :is(#ppi-tour-list,#ppi-start-pages-list) > .ppi-overview-tile.ppi-compact-menu-visible {
+  position:relative;
+  z-index:60!important;
+}
+@media (prefers-reduced-motion:reduce) {
+  #ppi-tours-app :is(#ppi-tour-list,#ppi-start-pages-list) > .ppi-overview-tile {
+    transition:none!important;
+  }
+  #ppi-tours-app :is(#ppi-tour-list,#ppi-start-pages-list) > .ppi-overview-tile:hover {
+    transform:none!important;
+  }
+}
+
+
+/* PPI MOBILE STARTPAGE V10 — keep existing preset designs and desktop layout unchanged. */
+#ppi-tours-app .ppi-mobile-columns-setting{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:9px;margin-top:13px;padding-top:12px;border-top:1px solid var(--color-border)}
+#ppi-tours-app .ppi-mobile-setting-label{font-size:13px;font-weight:650}
+#ppi-tours-app .ppi-mobile-choices,#ppi-tours-app .ppi-preview-device-choices{display:inline-flex;gap:4px;flex-wrap:nowrap;padding:3px;background:var(--color-background-dark,var(--color-background-hover));border-radius:9px;border:1px solid var(--color-border)}
+#ppi-tours-app .ppi-mobile-choices button,#ppi-tours-app .ppi-preview-device-choices button{border:0!important;min-height:33px;padding:5px 11px!important;border-radius:7px;background:transparent!important;color:var(--color-main-text)!important;font-size:12px;font-weight:650;box-shadow:none!important}
+#ppi-tours-app .ppi-mobile-choices button[aria-pressed="true"],#ppi-tours-app .ppi-preview-device-choices button[aria-pressed="true"]{background:var(--color-primary-element,#0874a4)!important;color:var(--color-primary-element-text,#fff)!important}
+#ppi-tours-app .ppi-startpage-preview-heading{flex-wrap:wrap}
+#ppi-tours-app .ppi-preview-device-choices{margin-left:auto}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"]{width:min(100%,390px)!important;max-width:390px!important;margin-inline:auto!important;min-width:0!important;box-sizing:border-box!important;padding:14px 10px 22px!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-grid-container{container-type:inline-size!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-grid[data-cols]{--ppi-mosaic-columns:var(--ppi-mobile-columns,1)!important;grid-template-columns:repeat(var(--ppi-mobile-columns,1),minmax(0,1fr))!important;grid-auto-rows:auto!important;gap:9px!important;grid-auto-flow:row!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-grid[data-cols]>.ppi-startpage-preview-tile{grid-column:span 1!important;grid-row:span 1!important;aspect-ratio:auto!important;width:100%!important;height:auto!important;min-height:0!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-tile .ppi-startpage-tile-media{aspect-ratio:16/9!important;height:auto!important;max-height:none!important;flex:0 0 auto!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-tile .ppi-startpage-tile-copy{height:auto!important;min-height:65px!important;max-height:none!important;flex:1 1 auto!important;padding:7px!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-tile .ppi-startpage-tile-copy strong{font-size:12px!important;line-height:1.3!important;display:-webkit-box!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;overflow:hidden!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-tile .ppi-startpage-tile-copy small{font-size:10px!important;line-height:1.3!important;-webkit-line-clamp:2!important}
+@media(max-width:480px){#ppi-tours-app .ppi-preview-device-choices{margin-left:0}#ppi-tours-app .ppi-mobile-columns-setting{align-items:flex-start}}
+
+/* PPI MOBILE STARTPAGE V12 — 3-column editor preview */
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-grid[style*="--ppi-mobile-columns: 3"],
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"] .ppi-startpage-preview-grid[data-cols]{min-width:0}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: 3"] .ppi-startpage-preview-grid[data-cols]{
+  --ppi-mosaic-columns:3!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-auto-rows:auto!important;gap:7px!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: 3"] .ppi-startpage-preview-tile{
+  grid-column:span 1!important;grid-row:span 1!important;height:auto!important;aspect-ratio:auto!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: 3"] .ppi-startpage-tile-copy{padding:5px!important;min-height:0!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: 3"] .ppi-startpage-tile-copy strong{font-size:10px!important;line-height:1.25!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: 3"] .ppi-startpage-tile-copy small{display:none!important}
+
+/* PPI MOBILE AUTO MOSAIC V17 - live preview reflects saved mobile choice. */
+
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-grid[data-cols]>.ppi-startpage-preview-tile{
+  grid-column:span 1!important;grid-row:span 1!important;aspect-ratio:auto!important;
+  height:100%!important;min-height:0!important;max-height:none!important;
+  display:flex!important;flex-direction:column!important;overflow:hidden!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-grid[data-cols]>.ppi-startpage-preview-tile:first-child:nth-last-child(n+3){
+  grid-column:span 2!important;grid-row:span 2!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile .ppi-startpage-tile-media{
+  flex:0 0 auto!important;height:auto!important;min-height:0!important;aspect-ratio:16/9!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile .ppi-startpage-tile-copy{
+  height:auto!important;min-height:0!important;max-height:none!important;flex:1 1 auto!important;
+  padding:4px!important;overflow:hidden!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile .ppi-startpage-tile-copy strong{
+  font-size:9px!important;line-height:1.2!important;-webkit-line-clamp:2!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile .ppi-startpage-tile-copy small{display:none!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-grid[data-cols]>.ppi-startpage-preview-tile:first-child:nth-last-child(n+3) .ppi-startpage-tile-copy strong{font-size:11px!important}
+
+
+/* PPI MOBILE MOSAIC REAL GRID V18 - editor mobile AUTO uses same 3x3 lattice. */
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-grid[data-cols] {
+ display:grid!important;--ppi-mosaic-columns:3!important;
+ grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ grid-template-rows:none!important;
+ grid-auto-rows:clamp(77px,24cqw,115px)!important;
+ grid-auto-flow:row dense!important;gap:7px!important;
+ align-items:stretch!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-grid[data-cols] > .ppi-startpage-preview-tile:nth-child(n) {
+ grid-column:span 1!important;grid-row:span 1!important;
+ display:flex!important;flex-direction:column!important;
+ width:100%!important;min-width:0!important;max-width:none!important;
+ height:100%!important;min-height:0!important;max-height:none!important;
+ aspect-ratio:auto!important;overflow:hidden!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-grid[data-cols] > .ppi-startpage-preview-tile:first-child:nth-last-child(n+3) {
+ grid-column:span 2!important;grid-row:span 2!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile .ppi-startpage-tile-media {
+ flex:0 0 auto!important;aspect-ratio:16/9!important;height:auto!important;min-height:0!important;overflow:hidden!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile:first-child:nth-last-child(n+3) .ppi-startpage-tile-media {
+ flex:1 1 auto!important;aspect-ratio:auto!important;height:auto!important;min-height:0!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile .ppi-startpage-tile-copy {
+ flex:1 1 auto!important;height:auto!important;min-height:0!important;max-height:none!important;
+ padding:4px!important;overflow:hidden!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile:first-child:nth-last-child(n+3) .ppi-startpage-tile-copy {flex:0 0 auto!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-tile-copy strong {font-size:9px!important;line-height:1.2!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;overflow:hidden!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-preview-tile:first-child:nth-last-child(n+3) .ppi-startpage-tile-copy strong {font-size:11px!important}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="mobile"][style*="--ppi-mobile-columns: auto"] .ppi-startpage-tile-copy small {display:none!important}
+
+
+/* PPI MOBILE PORTRAIT PRESETS V19 – visual only; no persistence, API or public view change. */
+#ppi-tours-app .ppi-mobile-columns-setting {
+  display:flex!important; flex-direction:column!important; align-items:stretch!important;
+  justify-content:flex-start!important; gap:9px!important;
+}
+#ppi-tours-app .ppi-mobile-columns-setting .ppi-mobile-setting-label {
+  display:block!important; font-size:13px!important; font-weight:650!important;
+}
+#ppi-tours-app .ppi-mobile-columns-setting .ppi-mobile-choices {
+  display:grid!important; grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  align-items:stretch!important; gap:7px!important; padding:0!important;
+  background:transparent!important; border:0!important; border-radius:0!important;
+  width:100%!important; min-width:0!important;
+}
+#ppi-tours-app .ppi-mobile-columns-setting .ppi-mobile-choices > .ppi-mobile-layout-preset {
+  display:flex!important; flex-direction:column!important; align-items:center!important;
+  justify-content:center!important; gap:7px!important; min-width:0!important;
+  min-height:107px!important; padding:9px 3px 8px!important;
+  border:2px solid var(--color-border,#dce1e6)!important;
+  border-radius:10px!important; background:var(--color-main-background,#fff)!important;
+  color:var(--color-main-text,#222)!important; box-shadow:none!important;
+  cursor:pointer!important; transition:border-color .15s ease,background-color .15s ease!important;
+}
+#ppi-tours-app .ppi-mobile-columns-setting .ppi-mobile-choices > .ppi-mobile-layout-preset[aria-pressed="true"] {
+  border-color:var(--color-primary-element,#0874a4)!important;
+  background:var(--color-primary-element-light,var(--color-main-background,#fff))!important;
+  color:var(--color-main-text,#222)!important;
+  box-shadow:0 0 0 1px var(--color-primary-element,#0874a4)!important;
+}
+#ppi-tours-app .ppi-mobile-columns-setting .ppi-mobile-choices > .ppi-mobile-layout-preset:focus-visible {
+  outline:3px solid var(--color-primary-element,#0874a4)!important; outline-offset:2px!important;
+}
+#ppi-tours-app .ppi-mobile-layout-preset > span:last-child {
+  font-size:11px!important; font-weight:650!important; line-height:1.2!important;
+  white-space:nowrap!important; text-align:center!important;
+}
+#ppi-tours-app .ppi-mobile-layout-mini {
+  box-sizing:border-box!important; width:39px!important; height:58px!important;
+  background:linear-gradient(145deg,#173b51,#244e68)!important;
+  border:3px solid #244357!important; border-radius:8px!important;
+  padding:6px 4px 5px!important; display:grid!important; gap:2px!important;
+  align-items:stretch!important; justify-items:stretch!important;
+  grid-auto-rows:minmax(0,1fr)!important; grid-auto-flow:row!important;
+  flex:0 0 auto!important; overflow:hidden!important;
+}
+#ppi-tours-app .ppi-mobile-layout-mini i {
+  display:block!important; min-width:0!important; min-height:0!important;
+  border-radius:2px!important; background:#98bfd7!important; opacity:1!important;
+}
+#ppi-tours-app .ppi-mobile-layout-mini-auto {
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-template-rows:repeat(3,minmax(0,1fr))!important;
+}
+#ppi-tours-app .ppi-mobile-layout-mini-auto i:first-child {
+  grid-column:span 2!important;grid-row:span 2!important;
+}
+#ppi-tours-app .ppi-mobile-layout-mini-1 {grid-template-columns:1fr!important;grid-template-rows:repeat(3,minmax(0,1fr))!important;}
+#ppi-tours-app .ppi-mobile-layout-mini-2 {grid-template-columns:repeat(2,minmax(0,1fr))!important;grid-template-rows:repeat(3,minmax(0,1fr))!important;}
+#ppi-tours-app .ppi-mobile-layout-mini-3 {grid-template-columns:repeat(3,minmax(0,1fr))!important;grid-template-rows:repeat(3,minmax(0,1fr))!important;}
+@media (max-width:380px) {
+ #ppi-tours-app .ppi-mobile-columns-setting .ppi-mobile-choices {gap:4px!important;}
+ #ppi-tours-app .ppi-mobile-columns-setting .ppi-mobile-choices>.ppi-mobile-layout-preset {padding-inline:1px!important;}
+ #ppi-tours-app .ppi-mobile-layout-preset>span:last-child {font-size:10px!important;}
+}
+
+
+
+/* PPI DESKTOP FIXED GRID PREVIEW SWITCH V20 – desktop preview ONLY. */
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="3"] {
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ grid-auto-rows:auto!important;grid-auto-flow:row!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="4"] {
+ display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;
+ grid-auto-rows:auto!important;grid-auto-flow:row!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="3"] > .ppi-startpage-preview-tile:nth-child(n),
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile:nth-child(n) {
+ grid-column:auto!important;grid-row:auto!important;
+ width:100%!important;min-width:0!important;max-width:none!important;
+ height:auto!important;min-height:0!important;max-height:none!important;
+ aspect-ratio:auto!important;
+}
+/* Previews can be narrower than actual desktops; keep four columns visible. */
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="4"] > .ppi-startpage-preview-tile .ppi-startpage-tile-copy strong {
+ overflow-wrap:anywhere!important;
+}
+
+
+
+/* PPI DESKTOP RESPONSIVE MOSAIC V21
+ * Live preview: scaled representation of responsive desktop grid.
+ * The editor's preview is narrow compared to a real desktop, therefore
+ * 3 tracks from 300px preview, 4 from 415px, 5 from 560px.
+ * Same item thresholds and maximum featured size (2x2). */
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid-container {
+ container-type:inline-size!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"] {
+ --ppi-v21-cols:2;--ppi-v21-gap:7px;
+ display:grid!important;width:100%!important;
+ gap:var(--ppi-v21-gap)!important;
+ grid-template-columns:repeat(var(--ppi-v21-cols),minmax(0,1fr))!important;
+ grid-auto-rows:calc((100cqw - (var(--ppi-v21-cols) - 1)*var(--ppi-v21-gap))/var(--ppi-v21-cols))!important;
+ grid-auto-flow:row dense!important;align-items:stretch!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(n)) > .ppi-startpage-preview-tile:nth-child(n):nth-child(n) {
+ grid-column:span 1!important;grid-row:span 1!important;
+ width:100%!important;min-width:0!important;max-width:none!important;
+ height:100%!important;min-height:0!important;max-height:none!important;
+ aspect-ratio:auto!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"] > .ppi-startpage-preview-tile .ppi-startpage-tile-media {
+ flex:1 1 auto!important;min-height:0!important;position:relative!important;overflow:hidden!important;aspect-ratio:auto!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"] > .ppi-startpage-preview-tile .ppi-startpage-tile-copy {
+ flex:0 0 auto!important;min-height:0!important;height:auto!important;padding:5px!important;
+}
+#ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"] > .ppi-startpage-preview-tile .ppi-startpage-tile-copy strong {
+ font-size:11px!important;overflow-wrap:anywhere!important;
+}
+@container (min-width:300px) {
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"] {--ppi-v21-cols:3!important;}
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:first-child {
+  grid-column:span 2!important;grid-row:span 2!important;
+ }
+}
+@container (min-width:415px) {
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"] {--ppi-v21-cols:4!important;}
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:first-child:nth-child(n) {
+  grid-column:span 1!important;grid-row:span 1!important;
+ }
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(7)) > .ppi-startpage-preview-tile:first-child {
+  grid-column:span 2!important;grid-row:span 2!important;
+ }
+}
+@container (min-width:560px) {
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"] {--ppi-v21-cols:5!important;}
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(5)) > .ppi-startpage-preview-tile:first-child:nth-child(n) {
+  grid-column:span 1!important;grid-row:span 1!important;
+ }
+ #ppi-tours-app .ppi-startpage-live-preview[data-ppi-preview-device="desktop"] .ppi-startpage-preview-grid[data-cols="auto"]:has(> .ppi-startpage-preview-tile:nth-child(9)) > .ppi-startpage-preview-tile:first-child {
+  grid-column:span 2!important;grid-row:span 2!important;
+ }
+}
+
+
+/* PPI PREVIEW SVG SHADOW AND INNER FRAME V25
+   Fixed selector: the editor dialog is outside #ppi-tours-app at runtime.
+   No public viewer changes. The shadow rules replace v24, not append to it. */
+#ppi-tour-preview #ppi-preview-sphere {
+  position:relative!important;
+  isolation:isolate!important;
+  overflow:hidden!important;
+}
+#ppi-tour-preview #ppi-preview-sphere > canvas {
+  position:relative!important;
+  z-index:0!important;
+}
+/* Soft inset vignette above the WebGL panorama; never intercept mouse/touch. */
+#ppi-tour-preview #ppi-preview-sphere::after {
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  z-index:4!important;
+  border-radius:inherit!important;
+  box-shadow:inset 0 0 12px 3px rgba(0,0,0,.25),
+             inset 0 0 2px 1px rgba(0,0,0,.15)!important;
+  pointer-events:none!important;
+}
+/* Actual placed hotspots are above the decorative inset vignette. */
+#ppi-tour-preview #ppi-preview-sphere > .ppi-hotspot {
+  z-index:5!important;
+}
+/* Provisional + before target selection must have NO shadow. */
+#ppi-tour-preview #ppi-preview-sphere > .ppi-hotspot[data-pending="true"] {
+  box-shadow:none!important;
+  filter:none!important;
+  text-shadow:none!important;
+}
+/* Restrict real-pin shadow to the six mask-based SVG pin designs. */
+#ppi-tour-preview #ppi-preview-sphere
+  :is(.ppi-hotspot-map-pin,.ppi-hotspot-chat-pin,.ppi-hotspot-label-pin,
+      .ppi-hotspot-gps-pin,.ppi-hotspot-you-pin,.ppi-hotspot-outline-pin) {
+  box-shadow:none!important;
+  overflow:visible!important;
+}
+/* The browser-tested shadow uses a separate layer with a masked ::before.
+   Blur its parent rather than the masked figure; keep SVG artwork crisp. */
+#ppi-tour-preview #ppi-preview-sphere
+  :is(.ppi-hotspot-map-pin,.ppi-hotspot-chat-pin,.ppi-hotspot-label-pin,
+      .ppi-hotspot-gps-pin,.ppi-hotspot-you-pin,.ppi-hotspot-outline-pin)
+  > .ppi-hotspot-pin-shadow {
+  display:block!important;
+  position:absolute!important;
+  left:50%!important;
+  bottom:0!important;
+  width:76px!important;
+  height:100px!important;
+  max-width:none!important;
+  overflow:visible!important;
+  background:transparent!important;
+  border:none!important;
+  border-radius:0!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+  mask-image:none!important;
+  -webkit-mask-image:none!important;
+  transform:translateX(-50%) translate(3px,5px)!important;
+  filter:blur(5px)!important;
+  opacity:.9!important;
+  z-index:1!important;
+  pointer-events:none!important;
+}
+#ppi-tour-preview #ppi-preview-sphere
+  :is(.ppi-hotspot-map-pin,.ppi-hotspot-chat-pin,.ppi-hotspot-label-pin,
+      .ppi-hotspot-gps-pin,.ppi-hotspot-you-pin,.ppi-hotspot-outline-pin)
+  > .ppi-hotspot-pin-shadow::before {
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  inset:0!important;
+  background:rgba(0,0,0,.9)!important;
+  mask-image:var(--ppi-shadow-mask,none)!important;
+  -webkit-mask-image:var(--ppi-shadow-mask,none)!important;
+  mask-position:center!important;
+  -webkit-mask-position:center!important;
+  mask-size:contain!important;
+  -webkit-mask-size:contain!important;
+  mask-repeat:no-repeat!important;
+  -webkit-mask-repeat:no-repeat!important;
+}
+/* Suppress duplicate drop-shadow from historical pin rules. */
+#ppi-tour-preview #ppi-preview-sphere
+  :is(.ppi-hotspot-map-pin,.ppi-hotspot-chat-pin,.ppi-hotspot-label-pin,
+      .ppi-hotspot-gps-pin,.ppi-hotspot-you-pin,.ppi-hotspot-outline-pin)
+  > .ppi-hotspot-pin-figure {
+  z-index:2!important;
+  filter:none!important;
+}
+/* End PPI PREVIEW SVG SHADOW AND INNER FRAME V25 */
+
+/* PPI FIXED STARTPAGE SHARE BINDINGS V26 – ONLY Touren wählen tab */
+#ppi-tours-app #ppi-start-page-editor .ppi-startpage-workspace.ppi-startpage-link-editor{
+  display:block!important;width:100%!important;max-width:none!important;
+}
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-link-editor>.ppi-start-page-fields{
+  display:block!important;width:100%!important;max-width:none!important;
+}
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-link-editor [data-startpage-panel="tours"]{
+  width:100%!important;max-width:none!important;
+}
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-link-editor #ppi-start-page-tours{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:12px!important;align-items:start!important;
+}
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-link-editor .ppi-startpage-tour-option{
+  display:grid!important;grid-template-columns:auto minmax(0,1fr) auto!important;
+  align-items:center!important;gap:8px!important;min-width:0!important;
+  padding:12px!important;border:1px solid var(--color-border)!important;
+  border-radius:11px!important;background:var(--color-main-background)!important;
+  box-sizing:border-box!important;
+}
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-link-editor>.ppi-startpage-preview-column{display:none!important}
+#ppi-tours-app .ppi-startpage-link-controls{
+  grid-column:1/-1!important;display:grid!important;gap:5px!important;
+  padding-top:7px!important;border-top:1px solid var(--color-border)!important;
+  min-width:0!important;
+}
+#ppi-tours-app .ppi-startpage-link-controls[hidden]{display:none!important}
+#ppi-tours-app .ppi-startpage-link-title{font-size:12px;font-weight:600}
+#ppi-tours-app .ppi-startpage-link-select{width:100%!important;max-width:100%!important;min-width:0!important;font-size:12px!important}
+#ppi-tours-app .ppi-startpage-link-status{font-size:11px;line-height:1.4;color:var(--color-text-maxcontrast)}
+#ppi-tours-app .ppi-startpage-tour-option>.ppi-startpage-tour-info{min-width:0!important;overflow-wrap:anywhere!important}
+
+/* STARTSEITEN: Tourenauswahl oben rechts */
+#ppi-tours-app .ppi-startpage-tour-option {
+    position: relative !important;
+}
+
+#ppi-tours-app .ppi-startpage-tour-option > input[type="checkbox"] {
+    position: absolute !important;
+    top: 12px !important;
+    right: 12px !important;
+    left: auto !important;
+    margin: 0 !important;
+    z-index: 10 !important;
+    width: 20px !important;
+    height: 20px !important;
+    cursor: pointer;
+}
+
+@media(max-width:730px){
+ #ppi-tours-app .ppi-startpage-workspace.ppi-startpage-link-editor #ppi-start-page-tours{grid-template-columns:1fr!important}
+}
+
+/* STARTPAGE TOUR GRID LAYOUT FIX */
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-link-editor
+.ppi-startpage-tour-option {
+  position:relative!important;
+  grid-template-columns:24px 100px minmax(0,1fr)!important;
+  column-gap:10px!important;
+  row-gap:12px!important;
+  align-items:center!important;
+  padding:12px!important;
+}
+
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-link-editor
+.ppi-startpage-tour-option>.ppi-startpage-tour-move {
+  grid-column:1!important;
+  grid-row:1!important;
+}
+
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-link-editor
+.ppi-startpage-tour-option>img,
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-link-editor
+.ppi-startpage-tour-option>.ppi-overview-placeholder {
+  grid-column:2!important;
+  grid-row:1!important;
+  width:100px!important;
+  height:76px!important;
+  max-width:none!important;
+  object-fit:cover!important;
+  border-radius:8px!important;
+}
+
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-link-editor
+.ppi-startpage-tour-option>.ppi-overview-placeholder {
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  background:var(--color-background-dark)!important;
+  font-size:30px!important;
+}
+
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-link-editor
+.ppi-startpage-tour-option>.ppi-startpage-tour-info {
+  grid-column:3!important;
+  grid-row:1!important;
+  min-width:0!important;
+  padding-right:12px!important;
+}
+
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-link-editor
+.ppi-startpage-tour-option>.ppi-startpage-link-controls {
+  grid-column:1/-1!important;
+  grid-row:2!important;
+}
+
+#ppi-tours-app .ppi-startpage-workspace.ppi-startpage-link-editor
+.ppi-startpage-tour-option>input[type="checkbox"] {
+  position:absolute!important;
+  top:12px!important;
+  right:12px!important;
+  left:auto!important;
+  margin:0!important;
+  z-index:10!important;
+}
+
+
+/* PPI STARTPAGE UNIFORM PREVIEW IMAGES V1 */
+
+/* Alle Tour-Kacheln gleichmaessig */
+#ppi-tours-app .ppi-startpage-preview-grid
+.ppi-startpage-preview-tile {
+    display:flex!important;
+    flex-direction:column!important;
+    height:100%!important;
+    min-height:0!important;
+    overflow:hidden!important;
+    box-sizing:border-box!important;
+}
+
+/* Einheitlicher Bildbereich 16:9 */
+#ppi-tours-app .ppi-startpage-preview-grid
+.ppi-startpage-tile-media {
+    width:100%!important;
+    aspect-ratio:16/9!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    flex:0 0 auto!important;
+    overflow:hidden!important;
+}
+
+/* Bilder ohne Verzerrung */
+#ppi-tours-app .ppi-startpage-preview-grid
+.ppi-startpage-tile-media img {
+    display:block!important;
+    width:100%!important;
+    height:100%!important;
+    aspect-ratio:16/9!important;
+    object-fit:cover!important;
+    object-position:center!important;
+}
+
+/* Einheitlicher Textbereich */
+#ppi-tours-app .ppi-startpage-preview-grid
+.ppi-startpage-tile-copy {
+    display:flex!important;
+    flex-direction:column!important;
+    flex:1 1 auto!important;
+    min-height:72px!important;
+    box-sizing:border-box!important;
+}
+
+/* Beschreibung auf zwei Zeilen begrenzen */
+#ppi-tours-app .ppi-startpage-preview-grid
+.ppi-startpage-tile-copy small {
+    display:-webkit-box!important;
+    -webkit-line-clamp:2!important;
+    -webkit-box-orient:vertical!important;
+    overflow:hidden!important;
+}
+
+/* Ende Uniform Preview */
+
+/* End PPI FIXED STARTPAGE SHARE BINDINGS V26 */
+
+/* PPI STARTPAGE PER-LINK PASSWORD RULE V26.3 */
+#ppi-tours-app .ppi-startpage-extra-policy{margin:12px 0;padding:13px;border:1px solid var(--color-border);border-radius:10px;display:grid;gap:12px;min-width:0}
+#ppi-tours-app .ppi-startpage-extra-policy legend{font-weight:650;padding:0 6px}
+#ppi-tours-app .ppi-startpage-extra-policy>label:not(.ppi-startpage-extra-visible){display:grid;gap:5px}
+#ppi-tours-app .ppi-startpage-extra-policy select{width:100%;max-width:100%;min-width:0}
+#ppi-tours-app .ppi-startpage-extra-visible,#ppi-tours-app .ppi-startpage-extra-policy-choice{display:flex;align-items:center;gap:9px;min-width:0}
+#ppi-tours-app .ppi-startpage-extra-visible input,#ppi-tours-app .ppi-startpage-extra-policy-choice input{width:18px!important;flex:0 0 18px!important;margin:0!important}
+#ppi-tours-app .ppi-startpage-extra-policy-choices{display:grid;gap:8px}
+#ppi-tours-app .ppi-startpage-extra-policy-choices[hidden]{display:none!important}
+#ppi-tours-app .ppi-startpage-extra-policy-status{font-size:12px;overflow-wrap:anywhere}
+/* End PPI STARTPAGE PER-LINK PASSWORD RULE V26.3 */
+/* PPI STARTPAGE LINK CARDS V26.3.1 */
+#ppi-tours-app .ppi-startpage-main-share-card{border:1px solid var(--color-border);border-radius:14px;padding:18px;margin:16px 0 22px;background:var(--color-main-background)}
+#ppi-tours-app .ppi-startpage-main-share-card>h4{margin:0 0 12px;font-size:1.04em}
+#ppi-tours-app .ppi-startpage-extra-links{margin-top:20px}
+#ppi-tours-app .ppi-startpage-share-accordion{display:block;border:1px solid var(--color-border);border-radius:12px;margin:12px 0;padding:0 14px;background:var(--color-main-background);overflow:hidden}
+#ppi-tours-app .ppi-startpage-share-accordion[open]{border-color:var(--color-primary-element);box-shadow:0 2px 12px rgba(0,0,0,.07);padding-bottom:14px}
+#ppi-tours-app .ppi-startpage-share-accordion:not([open])>:not(summary){display:none!important}
+#ppi-tours-app .ppi-startpage-share-accordion-heading{cursor:pointer;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:7px;padding:15px 3px;list-style:revert;min-height:44px}
+#ppi-tours-app .ppi-startpage-share-accordion-heading:focus-visible{outline:2px solid var(--color-primary-element);outline-offset:3px;border-radius:4px}
+#ppi-tours-app .ppi-startpage-share-accordion-heading strong{font-weight:700;overflow-wrap:anywhere}
+#ppi-tours-app .ppi-startpage-share-accordion-state{font-size:.84em;opacity:.85;overflow-wrap:anywhere}
+#ppi-tours-app .ppi-startpage-extra-policy-info{font-size:.9em;opacity:.85;margin:0;line-height:1.45}
+@media (max-width:650px){#ppi-tours-app .ppi-startpage-main-share-card{padding:12px}#ppi-tours-app .ppi-startpage-share-accordion-heading{display:block}#ppi-tours-app .ppi-startpage-share-accordion-state{display:block;margin-top:5px}}
+/* End PPI STARTPAGE LINK CARDS V26.3.1 */
+
+
+
+/* PPI STARTPAGE EXTRA AUTOSAVE V26.3.4 */
+#ppi-tours-app .ppi-startpage-extra-autosave{
+  margin-left:auto;white-space:nowrap;font-size:12px;line-height:1.4;
+  font-weight:500;opacity:.82;min-width:0;
+}
+#ppi-tours-app .ppi-startpage-share-accordion-state{margin-left:0;white-space:normal}
+#ppi-tours-app .ppi-startpage-extra-policy-choices{
+  display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:4px!important;
+}
+#ppi-tours-app .ppi-startpage-extra-policy-choices .ppi-startpage-extra-policy-choice{
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  justify-content:flex-start!important;gap:12px!important;width:100%!important;
+  min-width:0!important;box-sizing:border-box!important;padding:7px 10px!important;
+  border-radius:7px;
+}
+#ppi-tours-app .ppi-startpage-extra-policy-choices .ppi-startpage-extra-policy-choice input[type="checkbox"]{
+  flex:0 0 18px!important;width:18px!important;height:18px!important;
+  margin:0!important;padding:0!important;
+}
+#ppi-tours-app .ppi-startpage-extra-policy-choices .ppi-startpage-extra-policy-choice span{
+  flex:1 1 auto!important;min-width:0!important;overflow-wrap:anywhere!important;
+}
+#ppi-tours-app .ppi-startpage-extra-visibility-section{
+  display:grid!important;gap:9px!important;margin-top:8px!important;padding:14px!important;
+  border:1px solid var(--color-border);border-radius:10px;
+  background:var(--color-background-hover);
+}
+#ppi-tours-app .ppi-startpage-extra-visibility-section>strong{font-size:.92em}
+#ppi-tours-app .ppi-startpage-extra-visibility-section .ppi-startpage-extra-visible{
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  gap:12px!important;width:100%!important;margin:0!important;
+}
+#ppi-tours-app .ppi-startpage-extra-visibility-section .ppi-startpage-extra-visible input{
+  flex:0 0 18px!important;width:18px!important;height:18px!important;
+  margin:0!important;padding:0!important;
+}
+#ppi-tours-app .ppi-startpage-extra-visibility-help{
+  font-size:12px;opacity:.8;margin:0!important;line-height:1.45;
+}
+@media (max-width:620px){
+  #ppi-tours-app .ppi-startpage-share-accordion-heading{display:flex;flex-wrap:wrap;gap:6px}
+  #ppi-tours-app .ppi-startpage-extra-autosave{margin-left:auto}
+  #ppi-tours-app .ppi-startpage-share-accordion-state{flex:1 1 100%;}
+}
+/* End PPI STARTPAGE EXTRA AUTOSAVE V26.3.4 */
+
+
+/* PPI EXTRA LINK COMPACT CHOICES V26.3.5 */
+#ppi-tours-app .ppi-startpage-extra-policy .ppi-startpage-extra-policy-choices {
+  display:flex!important;
+  flex-direction:column!important;
+  gap:2px!important;
+  margin:2px 0 8px!important;
+  padding:0!important;
+}
+#ppi-tours-app .ppi-startpage-extra-policy .ppi-startpage-extra-policy-choices[hidden] {
+  display:none!important;
+}
+#ppi-tours-app .ppi-startpage-extra-policy .ppi-startpage-extra-policy-choices
+ .ppi-startpage-extra-policy-choice {
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  width:100%!important;
+  min-height:0!important;
+  gap:10px!important;
+  margin:0!important;
+  padding:5px 8px!important;
+  line-height:1.35!important;
+  box-sizing:border-box!important;
+}
+#ppi-tours-app .ppi-startpage-extra-policy .ppi-startpage-extra-policy-choices
+ .ppi-startpage-extra-policy-choice input[type="checkbox"] {
+  flex:0 0 18px!important;
+  width:18px!important;
+  height:18px!important;
+  min-width:18px!important;
+  min-height:18px!important;
+  margin:0!important;
+  padding:0!important;
+}
+#ppi-tours-app .ppi-startpage-extra-policy .ppi-startpage-extra-policy-choices
+ .ppi-startpage-extra-policy-choice span {
+  display:block!important;
+  flex:1 1 auto!important;
+  margin:0!important;
+  padding:0!important;
+  min-width:0!important;
+  line-height:1.35!important;
+}
+/* End PPI EXTRA LINK COMPACT CHOICES V26.3.5 */
+
+
+
+/* PPI HARMONIC RESPONSIVE MOSAIC V1
+   Editor: Desktop-Vorschau nutzt weiterhin V21-Raster.
+*/
+
+#ppi-tours-app
+.ppi-startpage-live-preview[data-ppi-preview-device="desktop"]
+.ppi-startpage-preview-grid[data-cols="auto"]
+> .ppi-startpage-preview-tile {
+  display:flex!important;
+  flex-direction:column!important;
+  min-height:0!important;
+  height:100%!important;
+  overflow:hidden!important;
+}
+
+#ppi-tours-app
+.ppi-startpage-live-preview[data-ppi-preview-device="desktop"]
+.ppi-startpage-preview-grid[data-cols="auto"]
+> .ppi-startpage-preview-tile
+> .ppi-startpage-tile-media {
+  position:relative!important;
+  display:block!important;
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  aspect-ratio:auto!important;
+  flex:1 1 0%!important;
+  overflow:hidden!important;
+}
+
+#ppi-tours-app
+.ppi-startpage-live-preview[data-ppi-preview-device="desktop"]
+.ppi-startpage-preview-grid[data-cols="auto"]
+> .ppi-startpage-preview-tile
+> .ppi-startpage-tile-media img {
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  object-fit:cover!important;
+  object-position:center!important;
+}
+
+#ppi-tours-app
+.ppi-startpage-live-preview[data-ppi-preview-device="desktop"]
+.ppi-startpage-preview-grid[data-cols="auto"]
+> .ppi-startpage-preview-tile
+> .ppi-startpage-tile-copy {
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  flex:0 0 52px!important;
+  height:52px!important;
+  min-height:52px!important;
+  max-height:52px!important;
+  padding:5px 7px!important;
+  overflow:hidden!important;
+  box-sizing:border-box!important;
+}
+
+#ppi-tours-app
+.ppi-startpage-live-preview[data-ppi-preview-device="desktop"]
+.ppi-startpage-preview-grid[data-cols="auto"]
+.ppi-startpage-tile-copy strong {
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+  overflow:hidden!important;
+  line-height:1.2!important;
+}
+
+#ppi-tours-app
+.ppi-startpage-live-preview[data-ppi-preview-device="desktop"]
+.ppi-startpage-preview-grid[data-cols="auto"]
+.ppi-startpage-tile-copy small {
+  display:-webkit-box!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:1!important;
+  overflow:hidden!important;
+  line-height:1.2!important;
+}
+
+
+/* PPI MOSAIC FIVE TOURS V1 */
+
+@container (min-width:415px) {
+  #ppi-tours-app
+  .ppi-startpage-live-preview[data-ppi-preview-device="desktop"]
+  .ppi-startpage-preview-grid[data-cols="auto"]:has(>
+    .ppi-startpage-preview-tile:nth-child(5):last-child) {
+    --ppi-v21-cols:4!important;
+  }
+
+  #ppi-tours-app
+  .ppi-startpage-live-preview[data-ppi-preview-device="desktop"]
+  .ppi-startpage-preview-grid[data-cols="auto"]:has(>
+    .ppi-startpage-preview-tile:nth-child(5):last-child)
+  > .ppi-startpage-preview-tile:first-child {
+    grid-column:span 2!important;
+    grid-row:span 2!important;
+  }
 }
 
 </style>

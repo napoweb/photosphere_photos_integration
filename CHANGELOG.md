@@ -1,9 +1,52 @@
+## 0.4.64
+
+### Neue Funktionen
+
+- **Öffentliche Startseiten:** Verbesserte Präsentation mehrerer virtueller 360°-Touren mit responsiven Kacheln und Mosaiklayouts.
+- **Tour-Präsentation:** Öffentliche Startseiten bieten individuell gestaltbare Übersichten mit Tour-Vorschaubildern, Titeln und Beschreibungen.
+- **Startseiten-Vorlagen:** Die vorhandenen Gestaltungsmöglichkeiten und Vorlagen lassen sich direkt im Startseiten-Editor verwenden.
+
+### Verbesserungen
+
+- **Vorschaubilder:** Festes Seitenverhältnis von 16:9 bei unterschiedlichen Browserfensterbreiten. Die Bilder werden proportional dargestellt und bei Bedarf passend zugeschnitten.
+- **Beschreibungstexte:** Einheitliche, kompakte Schriftgröße von 12 px auf öffentlichen Startseiten und Tour-Kacheln.
+- **Tour-Kacheln:** Optimierte Darstellung der Tour-Namen und Beschreibungen.
+- **Mobile Ansicht:** Passwortkennzeichnungen unter Tour-Namen werden auf schmalen öffentlichen Startseiten nicht mehr angezeigt; der Passwortschutz bleibt vollständig aktiv.
+- **Tour-Editor:** Besser lesbarer Dateiname des ausgewählten Startpanoramas im dunklen Nextcloud-Design.
+- **Oberfläche:** Bereinigung und Vereinheitlichung bestehender CSS-Regeln.
+
+### Fehlerbehebungen
+
+- **Startpanorama:** Kontrastproblem beim Dateinamen einer ausgewählten Startpanorama-Kachel behoben.
+- **Öffentliche Startseiten:** Uneinheitliche Bildproportionen beim Ändern der Fensterbreite korrigiert.
+- **Mobile Tour-Übersicht:** Überflüssige Passwortanzeige unter den Tour-Kacheln entfernt, ohne die Freigabeberechtigungen zu verändern.
+
+### Entwicklung der App – bisherige Meilensteine
+
+- **Version 0.4.63:** Veröffentlichung des vorangegangenen, App-Store-kompatiblen Entwicklungsstands.
+- **Versionen 0.4.62.x:** Ausbau der öffentlichen Startseiten, der Vorlagenverwaltung und der responsiven Tourdarstellung.
+- **Versionen 0.4.62.x:** Weiterentwicklung öffentlicher Freigaben einschließlich Passwortsteuerung, Aktivierung und Zugriffsprüfungen.
+- **Versionen 0.4.62.x:** Verbesserte Panoramaoptimierung mit geräteabhängigen Auflösungen und einem privaten App-Cache.
+- **Versionen 0.4.62.x:** Erweiterte Cache-Statistik und Einführung abgesicherter Hintergrundbereinigungen mit Schutzfrist.
+- **Frühere Versionen:** Aufbau des interaktiven 360°-Viewers, der Tourverwaltung, der Hotspots und der Nextcloud-Integration.
+
+Die vollständige, chronologisch geordnete Versionshistorie ist weiterhin in der CHANGELOG.md des Quellcode-Repositories enthalten.
+
+---
+
 ## 0.4.63
 
 - App Store-compatible release version.
 - Same tested functionality as 0.4.62.140.
 - No functional changes.
 
+## 0.4.62.139 – Startseitenbezogene Tour-Passwortfreigabe (Testversion)
+
+- Startseiten-Freigabe mit drei Regeln: Tour-Passwörter beibehalten (Standard), alle eingebundenen Touren freischalten, einzelne Touren freischalten.
+- Freigabe nur nach Anmeldung an einer passwortgeschützten Startseite; pro Browser-Sitzung und ausschließlich für den tatsächlich über diese Startseite eingebundenen Tour-Link.
+- Server prüft bei jeder Viewer-, Manifest-, Vorschau-, Bild-, Cache- und Wasserzeichen-Anfrage erneut Startseiten-Passwortsitzung, freigegebene Tour-Zuordnung, Modus und gültige Tour-Freigabe.
+- Tour-Links und vorhandene Tour-Passwörter werden nicht verändert. Passwortänderungen und widerrufene Startseiten- bzw. Tour-Freigaben beenden die entsprechende Berechtigung.
+- Sicherheitshinweis: Die Version ist für Funktionstests auf einer separaten Docker-Testinstallation gedacht, noch kein unabhängiges Security-Audit.
 ## 0.4.62.138 (Testversion)
 - Gemeinsame, responsive Fehlerdarstellung für ungültige, abgelaufene und deaktivierte öffentliche Tour- und Startseiten-Links.
 - Statuscodes und öffentliche Zugriffsprüfungen unverändert; keine Änderung an Tour-Passwortfreigaben.
@@ -234,6 +277,17 @@
 
 ## 0.4.62.20 – Speicherbutton im Darstellungs-Reiter (Testversion)
 - „Darstellung speichern“ von unten in die obere Aktionsleiste neben „Tour löschen“ verschoben. Je Reiter wird nur der passende Speicherbutton angezeigt; Speichervorgang bleibt unverändert.
+
+## 0.4.62.19 – Open Graph link previews
+- Metadata for title, description and optional start panorama on public tours.
+- Password-protected tours expose only generic social metadata; image route denies access.
+- Social preview choices in Darstellung: cover, neutral, off.
+- All social image requests check active share token and original image read permissions.\n
+### 0.4.62.80 – Isolated panorama derivative cache (experimental)
+- Cache 4096/8192 panorama JPEG derivatives in private appdata, independent of global Nextcloud preview limits.
+- Schedule background preparation for saved tours and upon opening existing authorized tours.
+- Detect Imagick dynamically, preserve server resource limits; retain normal Nextcloud preview/original fallback when unavailable.
+- Cache keyed by source identity and ETag; original files and public-share checks remain unchanged.
 
 ## 0.4.62.15 – Öffentliche Touren mit Passwortschutz (Testversion)
 - Der Tour-Eigentümer kann für einen aktiven Freigabelink ein Passwort setzen, ändern oder entfernen (10–128 Zeichen).
@@ -796,21 +850,3 @@
 - Editable optional welcome text in the tour design tab, validated and stored with each tour.
 - Public landing displays welcome description as plain text.
 
-## 0.4.62.19 – Open Graph link previews
-- Metadata for title, description and optional start panorama on public tours.
-- Password-protected tours expose only generic social metadata; image route denies access.
-- Social preview choices in Darstellung: cover, neutral, off.
-- All social image requests check active share token and original image read permissions.\n
-### 0.4.62.80 – Isolated panorama derivative cache (experimental)
-- Cache 4096/8192 panorama JPEG derivatives in private appdata, independent of global Nextcloud preview limits.
-- Schedule background preparation for saved tours and upon opening existing authorized tours.
-- Detect Imagick dynamically, preserve server resource limits; retain normal Nextcloud preview/original fallback when unavailable.
-- Cache keyed by source identity and ETag; original files and public-share checks remain unchanged.
-
-## 0.4.62.139 – Startseitenbezogene Tour-Passwortfreigabe (Testversion)
-
-- Startseiten-Freigabe mit drei Regeln: Tour-Passwörter beibehalten (Standard), alle eingebundenen Touren freischalten, einzelne Touren freischalten.
-- Freigabe nur nach Anmeldung an einer passwortgeschützten Startseite; pro Browser-Sitzung und ausschließlich für den tatsächlich über diese Startseite eingebundenen Tour-Link.
-- Server prüft bei jeder Viewer-, Manifest-, Vorschau-, Bild-, Cache- und Wasserzeichen-Anfrage erneut Startseiten-Passwortsitzung, freigegebene Tour-Zuordnung, Modus und gültige Tour-Freigabe.
-- Tour-Links und vorhandene Tour-Passwörter werden nicht verändert. Passwortänderungen und widerrufene Startseiten- bzw. Tour-Freigaben beenden die entsprechende Berechtigung.
-- Sicherheitshinweis: Die Version ist für Funktionstests auf einer separaten Docker-Testinstallation gedacht, noch kein unabhängiges Security-Audit.

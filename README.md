@@ -1,6 +1,6 @@
 # Photo Sphere – 360° Panorama
 
-**Version 0.4.62.92 (Veröffentlichungskandidat)** · Entwickler: **Stefan Sührer** · Nextcloud 35
+**Version 0.4.64** · Entwickler: **Stefan Sührer** · Nextcloud 35
 
 Photo Sphere erweitert die Nextcloud **Fotos-App** und **Dateien-App** um eine interaktive 360°-Panoramaansicht. Geeignete Panoramabilder werden automatisch erkannt, **aber nicht automatisch geöffnet**. Die gewohnte Navigation und die normale Bildanzeige bleiben erhalten. Die 360°-Ansicht startet erst nach einer bewussten Benutzeraktion.
 
@@ -32,13 +32,13 @@ Angemeldete Benutzer können eigene Touren aus ihren berechtigten Panorama-Datei
 
 ## Tour-Cache und Hintergrundjobs
 
-Die optionale Optimierung erzeugt über Nextcloud-Hintergrundjobs getrennte Desktop-/Mobil-JPEGs im privaten AppData-Verzeichnis. Sie benötigt PHP Imagick und einen funktionierenden Hintergrundjob-Runner. Die Administrationsoberfläche zeigt Cache-Größe, Tourreferenzen und Bereinigungskandidaten, ohne fremde Datei- oder Tournamen offenzulegen. Ungenutzte App-eigene Ableitungen werden frühestens nach einer siebentägigen Schutzfrist bereinigt. Originaldateien bleiben unverändert. Die automatische Löschung nach Fristende ist vor der Freigabe noch abschließend zu verifizieren.
+Die optionale Optimierung erzeugt über Nextcloud-Hintergrundjobs getrennte Desktop-/Mobil-JPEGs im privaten AppData-Verzeichnis. Sie benötigt PHP Imagick und einen funktionierenden Hintergrundjob-Runner. Die Administrationsoberfläche zeigt Cache-Größe, Tourreferenzen und Bereinigungskandidaten, ohne fremde Datei- oder Tournamen offenzulegen. Ungenutzte App-eigene Ableitungen werden frühestens nach einer siebentägigen Schutzfrist bereinigt. Originaldateien bleiben unverändert. Die automatische Cache-Bereinigung verwendet eine siebentägige Schutzfrist, prüft Tourreferenzen vor dem Löschen erneut und wurde in der bisherigen Entwicklungsumgebung praktisch getestet.
 
 ## Kompatibilitätsnachweis (Stand 21.11.2026)
 
 - Nextcloud 35.0.3, ARM64, PostgreSQL, PHP 8.5: produktive Benutzung mit Viewer, Touren und Cache bestätigt.
 - Nextcloud 35.0.3, ARM64, MariaDB 11.4, PHP 8.5: Installation, Tourdaten, Bildoptimierung, Cron und Cache-Statistik bestätigt.
-- Noch offen: x86-64, unterstützte ältere PHP-Versionen, signiertes Paket und Abschlussprüfung der automatischen Bereinigung. Andere Nextcloud-Hauptversionen werden nicht deklariert.
+- Nicht gesondert nachgewiesen sind Tests auf x86-64 und sämtlichen unterstützten PHP-Versionen. Andere Nextcloud-Hauptversionen als 35 werden nicht deklariert.
 
 ## Installation und Updates
 
